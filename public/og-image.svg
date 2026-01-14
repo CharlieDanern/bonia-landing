@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1193C1;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#6AD1F4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F5F5F5;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+
+  <!-- Content -->
+  <text x="600" y="200" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="#000080" text-anchor="middle">Bonia</text>
+  <text x="600" y="300" font-family="Arial, sans-serif" font-size="40" fill="#000080" text-anchor="middle">Kiểm soát dữ liệu của bạn</text>
+  <text x="600" y="400" font-family="Arial, sans-serif" font-size="32" fill="#1f2937" text-anchor="middle">Bảo vệ dữ liệu cá nhân và kiếm tiền từ chính nó</text>
+  <text x="600" y="500" font-family="Arial, sans-serif" font-size="28" fill="#4b5563" text-anchor="middle">AI Agent • Zero-Knowledge • Quyền riêng tư tuyệt đối</text>
+</svg>
