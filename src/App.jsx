@@ -169,8 +169,7 @@ function App() {
       {/* Problem Cards Section */}
       <section className="container mx-auto px-4 sm:px-6 py-12 md:py-16">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#000080] mb-8 md:mb-12 text-center md:text-left max-w-2xl px-4">
-          Bạn có cảm thấy mệt mỏi vì
-          <br className="hidden sm:block" />
+          Bạn có cảm thấy mệt mỏi vì <br className="hidden sm:block" />
           những cuộc gọi telesale hàng ngày?
         </h2>
 
@@ -225,10 +224,9 @@ function App() {
       <section className="container mx-auto px-4 sm:px-6 py-12 md:py-16">
         <div className="max-w-4xl mx-auto text-center mb-12 md:mb-16 px-4">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#000080] mb-4">
-            Với Bonia, bạn toàn quyền kiểm soát
+            Với Bonia, bạn toàn quyền kiểm soát{" "}
             <br className="hidden sm:block" />
-            dữ liệu và kiếm tiền từ nó,
-            <br className="hidden sm:block" />
+            dữ liệu và kiếm tiền từ nó, <br className="hidden sm:block" />
             bất cứ khi nào bạn muốn
           </h2>
           <p className="text-gray-600 text-base sm:text-lg mt-6">
