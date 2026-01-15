@@ -411,8 +411,7 @@ function App() {
               Bonia AI Agent
             </h2>
             <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#000080] mb-4 sm:mb-6">
-              Sẵn sàng bảo vệ và kiếm tiền từ
-              <br className="hidden sm:block" />
+              Sẵn sàng bảo vệ và kiếm tiền từ <br className="hidden sm:block" />
               dữ liệu của chính bạn ngay hôm nay?
             </h3>
 
