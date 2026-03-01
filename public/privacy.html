@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chính sách bảo mật - Bonia</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    h1, h2, h3 { font-family: 'Lora', 'Times New Roman', serif; }
+    body, p, li, a, span { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+  <!-- Header -->
+  <header class="container mx-auto px-4 sm:px-6 py-6">
+    <a href="/" class="flex items-center gap-2">
+      <img src="/logo.png" alt="Bonia" class="h-10" />
+      <span class="text-lg font-bold text-[#191970] tracking-tight" style="font-family: 'Inter', sans-serif;">Bonia</span>
+    </a>
+  </header>
+
+  <!-- Content -->
+  <main class="container mx-auto px-4 sm:px-6 py-8 md:py-12">
+    <div class="max-w-3xl mx-auto bg-white rounded-2xl p-6 sm:p-10 shadow-sm">
+      <h1 class="text-2xl sm:text-3xl font-bold text-[#191970] mb-2">Chính sách bảo mật</h1>
+      <p class="text-gray-500 text-sm mb-8">Cập nhật lần cuối: 01/03/2026</p>
+
+      <p class="text-gray-700 leading-relaxed mb-3">
+        Bonia ("chúng tôi") cung cấp dịch vụ trợ lý nghe máy AI giúp người dùng sàng lọc và tóm tắt cuộc gọi khi không trả lời.
+      </p>
+      <p class="text-gray-700 leading-relaxed mb-8">
+        Chúng tôi cam kết bảo vệ quyền riêng tư của bạn và chỉ xử lý dữ liệu cần thiết để cung cấp dịch vụ.
+      </p>
+
+      <!-- 1. Phạm vi áp dụng -->
+      <section class="mb-8">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">1. Phạm vi áp dụng</h2>
+        <p class="text-gray-700 text-sm leading-relaxed mb-2">
+          Chính sách này áp dụng cho ứng dụng Bonia trên iOS và website bonia.net.
+        </p>
+        <p class="text-gray-700 text-sm leading-relaxed">
+          Khi bạn sử dụng Bonia, bạn đồng ý với việc thu thập và xử lý dữ liệu theo nội dung dưới đây.
+        </p>
+      </section>
+
+      <!-- 2. Dữ liệu thu thập -->
+      <section class="mb-8">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">2. Dữ liệu chúng tôi thu thập</h2>
+        <p class="text-gray-700 text-sm leading-relaxed mb-4">
+          Chúng tôi chỉ thu thập những dữ liệu cần thiết để cung cấp dịch vụ.
+        </p>
+
+        <div class="space-y-5">
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-1">2.1 Số điện thoại</h3>
+            <p class="text-gray-700 text-sm leading-relaxed mb-2">Được sử dụng để:</p>
+            <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
+              <li>Xác thực tài khoản</li>
+              <li>Liên kết dịch vụ chuyển hướng cuộc gọi</li>
+              <li>Nhận diện người dùng trong hệ thống</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-1">2.2 Tên hiển thị</h3>
+            <p class="text-gray-700 text-sm leading-relaxed">
+              Tên bạn cung cấp khi tạo hồ sơ, được sử dụng trong lời chào của trợ lý AI.
+            </p>
+          </div>
+
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-1">2.3 Token thông báo đẩy</h3>
+            <p class="text-gray-700 text-sm leading-relaxed">
+              Apple Push Notification Token được sử dụng để gửi thông báo về cuộc gọi nhỡ.
+            </p>
+          </div>
+
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-1">2.4 Danh bạ (đã mã hóa)</h3>
+            <p class="text-gray-700 text-sm leading-relaxed mb-2">
+              Nếu bạn cho phép truy cập danh bạ:
+            </p>
+            <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm mb-2">
+              <li>Số điện thoại được chuyển đổi thành giá trị băm mật mã một chiều (HMAC-SHA256) ngay trên thiết bị.</li>
+              <li>Mỗi tài khoản sử dụng khóa bí mật riêng để tạo giá trị băm.</li>
+              <li>Chúng tôi không lưu trữ số điện thoại gốc hoặc tên liên hệ trên server.</li>
+            </ul>
+            <p class="text-gray-700 text-sm leading-relaxed mb-1">
+              Giá trị băm này chỉ dùng để xác định liệu số gọi đến có nằm trong danh bạ của bạn hay không.
+            </p>
+            <p class="text-gray-700 text-sm leading-relaxed">
+              Giá trị băm không thể đảo ngược để khôi phục số điện thoại ban đầu.
+            </p>
+          </div>
+
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-1">2.5 Nội dung cuộc gọi được chuyển hướng</h3>
+            <p class="text-gray-700 text-sm leading-relaxed mb-2">
+              Khi bạn không bắt máy và cuộc gọi được chuyển sang Bonia:
+            </p>
+            <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm mb-2">
+              <li>Hội thoại giữa người gọi và trợ lý AI được xử lý</li>
+              <li>Nội dung được chuyển thành văn bản (transcript)</li>
+              <li>Hệ thống phân loại cuộc gọi (quan trọng, spam, giao hàng, v.v.)</li>
+              <li>Tạo tóm tắt nội dung</li>
+            </ul>
+            <p class="text-gray-700 text-sm leading-relaxed">
+              Dữ liệu này được lưu để bạn có thể xem lại trong ứng dụng.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Cách sử dụng -->
+      <section class="mb-8">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">3. Cách chúng tôi sử dụng dữ liệu</h2>
+        <p class="text-gray-700 text-sm leading-relaxed mb-2">Chúng tôi sử dụng dữ liệu để:</p>
+        <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm mb-3">
+          <li>Cung cấp và vận hành dịch vụ nghe máy thay bạn</li>
+          <li>Phân loại và tóm tắt cuộc gọi</li>
+          <li>Gửi thông báo đẩy về cuộc gọi nhỡ</li>
+          <li>Nhận diện số trong danh bạ</li>
+          <li>Cải thiện độ chính xác của hệ thống</li>
+          <li>Đảm bảo an toàn và ngăn chặn lạm dụng</li>
+        </ul>
+        <p class="text-gray-700 text-sm leading-relaxed">
+          Chúng tôi không sử dụng dữ liệu của bạn cho mục đích quảng cáo.
+        </p>
+      </section>
+
+      <!-- 4. Chia sẻ dữ liệu -->
+      <section class="mb-8">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">4. Chia sẻ dữ liệu với bên thứ ba</h2>
+        <p class="text-gray-700 text-sm leading-relaxed mb-3">
+          Chúng tôi không bán hoặc chia sẻ dữ liệu cá nhân của bạn cho mục đích tiếp thị.
+        </p>
+        <p class="text-gray-700 text-sm leading-relaxed mb-2">
+          Để cung cấp dịch vụ, chúng tôi sử dụng các nhà cung cấp hạ tầng và AI sau:
+        </p>
+        <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm mb-3">
+          <li><strong>ElevenLabs</strong> — xử lý giọng nói (text-to-speech, speech-to-text)</li>
+          <li><strong>OpenAI</strong> — xử lý ngôn ngữ tự nhiên (phân loại, tóm tắt)</li>
+        </ul>
+        <p class="text-gray-700 text-sm leading-relaxed">
+          Dữ liệu được gửi đến các nhà cung cấp này chỉ nhằm mục đích xử lý kỹ thuật và được quản lý theo chính sách bảo mật của từng nhà cung cấp.
+        </p>
+      </section>
+
+      <!-- 5. Cơ sở pháp lý -->
+      <section class="mb-8">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">5. Cơ sở pháp lý xử lý dữ liệu</h2>
+        <p class="text-gray-700 text-sm leading-relaxed mb-2">Chúng tôi xử lý dữ liệu dựa trên:</p>
+        <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
+          <li>Sự đồng ý của bạn khi đăng ký và sử dụng dịch vụ</li>
+          <li>Việc thực hiện dịch vụ theo yêu cầu của bạn</li>
+          <li>Nghĩa vụ pháp lý (nếu có)</li>
+        </ul>
+      </section>
+
+      <!-- 6. Thời gian lưu trữ -->
+      <section class="mb-8">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">6. Thời gian lưu trữ dữ liệu</h2>
+        <p class="text-gray-700 text-sm leading-relaxed mb-2">Chúng tôi lưu trữ dữ liệu:</p>
+        <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm mb-3">
+          <li>Cho đến khi bạn xóa lịch sử trong ứng dụng, hoặc</li>
+          <li>Cho đến khi bạn xóa tài khoản</li>
+        </ul>
+        <p class="text-gray-700 text-sm leading-relaxed">
+          Sau khi xóa tài khoản, dữ liệu sẽ được xóa khỏi hệ thống trong vòng 30 ngày, trừ khi pháp luật yêu cầu lưu trữ lâu hơn.
+        </p>
+      </section>
+
+      <!-- 7. Bảo mật -->
+      <section class="mb-8">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">7. Bảo mật dữ liệu</h2>
+        <p class="text-gray-700 text-sm leading-relaxed mb-2">
+          Chúng tôi áp dụng các biện pháp bảo mật bao gồm:
+        </p>
+        <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
+          <li>Mã hóa HTTPS cho mọi kết nối</li>
+          <li>Xác thực người dùng bằng JWT</li>
+          <li>Giới hạn quyền truy cập nội bộ</li>
+          <li>Lưu trữ dữ liệu trên hệ thống bảo mật</li>
+        </ul>
+      </section>
+
+      <!-- 8. Vị trí lưu trữ -->
+      <section class="mb-8">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">8. Vị trí lưu trữ và xử lý dữ liệu</h2>
+        <p class="text-gray-700 text-sm leading-relaxed">
+          Dữ liệu có thể được lưu trữ và xử lý trên máy chủ đặt ngoài lãnh thổ Việt Nam thông qua các nhà cung cấp hạ tầng và AI.
+        </p>
+      </section>
+
+      <!-- 9. Quyền của bạn -->
+      <section class="mb-8">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">9. Quyền của bạn</h2>
+        <p class="text-gray-700 text-sm leading-relaxed mb-2">Bạn có quyền:</p>
+        <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
+          <li>Hủy chuyển hướng cuộc gọi bất cứ lúc nào (ví dụ: gọi ##61#)</li>
+          <li>Xóa lịch sử cuộc gọi trong ứng dụng</li>
+          <li>Xóa tài khoản và toàn bộ dữ liệu liên quan</li>
+          <li>Thu hồi quyền truy cập danh bạ và thông báo đẩy trong Cài đặt iOS</li>
+          <li>Yêu cầu thông tin về dữ liệu chúng tôi đang lưu trữ</li>
+        </ul>
+      </section>
+
+      <!-- 10. Cuộc gọi từ người không phải người dùng -->
+      <section class="mb-8">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">10. Cuộc gọi từ người không phải người dùng</h2>
+        <p class="text-gray-700 text-sm leading-relaxed mb-2">
+          Bonia hoạt động như một hệ thống trả lời tự động khi cuộc gọi được chuyển hướng.
+        </p>
+        <p class="text-gray-700 text-sm leading-relaxed">
+          Khi người gọi tiếp tục cuộc gọi và tương tác với trợ lý AI, dữ liệu hội thoại được xử lý nhằm cung cấp dịch vụ cho người dùng Bonia.
+        </p>
+      </section>
+
+      <!-- 11. Trẻ em -->
+      <section class="mb-8">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">11. Trẻ em</h2>
+        <p class="text-gray-700 text-sm leading-relaxed mb-1">
+          Bonia không được thiết kế cho người dưới 18 tuổi.
+        </p>
+        <p class="text-gray-700 text-sm leading-relaxed">
+          Chúng tôi không cố ý thu thập dữ liệu từ trẻ em.
+        </p>
+      </section>
+
+      <!-- 12. Thay đổi chính sách -->
+      <section class="mb-8">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">12. Thay đổi chính sách</h2>
+        <p class="text-gray-700 text-sm leading-relaxed mb-1">
+          Chúng tôi có thể cập nhật chính sách này khi cần thiết.
+        </p>
+        <p class="text-gray-700 text-sm leading-relaxed">
+          Mọi thay đổi sẽ được thông báo trong ứng dụng hoặc trên website.
+        </p>
+      </section>
+
+      <!-- 13. Liên hệ -->
+      <section class="mb-4">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">13. Liên hệ</h2>
+        <p class="text-gray-700 text-sm leading-relaxed">
+          Nếu bạn có câu hỏi về chính sách bảo mật này, vui lòng liên hệ:
+        </p>
+        <p class="text-gray-700 text-sm mt-2">
+          Email: <a href="mailto:duynguyen@bonia.net" class="text-indigo-600 hover:text-indigo-700">duynguyen@bonia.net</a>
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="container mx-auto px-4 sm:px-6 py-8">
+    <div class="text-center">
+      <p class="text-sm text-gray-500">© 2026 Bonia. Tất cả quyền được bảo lưu.</p>
+    </div>
+  </footer>
+</body>
+</html>

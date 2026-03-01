@@ -11,8 +11,8 @@
   <rect width="1200" height="630" fill="url(#bgGrad)"/>
 
   <!-- Content -->
-  <text x="600" y="200" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="#000080" text-anchor="middle">Bonia</text>
-  <text x="600" y="300" font-family="Arial, sans-serif" font-size="40" fill="#000080" text-anchor="middle">Kiểm soát dữ liệu của bạn</text>
-  <text x="600" y="400" font-family="Arial, sans-serif" font-size="32" fill="#1f2937" text-anchor="middle">Bảo vệ dữ liệu cá nhân và kiếm tiền từ chính nó</text>
-  <text x="600" y="500" font-family="Arial, sans-serif" font-size="28" fill="#4b5563" text-anchor="middle">AI Agent • Zero-Knowledge • Quyền riêng tư tuyệt đối</text>
+  <text x="600" y="200" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="#191970" text-anchor="middle">Bonia</text>
+  <text x="600" y="300" font-family="Arial, sans-serif" font-size="40" fill="#191970" text-anchor="middle">Trợ lý nghe máy AI</text>
+  <text x="600" y="400" font-family="Arial, sans-serif" font-size="32" fill="#1f2937" text-anchor="middle">Không bỏ lỡ cuộc gọi quan trọng nào</text>
+  <text x="600" y="500" font-family="Arial, sans-serif" font-size="28" fill="#4b5563" text-anchor="middle">Nghe máy • Phân loại • Tóm tắt • Thông báo</text>
 </svg>
