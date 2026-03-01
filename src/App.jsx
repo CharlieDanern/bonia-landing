@@ -879,6 +879,7 @@ function App() {
             <FadeIn>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight tracking-tight">
                 Đừng để spam quyết định
+                <span className="sm:hidden"> </span>
                 <br className="hidden sm:block" />
                 thời gian của bạn.
               </h2>
