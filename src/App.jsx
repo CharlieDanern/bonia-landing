@@ -283,7 +283,7 @@ function App() {
       </header>
 
       {/* ── 1. Hero ── */}
-      <section className="pt-28 pb-20 md:pt-36 md:pb-28">
+      <section className="pt-28 pb-20 md:pt-36 md:pb-28 bg-gradient-to-b from-blue-50/70 to-white">
         <div className="container mx-auto px-5 sm:px-6">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center max-w-6xl mx-auto">
             {/* Left — Copy */}
@@ -440,8 +440,7 @@ function App() {
         <div className="container mx-auto px-5 sm:px-6 max-w-4xl">
           <FadeIn>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#191970] leading-tight tracking-tight">
-              Bao nhiêu cuộc gọi mỗi ngày
-              <br className="hidden sm:block" />
+              Bao nhiêu cuộc gọi mỗi ngày <br className="hidden sm:block" />
               là không đáng trả lời?
             </h2>
           </FadeIn>
