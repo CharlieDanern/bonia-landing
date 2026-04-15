@@ -941,10 +941,16 @@ function App() {
                   Bonia
                 </span>
               </div>
-              <p className="text-gray-500 text-sm max-w-sm">
-                Trợ lý AI sàng lọc cuộc gọi. Biết ai gọi và vì sao — trước khi
-                bạn quyết định nghe.
+              <p className="text-gray-500 text-sm max-w-sm mb-4">
+                Trợ lý AI sàng lọc cuộc gọi.
               </p>
+              <div className="text-sm text-gray-400 space-y-1">
+                <p className="font-medium text-gray-500">
+                  Duy Nhien Investment Co., Ltd
+                </p>
+                <p>120 N2, Mega Village, Phường Long Trường, TP. Hồ Chí Minh</p>
+                <p>Mã số thuế: 0319376631</p>
+              </div>
             </div>
 
             <div>
@@ -982,6 +988,14 @@ function App() {
                     className="hover:text-[#191970] transition-colors"
                   >
                     Chính sách bảo mật
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/terms.html"
+                    className="hover:text-[#191970] transition-colors"
+                  >
+                    Điều khoản dịch vụ
                   </a>
                 </li>
               </ul>
