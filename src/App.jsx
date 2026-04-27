@@ -998,6 +998,14 @@ function App() {
                     Điều khoản dịch vụ
                   </a>
                 </li>
+                <li>
+                  <a
+                    href="/support.html"
+                    className="hover:text-[#191970] transition-colors"
+                  >
+                    Hỗ trợ
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
