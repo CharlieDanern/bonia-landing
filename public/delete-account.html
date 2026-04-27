@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Xoá tài khoản - Bonia</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    h1, h2, h3 { font-family: 'Lora', 'Times New Roman', serif; }
+    body, p, li, a, span { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+  <!-- Header -->
+  <header class="container mx-auto px-4 sm:px-6 py-6">
+    <a href="/" class="flex items-center gap-2">
+      <img src="/logo.png" alt="Bonia" class="h-10" />
+      <span class="text-lg font-bold text-[#191970] tracking-tight" style="font-family: 'Inter', sans-serif;">Bonia</span>
+    </a>
+  </header>
+
+  <!-- Content -->
+  <main class="container mx-auto px-4 sm:px-6 py-8 md:py-12">
+    <div class="max-w-3xl mx-auto bg-white rounded-2xl p-6 sm:p-10 shadow-sm">
+      <h1 class="text-2xl sm:text-3xl font-bold text-[#191970] mb-2">Xoá tài khoản Bonia</h1>
+      <p class="text-gray-500 text-sm mb-6">Cập nhật lần cuối: 27/04/2026</p>
+
+      <p class="text-gray-700 leading-relaxed mb-6">
+        Bạn có thể xoá tài khoản Bonia và toàn bộ dữ liệu liên quan bất cứ lúc nào, ngay trong ứng dụng. Trang này hướng dẫn các bước thực hiện và liệt kê những dữ liệu được xoá.
+      </p>
+
+      <!-- Cách xoá -->
+      <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-5 mb-8">
+        <h3 class="font-bold text-[#191970] mb-3">Cách xoá tài khoản</h3>
+        <ol class="list-decimal list-inside space-y-2 text-gray-700 text-sm">
+          <li>Mở ứng dụng <strong>Bonia</strong> trên điện thoại của bạn.</li>
+          <li>Chọn tab <strong>Cài đặt</strong> ở dưới cùng.</li>
+          <li>Chọn mục <strong>Quyền riêng tư</strong>.</li>
+          <li>Bấm nút <strong>Xoá tài khoản</strong> ở cuối trang và xác nhận.</li>
+        </ol>
+        <p class="text-gray-700 text-sm mt-3">
+          Sau khi xác nhận, tài khoản và tất cả dữ liệu liên quan sẽ được xoá khỏi hệ thống Bonia.
+        </p>
+      </div>
+
+      <!-- Không thể truy cập app? -->
+      <section class="mb-8">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">Nếu bạn không thể truy cập ứng dụng</h2>
+        <p class="text-gray-700 text-sm leading-relaxed mb-2">
+          Trong trường hợp bạn đã gỡ ứng dụng hoặc không truy cập được tài khoản, vui lòng gửi yêu cầu xoá đến chúng tôi qua một trong các kênh sau:
+        </p>
+        <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm ml-2">
+          <li>
+            Email: <a href="mailto:duynguyen@bonia.net" class="text-indigo-600 hover:text-indigo-700">duynguyen@bonia.net</a>
+          </li>
+          <li>
+            Điện thoại / Zalo: <a href="tel:+84909291268" class="text-indigo-600 hover:text-indigo-700">+84 909 291 268</a>
+          </li>
+        </ul>
+        <p class="text-gray-700 text-sm leading-relaxed mt-2">
+          Vui lòng cung cấp số điện thoại đã đăng ký Bonia để chúng tôi xác minh và xử lý yêu cầu trong vòng 7 ngày làm việc.
+        </p>
+      </section>
+
+      <!-- Dữ liệu được xoá -->
+      <section class="mb-8">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">Dữ liệu được xoá</h2>
+        <p class="text-gray-700 text-sm leading-relaxed mb-3">
+          Khi tài khoản bị xoá, tất cả các loại dữ liệu sau đây sẽ bị xoá vĩnh viễn khỏi máy chủ Bonia:
+        </p>
+        <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm ml-2">
+          <li>Số điện thoại và tên hiển thị</li>
+          <li>Toàn bộ lịch sử cuộc gọi đã được Bonia sàng lọc</li>
+          <li>Bản ghi âm cuộc gọi (audio)</li>
+          <li>Văn bản của cuộc gọi (transcript)</li>
+          <li>Giá trị băm danh bạ đã đồng bộ</li>
+          <li>Thiết lập cá nhân (lời chào, giọng nói, sở thích thông báo)</li>
+          <li>Token thông báo đẩy (APNs / FCM)</li>
+        </ul>
+      </section>
+
+      <!-- Dữ liệu được giữ lại -->
+      <section class="mb-8">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">Dữ liệu được giữ lại (nếu có)</h2>
+        <p class="text-gray-700 text-sm leading-relaxed">
+          Trong một số ít trường hợp pháp lý, chúng tôi có thể giữ lại một phần dữ liệu vô danh (anonymized logs) để phục vụ vận hành hệ thống và phòng chống lạm dụng. Dữ liệu này không thể liên kết ngược lại với danh tính của bạn.
+        </p>
+      </section>
+
+      <!-- Tự động xoá -->
+      <section class="mb-8">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">Tự động xoá cuộc gọi sau 30 ngày</h2>
+        <p class="text-gray-700 text-sm leading-relaxed">
+          Ngay cả khi bạn không xoá tài khoản, mọi cuộc gọi cũ hơn <strong>30 ngày</strong> đều được hệ thống tự động xoá, bao gồm bản ghi âm và bản phiên dịch. Đây là cam kết bảo vệ riêng tư mặc định của Bonia.
+        </p>
+      </section>
+
+      <!-- Liên kết hữu ích -->
+      <section class="border-t border-gray-200 pt-6">
+        <h2 class="text-xl font-bold text-[#191970] mb-3">Liên kết hữu ích</h2>
+        <ul class="space-y-1 text-sm">
+          <li>
+            <a href="/privacy.html" class="text-indigo-600 hover:text-indigo-700">Chính sách bảo mật</a>
+          </li>
+          <li>
+            <a href="/support.html" class="text-indigo-600 hover:text-indigo-700">Trang hỗ trợ</a>
+          </li>
+          <li>
+            <a href="/" class="text-indigo-600 hover:text-indigo-700">Trang chủ Bonia</a>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Footer info -->
+      <section class="border-t border-gray-200 pt-5 mt-8">
+        <div class="text-gray-600 text-xs space-y-1">
+          <p class="font-medium">Duy Nhien Investment Co., Ltd</p>
+          <p>Địa chỉ: 120 N2, Mega Village, Phường Long Trường, TP. Hồ Chí Minh</p>
+          <p>Mã số thuế: 0319376631</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="container mx-auto px-4 sm:px-6 py-8">
+    <div class="text-center">
+      <p class="text-sm text-gray-500">© 2026 Bonia. Tất cả quyền được bảo lưu.</p>
+    </div>
+  </footer>
+</body>
+</html>
