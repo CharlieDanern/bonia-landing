@@ -239,7 +239,7 @@ const COPY = {
     sub: "Để lại số điện thoại — đội ngũ Bonia sẽ liên hệ để gửi tin nhắn hướng dẫn cài đặt và sử dụng.",
     label: "Số điện thoại của bạn",
     placeholder: "091 234 5678",
-    button: "Gửi đăng ký",
+    button: "Đăng ký",
     note: "Chỉ gửi tin nhắn hướng dẫn cài đặt và sử dụng",
   },
   footer: {
@@ -405,7 +405,7 @@ function TranscriptCard({ idx }) {
           {t.tag}
         </span>
       </div>
-      <div className="p-5 space-y-2.5 min-h-[440px] sm:min-h-[300px]">
+      <div className="p-5 space-y-2.5 min-h-[360px] sm:min-h-[300px]">
         {t.lines.slice(0, shown).map((l, i) => (
           <div
             key={i}
