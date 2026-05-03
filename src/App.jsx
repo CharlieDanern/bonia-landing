@@ -405,7 +405,7 @@ function TranscriptCard({ idx }) {
           {t.tag}
         </span>
       </div>
-      <div className="p-5 space-y-2.5 min-h-[280px]">
+      <div className="p-5 space-y-2.5 min-h-[440px] sm:min-h-[300px]">
         {t.lines.slice(0, shown).map((l, i) => (
           <div
             key={i}
