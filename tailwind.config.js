@@ -4,35 +4,27 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: "#f0f4ff",
-          100: "#e0e9ff",
-          200: "#c7d8ff",
-          300: "#a4bdff",
-          400: "#8199ff",
-          500: "#5e75ff",
-          600: "#3b4bd8",
-          700: "#2d3aa3",
-          800: "#1f2970",
-          900: "#141b4a",
-        },
+        ink: "#1F1B16",
+        "ink-soft": "#4A4239",
+        "ink-mute": "#7A6F62",
+        cream: "#F2EEE6",
+        "cream-2": "#EFE9DD",
+        hair: "#D9D0BF",
+        clay: "#7B4A2D",
+        terra: "#B8553A",
       },
       fontFamily: {
-        sans: ["Lora", "Georgia", "serif"],
+        serif: ['"Source Serif 4"', "Georgia", "serif"],
+        sans: ["Inter", "system-ui", "sans-serif"],
+        mono: ['"JetBrains Mono"', "ui-monospace", "monospace"],
       },
       animation: {
         "fade-in-up": "fadeInUp 0.8s ease-out forwards",
       },
       keyframes: {
         fadeInUp: {
-          "0%": {
-            opacity: "0",
-            transform: "translateY(30px)",
-          },
-          "100%": {
-            opacity: "1",
-            transform: "translateY(0)",
-          },
+          "0%": { opacity: "0", transform: "translateY(30px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
       },
     },

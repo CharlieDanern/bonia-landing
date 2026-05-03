@@ -1,167 +1,244 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Điều khoản dịch vụ - Bonia</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Điều khoản dịch vụ — Bonia</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    h1, h2, h3 { font-family: 'Lora', 'Times New Roman', serif; }
-    body, p, li, a, span { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    :root {
+      --bg: #F2EEE6;
+      --ink: #1F1B16;
+      --ink-soft: #4A4239;
+      --ink-mute: #7A6F62;
+      --hair: #D9D0BF;
+      --cream-2: #EFE9DD;
+      --acc: #7B4A2D;
+    }
+    html, body { background: var(--bg); }
+    body { font-family: 'Inter', system-ui, sans-serif; color: var(--ink); }
+    .ff-serif { font-family: "Source Serif 4", Georgia, "Times New Roman", serif !important; }
+    .ff-mono  { font-family: "JetBrains Mono", ui-monospace, monospace !important; }
+    .toc-link:hover { color: var(--ink); }
+    .bullet { color: var(--ink-soft); }
+    .bullet-dot { background: var(--acc); }
   </style>
 </head>
-<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
-  <!-- Header -->
-  <header class="container mx-auto px-4 sm:px-6 py-6">
-    <a href="/" class="flex items-center gap-2">
-      <img src="/logo.png" alt="Bonia" class="h-10" />
-      <span class="text-lg font-bold text-[#191970] tracking-tight" style="font-family: 'Inter', sans-serif;">Bonia</span>
-    </a>
+<body>
+
+<nav class="flex items-center justify-between py-6 px-6 sm:px-12 border-b" style="border-color: var(--hair);">
+  <a href="/" class="flex items-center gap-2.5">
+    <img src="/logo-mark.png" alt="Bonia" class="h-9 w-auto" />
+    <span class="text-[22px] font-medium tracking-tight ff-serif" style="color: var(--ink);">Bonia</span>
+    <span class="text-[11px] uppercase tracking-[0.22em] ml-1 hidden sm:inline" style="color: var(--ink-soft);">beta · tiếng việt</span>
+  </a>
+  <div class="hidden md:flex items-baseline gap-8">
+    <a href="/#solution" class="text-[14px]" style="color: var(--ink-soft);">Tính năng</a>
+    <a href="/#how" class="text-[14px]" style="color: var(--ink-soft);">Cách dùng</a>
+    <a href="/#faq" class="text-[14px]" style="color: var(--ink-soft);">Câu hỏi</a>
+    <a href="/#cta" class="text-[14px] font-medium flex items-center gap-1.5" style="color: var(--acc);">Đăng ký →</a>
+  </div>
+  <a href="/#cta" class="md:hidden text-[14px] font-medium flex items-center gap-1.5" style="color: var(--acc);">Đăng ký →</a>
+</nav>
+
+<main class="px-6 sm:px-12 py-12 sm:py-16">
+  <header class="max-w-4xl">
+    <div class="flex items-baseline gap-3 mb-6">
+      <span class="text-[12px] ff-mono" style="color: var(--acc);">№ 02</span>
+      <span class="text-[11px] uppercase tracking-[0.22em]" style="color: var(--ink-mute);">Pháp lý</span>
+    </div>
+    <h1 class="text-[40px] sm:text-[52px] md:text-[68px] leading-[1.05] tracking-tight ff-serif" style="color: var(--ink); font-weight: 400;">
+      Điều khoản dịch vụ.
+    </h1>
+    <p class="mt-6 text-[18px] sm:text-[19px] leading-[1.65] max-w-2xl ff-serif italic" style="color: var(--ink-soft); font-weight: 380;">
+      Vui lòng đọc kỹ trước khi sử dụng Bonia. Bằng việc đăng ký, bạn đồng ý tuân thủ các điều khoản dưới đây.
+    </p>
+    <div class="mt-8 pt-5 border-t flex items-center justify-between max-w-md" style="border-color: var(--hair);">
+      <span class="text-[11px] uppercase tracking-[0.22em]" style="color: var(--ink-mute);">Cập nhật lần cuối</span>
+      <span class="text-[13px] ff-mono" style="color: var(--ink-soft);">15 / 04 / 2026</span>
+    </div>
   </header>
 
-  <!-- Content -->
-  <main class="container mx-auto px-4 sm:px-6 py-8 md:py-12">
-    <div class="max-w-3xl mx-auto bg-white rounded-2xl p-6 sm:p-10 shadow-sm">
-      <h1 class="text-2xl sm:text-3xl font-bold text-[#191970] mb-2">Điều khoản dịch vụ</h1>
-      <p class="text-gray-500 text-sm mb-6">Cập nhật lần cuối: 15/04/2026</p>
+  <div class="mt-14 sm:mt-16 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12">
+    <aside class="hidden lg:block lg:col-span-3 lg:sticky lg:top-8 self-start">
+      <div class="text-[11px] uppercase tracking-[0.22em] mb-4" style="color: var(--ink-mute);">Mục lục</div>
+      <ol class="space-y-2">
+        <li class="flex gap-3 items-baseline text-[13px]"><span class="ff-mono" style="color: var(--acc);">01</span><a href="#s-1" class="toc-link hover:underline leading-snug" style="color: var(--ink-soft);">Về Bonia</a></li>
+        <li class="flex gap-3 items-baseline text-[13px]"><span class="ff-mono" style="color: var(--acc);">02</span><a href="#s-2" class="toc-link hover:underline leading-snug" style="color: var(--ink-soft);">Tài khoản</a></li>
+        <li class="flex gap-3 items-baseline text-[13px]"><span class="ff-mono" style="color: var(--acc);">03</span><a href="#s-3" class="toc-link hover:underline leading-snug" style="color: var(--ink-soft);">Cách sử dụng hợp lệ</a></li>
+        <li class="flex gap-3 items-baseline text-[13px]"><span class="ff-mono" style="color: var(--acc);">04</span><a href="#s-4" class="toc-link hover:underline leading-snug" style="color: var(--ink-soft);">Chuyển hướng cuộc gọi</a></li>
+        <li class="flex gap-3 items-baseline text-[13px]"><span class="ff-mono" style="color: var(--acc);">05</span><a href="#s-5" class="toc-link hover:underline leading-snug" style="color: var(--ink-soft);">Nội dung cuộc gọi và ghi âm</a></li>
+        <li class="flex gap-3 items-baseline text-[13px]"><span class="ff-mono" style="color: var(--acc);">06</span><a href="#s-6" class="toc-link hover:underline leading-snug" style="color: var(--ink-soft);">Phí dịch vụ</a></li>
+        <li class="flex gap-3 items-baseline text-[13px]"><span class="ff-mono" style="color: var(--acc);">07</span><a href="#s-7" class="toc-link hover:underline leading-snug" style="color: var(--ink-soft);">Quyền sở hữu trí tuệ</a></li>
+        <li class="flex gap-3 items-baseline text-[13px]"><span class="ff-mono" style="color: var(--acc);">08</span><a href="#s-8" class="toc-link hover:underline leading-snug" style="color: var(--ink-soft);">Giới hạn trách nhiệm</a></li>
+        <li class="flex gap-3 items-baseline text-[13px]"><span class="ff-mono" style="color: var(--acc);">09</span><a href="#s-9" class="toc-link hover:underline leading-snug" style="color: var(--ink-soft);">Chấm dứt dịch vụ</a></li>
+        <li class="flex gap-3 items-baseline text-[13px]"><span class="ff-mono" style="color: var(--acc);">10</span><a href="#s-10" class="toc-link hover:underline leading-snug" style="color: var(--ink-soft);">Thay đổi điều khoản</a></li>
+        <li class="flex gap-3 items-baseline text-[13px]"><span class="ff-mono" style="color: var(--acc);">11</span><a href="#s-11" class="toc-link hover:underline leading-snug" style="color: var(--ink-soft);">Luật áp dụng</a></li>
+      </ol>
+    </aside>
 
-
-      <p class="text-gray-700 leading-relaxed mb-6">
-        Chào mừng bạn đến với Bonia. Vui lòng đọc kỹ Điều khoản dịch vụ ("Điều khoản") này trước khi sử dụng ứng dụng Bonia và website bonia.net ("Dịch vụ"). Bằng việc đăng ký và sử dụng Dịch vụ, bạn đồng ý tuân thủ các Điều khoản này.
-      </p>
-
-      <!-- 1. Về Bonia -->
-      <section class="mb-8">
-        <h2 class="text-xl font-bold text-[#191970] mb-3">1. Về Bonia</h2>
-        <p class="text-gray-700 text-sm leading-relaxed">
-          Bonia là dịch vụ trợ lý AI nghe máy tự động dành cho người dùng tại Việt Nam. Khi bạn không bắt máy hoặc từ chối cuộc gọi, cuộc gọi sẽ được chuyển hướng đến Bonia để sàng lọc, ghi nhận nội dung và gửi thông báo lại cho bạn.
+    <article class="lg:col-span-9 lg:col-start-4">
+      <div class="max-w-3xl">
+        <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">
+          Chào mừng bạn đến với Bonia. Vui lòng đọc kỹ Điều khoản dịch vụ ("Điều khoản") này trước khi sử dụng ứng dụng Bonia và website bonia.net ("Dịch vụ"). Bằng việc đăng ký và sử dụng Dịch vụ, bạn đồng ý tuân thủ các Điều khoản này.
         </p>
-      </section>
 
-      <!-- 2. Tài khoản -->
-      <section class="mb-8">
-        <h2 class="text-xl font-bold text-[#191970] mb-3">2. Tài khoản</h2>
-        <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
-          <li>Để sử dụng Bonia, bạn cần đăng ký tài khoản bằng số điện thoại di động Việt Nam hợp lệ.</li>
-          <li>Bạn chịu trách nhiệm bảo mật số điện thoại và thiết bị dùng để truy cập tài khoản.</li>
-          <li>Bạn phải đủ 18 tuổi hoặc có sự đồng ý của người giám hộ hợp pháp.</li>
-          <li>Bạn cam kết cung cấp thông tin trung thực và chính xác.</li>
-        </ul>
-      </section>
+        <section id="s-1" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+          <div class="flex items-baseline gap-4 mb-5">
+            <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 01</span>
+            <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Về Bonia</h2>
+          </div>
+          <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">
+            Bonia là dịch vụ trợ lý AI nghe máy tự động dành cho người dùng tại Việt Nam. Khi bạn không bắt máy hoặc từ chối cuộc gọi, cuộc gọi sẽ được chuyển hướng đến Bonia để sàng lọc, ghi nhận nội dung và gửi thông báo lại cho bạn.
+          </p>
+        </section>
 
-      <!-- 3. Cách sử dụng hợp lệ -->
-      <section class="mb-8">
-        <h2 class="text-xl font-bold text-[#191970] mb-3">3. Cách sử dụng hợp lệ</h2>
-        <p class="text-gray-700 text-sm leading-relaxed mb-2">Bạn đồng ý không:</p>
-        <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
-          <li>Sử dụng Bonia cho mục đích bất hợp pháp, lừa đảo, hoặc vi phạm pháp luật Việt Nam.</li>
-          <li>Cố tình gây quá tải, tấn công, hoặc phá vỡ hạ tầng kỹ thuật của Bonia.</li>
-          <li>Sử dụng dịch vụ để ghi âm cuộc gọi mà không có sự đồng ý phù hợp theo luật.</li>
-          <li>Dùng Bonia cho cuộc gọi thương mại quy mô lớn (call center) mà không có thoả thuận riêng.</li>
-        </ul>
-      </section>
+        <section id="s-2" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+          <div class="flex items-baseline gap-4 mb-5">
+            <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 02</span>
+            <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Tài khoản</h2>
+          </div>
+          <ul class="space-y-2.5 mb-5 mt-2">
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Để sử dụng Bonia, bạn cần đăng ký tài khoản bằng số điện thoại di động Việt Nam hợp lệ.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Bạn chịu trách nhiệm bảo mật số điện thoại và thiết bị dùng để truy cập tài khoản.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Bạn phải đủ 18 tuổi hoặc có sự đồng ý của người giám hộ hợp pháp.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Bạn cam kết cung cấp thông tin trung thực và chính xác.</span></li>
+          </ul>
+        </section>
 
-      <!-- 4. Chuyển hướng cuộc gọi -->
-      <section class="mb-8">
-        <h2 class="text-xl font-bold text-[#191970] mb-3">4. Chuyển hướng cuộc gọi</h2>
-        <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
-          <li>Bonia cung cấp hướng dẫn chuyển hướng cuộc gọi — việc kích hoạt do bạn tự thực hiện trên điện thoại của mình.</li>
-          <li>Chuyển hướng cuộc gọi là dịch vụ của nhà mạng. Nhà mạng có thể tính phí cuộc gọi chuyển tiếp theo gói cước hiện tại. Bonia KHÔNG thu bất kỳ phí nào từ việc chuyển hướng.</li>
-          <li>Bạn có thể tắt chuyển hướng bất cứ lúc nào bằng mã USSD của nhà mạng.</li>
-        </ul>
-      </section>
+        <section id="s-3" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+          <div class="flex items-baseline gap-4 mb-5">
+            <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 03</span>
+            <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Cách sử dụng hợp lệ</h2>
+          </div>
+          <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">Bạn đồng ý không:</p>
+          <ul class="space-y-2.5 mb-5 mt-2">
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Sử dụng Bonia cho mục đích bất hợp pháp, lừa đảo, hoặc vi phạm pháp luật Việt Nam.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Cố tình gây quá tải, tấn công, hoặc phá vỡ hạ tầng kỹ thuật của Bonia.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Sử dụng dịch vụ để ghi âm cuộc gọi mà không có sự đồng ý phù hợp theo luật.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Dùng Bonia cho cuộc gọi thương mại quy mô lớn (call center) mà không có thoả thuận riêng.</span></li>
+          </ul>
+        </section>
 
-      <!-- 5. Nội dung cuộc gọi -->
-      <section class="mb-8">
-        <h2 class="text-xl font-bold text-[#191970] mb-3">5. Nội dung cuộc gọi và ghi âm</h2>
-        <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
-          <li>Khi cuộc gọi được chuyển đến Bonia, hội thoại giữa người gọi và trợ lý AI sẽ được xử lý và lưu lại dưới dạng văn bản và âm thanh.</li>
-          <li>Dữ liệu này chỉ dành cho mục đích cung cấp dịch vụ cho bạn (hiển thị trong ứng dụng) và tự động xoá sau 30 ngày.</li>
-          <li>Bonia <strong>KHÔNG</strong> dùng nội dung cuộc gọi của bạn để huấn luyện AI.</li>
-          <li>Bonia <strong>KHÔNG</strong> bán dữ liệu của bạn cho bên thứ ba.</li>
-          <li>Chi tiết về xử lý dữ liệu được mô tả trong <a href="/privacy.html" class="text-indigo-600 hover:text-indigo-700">Chính sách bảo mật</a>.</li>
-        </ul>
-      </section>
+        <section id="s-4" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+          <div class="flex items-baseline gap-4 mb-5">
+            <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 04</span>
+            <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Chuyển hướng cuộc gọi</h2>
+          </div>
+          <ul class="space-y-2.5 mb-5 mt-2">
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Bonia cung cấp hướng dẫn chuyển hướng cuộc gọi — việc kích hoạt do bạn tự thực hiện trên điện thoại của mình.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Chuyển hướng cuộc gọi là dịch vụ của nhà mạng. Nhà mạng có thể tính phí cuộc gọi chuyển tiếp theo gói cước hiện tại. Bonia <strong style="color: var(--ink); font-weight: 600;">KHÔNG</strong> thu bất kỳ phí nào từ việc chuyển hướng.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Bạn có thể tắt chuyển hướng bất cứ lúc nào bằng mã USSD của nhà mạng.</span></li>
+          </ul>
+        </section>
 
-      <!-- 6. Phí dịch vụ -->
-      <section class="mb-8">
-        <h2 class="text-xl font-bold text-[#191970] mb-3">6. Phí dịch vụ</h2>
-        <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
-          <li>Hiện tại, Bonia cung cấp dịch vụ miễn phí cho người dùng cá nhân.</li>
-          <li>Chúng tôi có thể giới thiệu các gói dịch vụ có phí trong tương lai; thay đổi sẽ được thông báo trước khi áp dụng.</li>
-          <li>Phí SMS OTP để đăng ký tài khoản do Bonia chi trả.</li>
-          <li>Phí chuyển hướng cuộc gọi là phí của nhà mạng, không phải của Bonia.</li>
-        </ul>
-      </section>
+        <section id="s-5" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+          <div class="flex items-baseline gap-4 mb-5">
+            <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 05</span>
+            <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Nội dung cuộc gọi và ghi âm</h2>
+          </div>
+          <ul class="space-y-2.5 mb-5 mt-2">
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Khi cuộc gọi được chuyển đến Bonia, hội thoại giữa người gọi và trợ lý AI sẽ được xử lý và lưu lại dưới dạng văn bản và âm thanh.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Dữ liệu này chỉ dành cho mục đích cung cấp dịch vụ cho bạn (hiển thị trong ứng dụng) và tự động xoá sau 30 ngày.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Bonia <strong style="color: var(--ink); font-weight: 600;">KHÔNG</strong> dùng nội dung cuộc gọi của bạn để huấn luyện AI.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Bonia <strong style="color: var(--ink); font-weight: 600;">KHÔNG</strong> bán dữ liệu của bạn cho bên thứ ba.</span></li>
+          </ul>
+          <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">
+            Chi tiết về xử lý dữ liệu được mô tả trong <a href="/privacy.html" class="underline" style="color: var(--acc);">Chính sách bảo mật</a>.
+          </p>
+        </section>
 
-      <!-- 7. Quyền sở hữu trí tuệ -->
-      <section class="mb-8">
-        <h2 class="text-xl font-bold text-[#191970] mb-3">7. Quyền sở hữu trí tuệ</h2>
-        <p class="text-gray-700 text-sm leading-relaxed">
-          Mã nguồn, thiết kế, giọng nói AI, văn bản phân loại và tất cả tài sản khác của Bonia thuộc sở hữu của chúng tôi. Bạn không được sao chép, phân phối, hoặc tạo sản phẩm phái sinh mà không có sự đồng ý bằng văn bản.
-        </p>
-      </section>
+        <section id="s-6" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+          <div class="flex items-baseline gap-4 mb-5">
+            <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 06</span>
+            <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Phí dịch vụ</h2>
+          </div>
+          <ul class="space-y-2.5 mb-5 mt-2">
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Hiện tại, Bonia cung cấp dịch vụ miễn phí cho người dùng cá nhân.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Chúng tôi có thể giới thiệu các gói dịch vụ có phí trong tương lai; thay đổi sẽ được thông báo trước khi áp dụng.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Phí SMS OTP để đăng ký tài khoản do Bonia chi trả.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Phí chuyển hướng cuộc gọi là phí của nhà mạng, không phải của Bonia.</span></li>
+          </ul>
+        </section>
 
-      <!-- 8. Giới hạn trách nhiệm -->
-      <section class="mb-8">
-        <h2 class="text-xl font-bold text-[#191970] mb-3">8. Giới hạn trách nhiệm</h2>
-        <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
-          <li>Bonia cung cấp dịch vụ "nguyên trạng" (as is) và không bảo đảm tuyệt đối về độ chính xác của việc phân loại hoặc tóm tắt cuộc gọi.</li>
-          <li>Bonia không chịu trách nhiệm về các cuộc gọi bị bỏ lỡ do lỗi nhà mạng, sự cố kỹ thuật, hoặc việc bạn chưa kích hoạt chuyển hướng.</li>
-          <li>Trong phạm vi tối đa cho phép bởi pháp luật, trách nhiệm của Bonia bị giới hạn ở tổng phí bạn đã thanh toán (nếu có) trong 12 tháng trước.</li>
-        </ul>
-      </section>
+        <section id="s-7" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+          <div class="flex items-baseline gap-4 mb-5">
+            <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 07</span>
+            <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Quyền sở hữu trí tuệ</h2>
+          </div>
+          <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">
+            Mã nguồn, thiết kế, giọng nói AI, văn bản phân loại và tất cả tài sản khác của Bonia thuộc sở hữu của chúng tôi. Bạn không được sao chép, phân phối, hoặc tạo sản phẩm phái sinh mà không có sự đồng ý bằng văn bản.
+          </p>
+        </section>
 
-      <!-- 9. Chấm dứt -->
-      <section class="mb-8">
-        <h2 class="text-xl font-bold text-[#191970] mb-3">9. Chấm dứt dịch vụ</h2>
-        <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm">
-          <li>Bạn có thể xoá tài khoản bất cứ lúc nào từ trong ứng dụng (Cài đặt → Quyền riêng tư).</li>
-          <li>Khi xoá tài khoản, toàn bộ dữ liệu liên quan sẽ được xoá ngay lập tức khỏi hệ thống Bonia.</li>
-          <li>Bonia có quyền tạm ngưng hoặc chấm dứt dịch vụ nếu bạn vi phạm Điều khoản này hoặc pháp luật.</li>
-        </ul>
-      </section>
+        <section id="s-8" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+          <div class="flex items-baseline gap-4 mb-5">
+            <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 08</span>
+            <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Giới hạn trách nhiệm</h2>
+          </div>
+          <ul class="space-y-2.5 mb-5 mt-2">
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Bonia cung cấp dịch vụ "nguyên trạng" (as is) và không bảo đảm tuyệt đối về độ chính xác của việc phân loại hoặc tóm tắt cuộc gọi.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Bonia không chịu trách nhiệm về các cuộc gọi bị bỏ lỡ do lỗi nhà mạng, sự cố kỹ thuật, hoặc việc bạn chưa kích hoạt chuyển hướng.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Trong phạm vi tối đa cho phép bởi pháp luật, trách nhiệm của Bonia bị giới hạn ở tổng phí bạn đã thanh toán (nếu có) trong 12 tháng trước.</span></li>
+          </ul>
+        </section>
 
-      <!-- 10. Thay đổi -->
-      <section class="mb-8">
-        <h2 class="text-xl font-bold text-[#191970] mb-3">10. Thay đổi Điều khoản</h2>
-        <p class="text-gray-700 text-sm leading-relaxed">
-          Chúng tôi có thể cập nhật Điều khoản này khi cần thiết. Các thay đổi quan trọng sẽ được thông báo trong ứng dụng hoặc qua website. Việc tiếp tục sử dụng Dịch vụ sau khi cập nhật đồng nghĩa với việc bạn chấp nhận Điều khoản mới.
-        </p>
-      </section>
+        <section id="s-9" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+          <div class="flex items-baseline gap-4 mb-5">
+            <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 09</span>
+            <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Chấm dứt dịch vụ</h2>
+          </div>
+          <ul class="space-y-2.5 mb-5 mt-2">
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Bạn có thể xoá tài khoản bất cứ lúc nào từ trong ứng dụng (Cài đặt → Quyền riêng tư).</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Khi xoá tài khoản, toàn bộ dữ liệu liên quan sẽ được xoá ngay lập tức khỏi hệ thống Bonia.</span></li>
+            <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span>Bonia có quyền tạm ngưng hoặc chấm dứt dịch vụ nếu bạn vi phạm Điều khoản này hoặc pháp luật.</span></li>
+          </ul>
+        </section>
 
-      <!-- 11. Luật áp dụng -->
-      <section class="mb-8">
-        <h2 class="text-xl font-bold text-[#191970] mb-3">11. Luật áp dụng</h2>
-        <p class="text-gray-700 text-sm leading-relaxed">
-          Điều khoản này được điều chỉnh bởi pháp luật Việt Nam. Mọi tranh chấp sẽ được giải quyết tại toà án có thẩm quyền tại Việt Nam.
-        </p>
-      </section>
+        <section id="s-10" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+          <div class="flex items-baseline gap-4 mb-5">
+            <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 10</span>
+            <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Thay đổi điều khoản</h2>
+          </div>
+          <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">
+            Chúng tôi có thể cập nhật Điều khoản này khi cần thiết. Các thay đổi quan trọng sẽ được thông báo trong ứng dụng hoặc qua website. Việc tiếp tục sử dụng Dịch vụ sau khi cập nhật đồng nghĩa với việc bạn chấp nhận Điều khoản mới.
+          </p>
+        </section>
 
-      <!-- 12. Liên hệ -->
-      <section class="mb-4">
-        <h2 class="text-xl font-bold text-[#191970] mb-3">12. Liên hệ</h2>
-        <!-- <p class="text-gray-700 text-sm leading-relaxed">
-          Nếu bạn có câu hỏi về Điều khoản này, vui lòng liên hệ:
-        </p> -->
-        <div class="text-gray-700 text-sm mt-3 space-y-1">
-          <p class="font-medium">Duy Nhien Investment Co., Ltd</p>
-          <p>Địa chỉ: 120 N2, Mega Village, Phường Long Trường, TP. Hồ Chí Minh</p>
-          <p>Mã số thuế: 0319376631</p>
-          <p>Email: <a href="mailto:duynguyen@bonia.net" class="text-indigo-600 hover:text-indigo-700">duynguyen@bonia.net</a></p>
-        </div>
-      </section>
+        <section id="s-11" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+          <div class="flex items-baseline gap-4 mb-5">
+            <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 11</span>
+            <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Luật áp dụng</h2>
+          </div>
+          <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">
+            Điều khoản này được điều chỉnh bởi pháp luật Việt Nam. Mọi tranh chấp sẽ được giải quyết tại toà án có thẩm quyền tại Việt Nam.
+          </p>
+        </section>
+      </div>
+    </article>
+  </div>
+
+  <div class="mt-20 sm:mt-24 pt-10 border-t max-w-4xl" style="border-color: var(--hair);">
+    <div class="text-[11px] uppercase tracking-[0.22em] mb-3" style="color: var(--acc);">Liên hệ</div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-[14px] leading-relaxed" style="color: var(--ink-soft);">
+      <div>
+        <div class="ff-serif text-[18px]" style="color: var(--ink); font-weight: 500;">Công ty TNHH Duy Nhiên Investment</div>
+        <div class="mt-2">120 N2 Mega Village, Đường Võ Chí Công,<br />phường Long Trường, TP.HCM</div>
+        <div class="mt-2 ff-mono text-[12px]">MST 0319376631</div>
+      </div>
+      <div>
+        <div class="text-[11px] uppercase tracking-[0.18em] mb-1" style="color: var(--ink-mute);">Email</div>
+        <a href="mailto:duynguyen@bonia.net" class="ff-serif text-[18px] hover:underline" style="color: var(--acc); font-weight: 500;">duynguyen@bonia.net</a>
+      </div>
     </div>
-  </main>
+  </div>
+</main>
 
-  <!-- Footer -->
-  <footer class="container mx-auto px-4 sm:px-6 py-8">
-    <div class="text-center">
-      <p class="text-sm text-gray-500">© 2026 Bonia. Tất cả quyền được bảo lưu.</p>
-    </div>
-  </footer>
+
 </body>
 </html>

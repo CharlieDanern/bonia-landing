@@ -1,173 +1,231 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hỗ trợ - Bonia</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hỗ trợ — Bonia</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    h1, h2, h3 { font-family: 'Lora', 'Times New Roman', serif; }
-    body, p, li, a, span { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    :root {
+      --bg: #F2EEE6;
+      --ink: #1F1B16;
+      --ink-soft: #4A4239;
+      --ink-mute: #7A6F62;
+      --hair: #D9D0BF;
+      --cream-2: #EFE9DD;
+      --acc: #7B4A2D;
+    }
+    html, body { background: var(--bg); }
+    body { font-family: 'Inter', system-ui, sans-serif; color: var(--ink); }
+    .ff-serif { font-family: "Source Serif 4", Georgia, "Times New Roman", serif !important; }
+    .ff-mono  { font-family: "JetBrains Mono", ui-monospace, monospace !important; }
+    .bullet { color: var(--ink-soft); }
+    .bullet-dot { background: var(--acc); }
   </style>
 </head>
-<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
-  <!-- Header -->
-  <header class="container mx-auto px-4 sm:px-6 py-6">
-    <a href="/" class="flex items-center gap-2">
-      <img src="/logo.png" alt="Bonia" class="h-10" />
-      <span class="text-lg font-bold text-[#191970] tracking-tight" style="font-family: 'Inter', sans-serif;">Bonia</span>
-    </a>
+<body>
+
+<nav class="flex items-center justify-between py-6 px-6 sm:px-12 border-b" style="border-color: var(--hair);">
+  <a href="/" class="flex items-center gap-2.5">
+    <img src="/logo-mark.png" alt="Bonia" class="h-9 w-auto" />
+    <span class="text-[22px] font-medium tracking-tight ff-serif" style="color: var(--ink);">Bonia</span>
+    <span class="text-[11px] uppercase tracking-[0.22em] ml-1 hidden sm:inline" style="color: var(--ink-soft);">beta · tiếng việt</span>
+  </a>
+  <div class="hidden md:flex items-baseline gap-8">
+    <a href="/#solution" class="text-[14px]" style="color: var(--ink-soft);">Tính năng</a>
+    <a href="/#how" class="text-[14px]" style="color: var(--ink-soft);">Cách dùng</a>
+    <a href="/#faq" class="text-[14px]" style="color: var(--ink-soft);">Câu hỏi</a>
+    <a href="/#cta" class="text-[14px] font-medium flex items-center gap-1.5" style="color: var(--acc);">Đăng ký →</a>
+  </div>
+  <a href="/#cta" class="md:hidden text-[14px] font-medium flex items-center gap-1.5" style="color: var(--acc);">Đăng ký →</a>
+</nav>
+
+<main class="px-6 sm:px-12 py-12 sm:py-16">
+  <header class="max-w-4xl">
+    <div class="flex items-baseline gap-3 mb-6">
+      <span class="text-[12px] ff-mono" style="color: var(--acc);">№ 03</span>
+      <span class="text-[11px] uppercase tracking-[0.22em]" style="color: var(--ink-mute);">Hỗ trợ</span>
+    </div>
+    <h1 class="text-[40px] sm:text-[52px] md:text-[68px] leading-[1.05] tracking-tight ff-serif" style="color: var(--ink); font-weight: 400;">
+      Hỗ trợ Bonia.
+    </h1>
+    <p class="mt-6 text-[18px] sm:text-[19px] leading-[1.65] max-w-2xl ff-serif italic" style="color: var(--ink-soft); font-weight: 380;">
+      Bonia là trợ lý AI nghe máy bằng tiếng Việt giúp bạn không bỏ sót cuộc gọi quan trọng và không phải bắt máy những cuộc gọi spam, làm phiền.
+    </p>
+    <div class="mt-8 pt-5 border-t flex items-center justify-between max-w-md" style="border-color: var(--hair);">
+      <span class="text-[11px] uppercase tracking-[0.22em]" style="color: var(--ink-mute);">Cập nhật lần cuối</span>
+      <span class="text-[13px] ff-mono" style="color: var(--ink-soft);">27 / 04 / 2026</span>
+    </div>
   </header>
 
-  <!-- Content -->
-  <main class="container mx-auto px-4 sm:px-6 py-8 md:py-12">
-    <div class="max-w-3xl mx-auto bg-white rounded-2xl p-6 sm:p-10 shadow-sm">
-      <h1 class="text-2xl sm:text-3xl font-bold text-[#191970] mb-2">Hỗ trợ Bonia</h1>
-      <p class="text-gray-500 text-sm mb-6">Cập nhật lần cuối: 27/04/2026</p>
-
-      <p class="text-gray-700 leading-relaxed mb-3">
-        Bonia là trợ lý AI nghe máy bằng tiếng Việt giúp bạn không bỏ sót cuộc gọi quan trọng và không phải bắt máy những cuộc gọi spam, làm phiền.
-      </p>
-      <p class="text-gray-700 leading-relaxed mb-8">
+  <article class="mt-14 sm:mt-16">
+    <div class="max-w-3xl">
+      <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">
         Trang này tổng hợp cách liên hệ và những câu hỏi thường gặp khi sử dụng Bonia.
       </p>
 
-      <!-- Liên hệ trực tiếp -->
-      <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-5 mb-8">
-        <h3 class="font-bold text-[#191970] mb-3">Liên hệ trực tiếp</h3>
-        <div class="text-gray-700 text-sm space-y-2">
-          <p>
-            <span class="font-medium">Email:</span>
-            <a href="mailto:duynguyen@bonia.net" class="text-indigo-600 hover:text-indigo-700">duynguyen@bonia.net</a>
-          </p>
-          <p>
-            <span class="font-medium">Điện thoại / Zalo:</span>
-            <a href="tel:+84909291268" class="text-indigo-600 hover:text-indigo-700">+84 909 291 268</a>
-          </p>
-          <p class="text-gray-500 text-xs pt-1">
-            Chúng tôi cố gắng phản hồi mọi yêu cầu hỗ trợ trong vòng 24 giờ làm việc.
-          </p>
+      <!-- Contact pull-block -->
+      <div class="my-8 pl-6 border-l-2" style="border-color: var(--acc);">
+        <div class="text-[11px] uppercase tracking-[0.22em] mb-3" style="color: var(--acc);">Liên hệ trực tiếp</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-1">
+          <div>
+            <div class="text-[11px] uppercase tracking-[0.18em] mb-1" style="color: var(--ink-mute);">Email</div>
+            <a href="mailto:duynguyen@bonia.net" class="ff-serif text-[20px] hover:underline" style="color: var(--acc); font-weight: 500;">
+              duynguyen@bonia.net
+            </a>
+          </div>
+          <div>
+            <div class="text-[11px] uppercase tracking-[0.18em] mb-1" style="color: var(--ink-mute);">Điện thoại / Zalo</div>
+            <a href="tel:+84909291268" class="ff-serif text-[20px] hover:underline" style="color: var(--acc); font-weight: 500;">
+              +84 909 291 268
+            </a>
+          </div>
         </div>
+        <p class="mt-5 text-[14px] italic ff-serif" style="color: var(--ink-soft);">
+          Chúng tôi cố gắng phản hồi mọi yêu cầu hỗ trợ trong vòng 24 giờ làm việc.
+        </p>
       </div>
 
-      <!-- FAQ -->
-      <section class="mb-8">
-        <h2 class="text-xl font-bold text-[#191970] mb-4">Câu hỏi thường gặp</h2>
-
-        <div class="mb-6">
-          <h3 class="font-bold text-[#191970] text-base mb-2">Bonia hoạt động như thế nào?</h3>
-          <p class="text-gray-700 text-sm leading-relaxed">
-            Khi bạn không bắt máy hoặc từ chối cuộc gọi, dịch vụ chuyển cuộc gọi của nhà mạng (Viettel, MobiFone, VinaPhone, Vietnamobile) tự động chuyển cuộc gọi đến Bonia. Trợ lý AI nói chuyện với người gọi bằng tiếng Việt tự nhiên, hiểu mục đích cuộc gọi, phân loại (quan trọng / cần gọi lại / lời nhắn / spam) rồi gửi tóm tắt qua thông báo cho bạn.
-          </p>
+      <section id="s-1" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+        <div class="flex items-baseline gap-4 mb-5">
+          <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 01</span>
+          <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Bonia hoạt động như thế nào?</h2>
         </div>
-
-        <div class="mb-6">
-          <h3 class="font-bold text-[#191970] text-base mb-2">Làm thế nào để bật chuyển cuộc gọi đến Bonia?</h3>
-          <p class="text-gray-700 text-sm leading-relaxed mb-2">
-            Trong app Bonia, mục <em>Cài đặt &gt; Hướng dẫn chuyển hướng cuộc gọi</em> sẽ hiển thị mã USSD chính xác cho nhà mạng của bạn. Hai mã thường dùng:
-          </p>
-          <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm ml-2">
-            <li><code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">**61*02873017200#</code> — chuyển khi không nghe máy</li>
-            <li><code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">**67*02873017200#</code> — chuyển khi từ chối / máy bận</li>
-          </ul>
-          <p class="text-gray-700 text-sm leading-relaxed mt-2">
-            Bấm gọi mã trên bàn phím điện thoại như gọi một số bình thường. Nhà mạng sẽ xác nhận chuyển hướng đã được kích hoạt.
-          </p>
-        </div>
-
-        <div class="mb-6">
-          <h3 class="font-bold text-[#191970] text-base mb-2">Tôi có mất phí không?</h3>
-          <p class="text-gray-700 text-sm leading-relaxed">
-            Ứng dụng Bonia hiện miễn phí. Tuy nhiên, một số nhà mạng có thể tính phí cho dịch vụ chuyển cuộc gọi theo gói cước của bạn — đây là phí của nhà mạng, Bonia không thu thêm bất cứ khoản nào.
-          </p>
-        </div>
-
-        <div class="mb-6">
-          <h3 class="font-bold text-[#191970] text-base mb-2">Làm thế nào để tạm tắt Bonia?</h3>
-          <p class="text-gray-700 text-sm leading-relaxed mb-2">
-            Bấm các mã sau trên bàn phím điện thoại để huỷ chuyển hướng:
-          </p>
-          <ul class="list-disc list-inside space-y-1 text-gray-700 text-sm ml-2">
-            <li><code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">##61#</code> — huỷ chuyển khi không nghe máy</li>
-            <li><code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">##67#</code> — huỷ chuyển khi từ chối / bận</li>
-          </ul>
-          <p class="text-gray-700 text-sm leading-relaxed mt-2">
-            Khi tắt chuyển hướng, các cuộc gọi nhỡ sẽ không còn được chuyển đến Bonia nữa.
-          </p>
-        </div>
-
-        <div class="mb-6">
-          <h3 class="font-bold text-[#191970] text-base mb-2">Tôi có thể xoá tài khoản và dữ liệu không?</h3>
-          <p class="text-gray-700 text-sm leading-relaxed">
-            Có. Trong app, vào <em>Cài đặt &gt; Quyền riêng tư &gt; Xoá tài khoản</em>. Khi xoá, toàn bộ thông tin tài khoản, danh sách cuộc gọi, bản ghi và bản phiên dịch của bạn sẽ được xoá khỏi hệ thống Bonia. Ngoài ra, các cuộc gọi cũ hơn 30 ngày sẽ tự động bị xoá ngay cả khi bạn không xoá tài khoản.
-          </p>
-        </div>
-
-        <div class="mb-6">
-          <h3 class="font-bold text-[#191970] text-base mb-2">Tôi không nhận được thông báo</h3>
-          <p class="text-gray-700 text-sm leading-relaxed mb-2">
-            Hãy kiểm tra theo thứ tự:
-          </p>
-          <ol class="list-decimal list-inside space-y-1 text-gray-700 text-sm ml-2">
-            <li>Trong app Bonia, vào <em>Cài đặt &gt; Thông báo</em>, đảm bảo bạn đã bật loại thông báo mong muốn (Quan trọng, Cần gọi lại, Lời nhắn, Spam).</li>
-            <li>Trong phần <em>Cài đặt</em> của iPhone hoặc Android, mở mục Bonia và bật Cho phép thông báo.</li>
-            <li>Bấm <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">*#61#</code> trên bàn phím điện thoại để kiểm tra trạng thái chuyển hướng cuộc gọi của nhà mạng.</li>
-          </ol>
-          <p class="text-gray-700 text-sm leading-relaxed mt-2">
-            Nếu vẫn không nhận được thông báo sau khi đã thử các bước trên, vui lòng email cho chúng tôi.
-          </p>
-        </div>
-
-        <div class="mb-6">
-          <h3 class="font-bold text-[#191970] text-base mb-2">Bonia có nghe lén tôi không?</h3>
-          <p class="text-gray-700 text-sm leading-relaxed">
-            Không. Bonia chỉ xử lý âm thanh khi cuộc gọi đã được nhà mạng chuyển hướng đến số dịch vụ Bonia (số <strong>02873017200</strong>). Bonia không truy cập microphone của thiết bị, không nghe các cuộc gọi mà bạn tự bắt máy, và không lưu lại bất cứ thứ gì ngoài cuộc gọi đã được chuyển hướng. Chi tiết tại <a href="/privacy.html" class="text-indigo-600 hover:text-indigo-700">Chính sách bảo mật</a>.
-          </p>
-        </div>
-
-        <div>
-          <h3 class="font-bold text-[#191970] text-base mb-2">Tôi có thể dùng Bonia mà không cần SIM Việt Nam không?</h3>
-          <p class="text-gray-700 text-sm leading-relaxed">
-            Hiện tại, Bonia chỉ hỗ trợ thuê bao Việt Nam có dịch vụ chuyển cuộc gọi của nhà mạng (Viettel, MobiFone, VinaPhone, Vietnamobile). Chúng tôi đang nghiên cứu mở rộng cho các thị trường khác.
-          </p>
-        </div>
+        <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">
+          Khi bạn không bắt máy hoặc từ chối cuộc gọi, dịch vụ chuyển cuộc gọi của nhà mạng (Viettel, MobiFone, VinaPhone, Vietnamobile) tự động chuyển cuộc gọi đến Bonia. Trợ lý AI nói chuyện với người gọi bằng tiếng Việt tự nhiên, hiểu mục đích cuộc gọi, phân loại (quan trọng / cần gọi lại / lời nhắn / spam) rồi gửi tóm tắt qua thông báo cho bạn.
+        </p>
       </section>
 
-      <!-- Liên kết hữu ích -->
-      <section class="border-t border-gray-200 pt-6 mb-2">
-        <h2 class="text-xl font-bold text-[#191970] mb-3">Liên kết hữu ích</h2>
-        <ul class="space-y-1 text-sm">
-          <li>
-            <a href="/privacy.html" class="text-indigo-600 hover:text-indigo-700">Chính sách bảo mật</a>
-          </li>
-          <li>
-            <a href="/terms.html" class="text-indigo-600 hover:text-indigo-700">Điều khoản sử dụng</a>
-          </li>
-          <li>
-            <a href="/" class="text-indigo-600 hover:text-indigo-700">Trang chủ Bonia</a>
-          </li>
+      <section id="s-2" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+        <div class="flex items-baseline gap-4 mb-5">
+          <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 02</span>
+          <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Làm thế nào để bật chuyển cuộc gọi đến Bonia?</h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">
+          Trong app Bonia, mục <em>Cài đặt → Hướng dẫn chuyển hướng cuộc gọi</em> sẽ hiển thị mã USSD chính xác cho nhà mạng của bạn. Hai mã thường dùng:
+        </p>
+        <ul class="space-y-2.5 mb-5 mt-2">
+          <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span><code class="ff-mono text-[14px] px-1.5 py-0.5 rounded" style="background: var(--cream-2); color: var(--ink);">**61*02873017200#</code> — chuyển khi không nghe máy.</span></li>
+          <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span><code class="ff-mono text-[14px] px-1.5 py-0.5 rounded" style="background: var(--cream-2); color: var(--ink);">**67*02873017200#</code> — chuyển khi từ chối / máy bận.</span></li>
         </ul>
+        <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">
+          Bấm gọi mã trên bàn phím điện thoại như gọi một số bình thường. Nhà mạng sẽ xác nhận chuyển hướng đã được kích hoạt.
+        </p>
       </section>
 
-      <!-- Footer info -->
-      <section class="border-t border-gray-200 pt-5 mt-8">
-        <div class="text-gray-600 text-xs space-y-1">
-          <p class="font-medium">Duy Nhien Investment Co., Ltd</p>
-          <p>Địa chỉ: 120 N2, Mega Village, Phường Long Trường, TP. Hồ Chí Minh</p>
-          <p>Mã số thuế: 0319376631</p>
+      <section id="s-3" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+        <div class="flex items-baseline gap-4 mb-5">
+          <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 03</span>
+          <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Tôi có mất phí không?</h2>
         </div>
+        <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">
+          Ứng dụng Bonia hiện miễn phí. Tuy nhiên, một số nhà mạng có thể tính phí cho dịch vụ chuyển cuộc gọi theo gói cước của bạn — đây là phí của nhà mạng, Bonia không thu thêm bất cứ khoản nào.
+        </p>
       </section>
-    </div>
-  </main>
 
-  <!-- Footer -->
-  <footer class="container mx-auto px-4 sm:px-6 py-8">
-    <div class="text-center">
-      <p class="text-sm text-gray-500">© 2026 Bonia. Tất cả quyền được bảo lưu.</p>
+      <section id="s-4" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+        <div class="flex items-baseline gap-4 mb-5">
+          <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 04</span>
+          <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Làm thế nào để tạm tắt Bonia?</h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">Bấm các mã sau trên bàn phím điện thoại để huỷ chuyển hướng:</p>
+        <ul class="space-y-2.5 mb-5 mt-2">
+          <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span><code class="ff-mono text-[14px] px-1.5 py-0.5 rounded" style="background: var(--cream-2); color: var(--ink);">##61#</code> — huỷ chuyển khi không nghe máy.</span></li>
+          <li class="flex gap-3 text-[16px] leading-[1.6] bullet"><span class="mt-[10px] w-[5px] h-[5px] rounded-full flex-shrink-0 bullet-dot"></span><span><code class="ff-mono text-[14px] px-1.5 py-0.5 rounded" style="background: var(--cream-2); color: var(--ink);">##67#</code> — huỷ chuyển khi từ chối / bận.</span></li>
+        </ul>
+        <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">
+          Khi tắt chuyển hướng, các cuộc gọi nhỡ sẽ không còn được chuyển đến Bonia nữa.
+        </p>
+      </section>
+
+      <section id="s-5" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+        <div class="flex items-baseline gap-4 mb-5">
+          <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 05</span>
+          <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Tôi có thể xoá tài khoản và dữ liệu không?</h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">
+          Có. Trong app, vào <em>Cài đặt → Quyền riêng tư → Xoá tài khoản</em>. Khi xoá, toàn bộ thông tin tài khoản, danh sách cuộc gọi, bản ghi và bản phiên dịch của bạn sẽ được xoá khỏi hệ thống Bonia. Ngoài ra, các cuộc gọi cũ hơn 30 ngày sẽ tự động bị xoá ngay cả khi bạn không xoá tài khoản. Hướng dẫn chi tiết: <a href="/delete-account.html" class="underline" style="color: var(--acc);">Xoá tài khoản</a>.
+        </p>
+      </section>
+
+      <section id="s-6" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+        <div class="flex items-baseline gap-4 mb-5">
+          <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 06</span>
+          <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Tôi không nhận được thông báo</h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">Hãy kiểm tra theo thứ tự:</p>
+        <ol class="space-y-3 mb-4 mt-2 ml-1">
+          <li class="flex gap-4 text-[16px] leading-[1.65]" style="color: var(--ink-soft);">
+            <span class="ff-mono text-[13px] mt-[3px]" style="color: var(--acc);">01</span>
+            <span>Trong app Bonia, vào Cài đặt → Thông báo, đảm bảo bạn đã bật loại thông báo mong muốn (Quan trọng, Cần gọi lại, Lời nhắn, Spam).</span>
+          </li>
+          <li class="flex gap-4 text-[16px] leading-[1.65]" style="color: var(--ink-soft);">
+            <span class="ff-mono text-[13px] mt-[3px]" style="color: var(--acc);">02</span>
+            <span>Trong phần Cài đặt của iPhone hoặc Android, mở mục Bonia và bật Cho phép thông báo.</span>
+          </li>
+          <li class="flex gap-4 text-[16px] leading-[1.65]" style="color: var(--ink-soft);">
+            <span class="ff-mono text-[13px] mt-[3px]" style="color: var(--acc);">03</span>
+            <span>Bấm <code class="ff-mono text-[14px] px-1.5 py-0.5 rounded" style="background: var(--cream-2); color: var(--ink);">*#61#</code> trên bàn phím điện thoại để kiểm tra trạng thái chuyển hướng cuộc gọi của nhà mạng.</span>
+          </li>
+        </ol>
+        <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">
+          Nếu vẫn không nhận được thông báo sau khi đã thử các bước trên, vui lòng email cho chúng tôi.
+        </p>
+      </section>
+
+      <section id="s-7" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+        <div class="flex items-baseline gap-4 mb-5">
+          <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 07</span>
+          <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Bonia có nghe lén tôi không?</h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">
+          Không. Bonia chỉ xử lý âm thanh khi cuộc gọi đã được nhà mạng chuyển hướng đến số dịch vụ Bonia (số <strong style="color: var(--ink); font-weight: 600;">02873017200</strong>). Bonia không truy cập microphone của thiết bị, không nghe các cuộc gọi mà bạn tự bắt máy, và không lưu lại bất cứ thứ gì ngoài cuộc gọi đã được chuyển hướng. Chi tiết tại <a href="/privacy.html" class="underline" style="color: var(--acc);">Chính sách bảo mật</a>.
+        </p>
+      </section>
+
+      <section id="s-8" class="pt-12 mt-12 border-t" style="border-color: var(--hair);">
+        <div class="flex items-baseline gap-4 mb-5">
+          <span class="text-[13px] ff-mono" style="color: var(--acc);">§ 08</span>
+          <h2 class="text-[26px] sm:text-[28px] md:text-[32px] leading-[1.15] tracking-tight ff-serif" style="color: var(--ink); font-weight: 500;">Tôi có thể dùng Bonia mà không cần SIM Việt Nam không?</h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] mb-4" style="color: var(--ink-soft);">
+          Hiện tại, Bonia chỉ hỗ trợ thuê bao Việt Nam có dịch vụ chuyển cuộc gọi của nhà mạng (Viettel, MobiFone, VinaPhone, Vietnamobile). Chúng tôi đang nghiên cứu mở rộng cho các thị trường khác.
+        </p>
+      </section>
+
+      <div class="mt-16 pt-8 border-t" style="border-color: var(--hair);">
+        <div class="text-[11px] uppercase tracking-[0.22em] mb-4" style="color: var(--acc);">Liên kết hữu ích</div>
+        <ul class="space-y-2 text-[16px]">
+          <li><a href="/privacy.html" class="hover:underline ff-serif" style="color: var(--ink);">→ Chính sách bảo mật</a></li>
+          <li><a href="/terms.html" class="hover:underline ff-serif" style="color: var(--ink);">→ Điều khoản sử dụng</a></li>
+          <li><a href="/delete-account.html" class="hover:underline ff-serif" style="color: var(--ink);">→ Xoá tài khoản</a></li>
+          <li><a href="/" class="hover:underline ff-serif" style="color: var(--ink);">→ Trang chủ Bonia</a></li>
+        </ul>
+      </div>
     </div>
-  </footer>
+  </article>
+
+  <div class="mt-20 sm:mt-24 pt-10 border-t max-w-4xl" style="border-color: var(--hair);">
+    <div class="text-[11px] uppercase tracking-[0.22em] mb-3" style="color: var(--acc);">Liên hệ</div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-[14px] leading-relaxed" style="color: var(--ink-soft);">
+      <div>
+        <div class="ff-serif text-[18px]" style="color: var(--ink); font-weight: 500;">Công ty TNHH Duy Nhiên Investment</div>
+        <div class="mt-2">120 N2 Mega Village, Đường Võ Chí Công,<br />phường Long Trường, TP.HCM</div>
+        <div class="mt-2 ff-mono text-[12px]">MST 0319376631</div>
+      </div>
+      <div>
+        <div class="text-[11px] uppercase tracking-[0.18em] mb-1" style="color: var(--ink-mute);">Email</div>
+        <a href="mailto:duynguyen@bonia.net" class="ff-serif text-[18px] hover:underline" style="color: var(--acc); font-weight: 500;">duynguyen@bonia.net</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+
 </body>
 </html>

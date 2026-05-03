@@ -1,192 +1,666 @@
-import React, { useState, useEffect, useRef } from "react";
-import {
-  CheckCircle2,
-  Phone,
-  PhoneForwarded,
-  Bell,
-  Shield,
-  Lock,
-  ChevronDown,
-  ArrowRight,
-  PhoneOff,
-  Eye,
-} from "lucide-react";
+import React, { useState, useEffect } from "react";
 
-// ---------------------------------------------------------------------------
-// Fade-in on scroll wrapper
-// ---------------------------------------------------------------------------
-function FadeIn({ children, className = "", delay = 0 }) {
-  const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
+// ─────────────────────────────────────────────────────────────────────────────
+// Design tokens (clay accent, softened navy CTA)
+// ─────────────────────────────────────────────────────────────────────────────
+const ACC = "#7B4A2D"; // clay (primary)
+const ACC2_WARM = "#9C6D4E"; // muted amber (CTA accent)
+const BG = "#F2EEE6";
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
+// Production endpoint for the signup form (preserved from previous version)
+const GOOGLE_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbxOsS2N_LZnJ335QtATbdOckCfTuk-a0-iKDqEXAK8YEkbMN1W8AUn_yocfj3CGjXyX/exec";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Inline icons (1.5px stroke, currentColor)
+// ─────────────────────────────────────────────────────────────────────────────
+const Icon = ({
+  d,
+  size = 16,
+  className = "",
+  stroke = 1.5,
+  fill = "none",
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill={fill}
+    stroke="currentColor"
+    strokeWidth={stroke}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    {typeof d === "string" ? <path d={d} /> : d}
+  </svg>
+);
+
+const IconArrow = (p) => <Icon {...p} d="M5 12h14M13 6l6 6-6 6" />;
+const IconShield = (p) => (
+  <Icon {...p} d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+);
+const IconQuote = (p) => (
+  <Icon
+    {...p}
+    d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h2c1 0 1 0 1 1v1c0 1-1 2-2 2H3v4ZM15 21c3 0 7-1 7-8V5c0-1.25-.757-2-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h2c1 0 1 0 1 1v1c0 1-1 2-2 2h-2v4Z"
+  />
+);
+const IconCheck = (p) => <Icon {...p} d="M20 6 9 17l-5-5" />;
+const IconX = (p) => <Icon {...p} d="M18 6 6 18M6 6l12 12" />;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Vietnamese copy (preserved verbatim from design)
+// ─────────────────────────────────────────────────────────────────────────────
+const COPY = {
+  brand: "Bonia",
+  nav: ["Tính năng", "Cách dùng", "Câu hỏi"],
+  hero: {
+    eyebrow: "Trợ lý nghe máy bằng tiếng Việt",
+    title: "Bonia nghe máy giúp bạn,",
+    titleAccent: "khi bạn không tiện trả lời.",
+    sub: "Khi bạn không bắt máy, Bonia tự động trả lời, khéo léo tìm hiểu mục đích cuộc gọi và gửi tóm tắt về điện thoại của bạn — bằng tiếng Việt, chi tiết và rõ ràng.",
+    cta: "Đăng ký dùng thử",
+    ctaSub: "Luôn luôn miễn phí!",
+  },
+  problem: {
+    eyebrow: "Vấn đề",
+    title: "Mỗi ngày bạn nhận hàng chục cuộc gọi.",
+    sub: "Phần lớn là Telesales, lừa đảo, hoặc số lạ. Một số ít là quan trọng — và bạn không có cách nào biết trước.",
+    spam: {
+      label: "Cuộc gọi không mong muốn",
+      items: [
+        "Telesales bảo hiểm, bất động sản",
+        "Số lạ gọi nhiều lần trong ngày",
+        "Lừa đảo giả danh ngân hàng, công an",
+        "Đòi nợ thay, đe doạ",
+      ],
+    },
+    important: {
+      label: "Cuộc gọi bạn cần biết",
+      items: [
+        "Shipper giao hàng đến nơi",
+        "Nhà tuyển dụng, đối tác công việc",
+        "Bệnh viện, trường học của con",
+        "Người thân dùng số điện thoại lạ",
+      ],
+    },
+  },
+  solution: {
+    eyebrow: "Giải pháp",
+    title: "Một trợ lý lịch sự, trả lời bằng tiếng Việt tự nhiên.",
+    sub: "Bonia hoạt động như một thư ký riêng — khéo léo tìm hiểu mục đích cuộc gọi, ghi lại nội dung, và để bạn quyết định có gọi lại hay không.",
+    features: [
+      {
+        title: "Trả lời tự nhiên bằng tiếng Việt",
+        body: "Bonia hiểu giọng vùng miền và các tình huống thường gặp ở Việt Nam — từ shipper, đối tác, đến số lạ.",
       },
-      { threshold: 0.1 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+      {
+        title: "Tóm tắt gửi ngay về điện thoại",
+        body: "Sau mỗi cuộc gọi, bạn nhận một thông báo ngắn gọn: ai gọi, vì việc gì, có cần gọi lại không.",
+      },
+      {
+        title: "Chặn quấy rối tự động",
+        body: "Tiếp thị, robocall, lừa đảo bị nhận diện và đánh dấu — không làm phiền bạn nữa.",
+      },
+      {
+        title: "Bạn vẫn là người quyết định",
+        body: "Bonia không thay bạn xử lý — chỉ thu thập thông tin để bạn chọn gọi lại, nhắn tin, hoặc bỏ qua.",
+      },
+    ],
+  },
+  how: {
+    eyebrow: "Cách dùng",
+    title: "Cài đặt một lần, Yên tâm trọn đời!",
+    steps: [
+      {
+        n: "01",
+        title: "Chuyển hướng cuộc gọi nhỡ",
+        body: "Bật chuyển hướng cuộc gọi sang số Bonia khi bạn không bắt máy hoặc cuộc gọi nhỡ. Mất khoảng 30 giây.",
+      },
+      {
+        n: "02",
+        title: "Bonia trả lời thay bạn",
+        body: "Khi bạn không nghe máy, Bonia nhận cuộc gọi, hỏi tên người gọi và mục đích, ghi lại nội dung.",
+      },
+      {
+        n: "03",
+        title: "Bạn nhận tóm tắt qua thông báo",
+        body: "Mở điện thoại — bạn thấy ngay ai gọi, vì việc gì, và có thể quyết định bước tiếp theo.",
+      },
+    ],
+  },
+  examples: {
+    eyebrow: "Ví dụ thực tế",
+    title: "Ba tình huống bạn gặp mỗi tuần.",
+    cards: [
+      {
+        kind: "Telesales",
+        time: "16:48",
+        quote:
+          "Em chào anh, em bên bảo hiểm nhân thọ ABC, em muốn giới thiệu gói sản phẩm mới…",
+        meta: "Đã chặn — không cần phản hồi",
+      },
+      {
+        kind: "Shipper",
+        time: "14:32",
+        quote:
+          "Em là shipper Giao Hàng Tiết Kiệm, đang ở dưới nhà chị. Đơn 198k, chị xuống nhận giúp em ạ.",
+        meta: "Quan trọng — gọi lại ngay",
+      },
+      {
+        kind: "Nhà tuyển dụng",
+        time: "10:15",
+        quote:
+          "Tôi là Linh, phòng nhân sự công ty XYZ. Muốn hẹn anh phỏng vấn vào thứ Sáu này, 9 giờ sáng.",
+        meta: "Quan trọng — gọi lại hôm nay",
+      },
+    ],
+  },
+  privacy: {
+    items: [
+      {
+        title: "Dữ liệu tự động xoá sau 30 ngày",
+        body: "Sau 30 ngày, dữ liệu tự động xoá khỏi máy chủ — bạn cũng có thể xoá bất kỳ lúc nào.",
+      },
+      {
+        title: "Không bán dữ liệu, không quảng cáo",
+        body: "Bonia không dùng dữ liệu của bạn để kinh doanh hay bán cho bên thứ ba.",
+      },
+    ],
+  },
+  concerns: {
+    eyebrow: "Băn khoăn thường gặp",
+    title: "Ba điều người Việt lo lắng nhất.",
+    items: [
+      {
+        q: "Có bất lịch sự khi để AI nghe máy thay không?",
+        a: 'Bonia chỉ nghe máy khi bạn nhỡ cuộc gọi hoặc đang bận. Bonia mở lời như một người thân/thư ký đang cầm máy giùm — "Dạ alo, mình gọi có việc gì ạ?" — đúng phép xã giao tiếng Việt, không xưng mình là máy hay AI. Với người thân hoặc bạn bè trong danh bạ, bạn có thể cài đặt để Bonia trả lời theo ý bạn.',
+      },
+      {
+        q: "Bonia nói có tự nhiên như người không?",
+        a: 'Bonia được huấn luyện riêng cho tiếng Việt — giọng Bắc, Nam đều hiểu, biết dùng "dạ", "ạ", xưng hô đúng vai. Không phải giọng tổng đài đọc kịch bản. Bạn có thể nghe thử khi cài đặt App trước khi sử dụng.',
+      },
+      {
+        q: "Nếu là cuộc gọi khẩn cấp thì sao?",
+        a: 'Bonia nhận diện từ khoá khẩn cấp ("tai nạn", "bệnh viện", "cấp cứu"…), ghi nhận thông tin, kết thúc cuộc gọi gọn gàng và lập tức báo cho bạn biết. Số trong danh bạ ưu tiên (bố mẹ, vợ/chồng, con) cũng được Bonia xử lý gọn ghẽ.',
+      },
+    ],
+  },
+  faq: {
+    eyebrow: "Câu hỏi thường gặp",
+    title: "Những điều bạn có thể đang băn khoăn.",
+    items: [
+      {
+        q: "Bonia có thay tôi nghe máy hoàn toàn không?",
+        a: "Không. Bonia chỉ nhận khi bạn không bắt máy. Khi bạn đang nghe điện thoại bình thường, Bonia không can thiệp.",
+      },
+      {
+        q: "Tôi có cần cài thêm app gì không?",
+        a: "Không. Bonia hoạt động qua tính năng chuyển hướng cuộc gọi sẵn có trên điện thoại của bạn.",
+      },
+      {
+        q: "Bonia hoạt động trên điện thoại nào?",
+        a: "Mọi điện thoại di động dùng SIM Việt Nam đều dùng được — iPhone, Android, hay điện thoại cơ bản.",
+      },
+      {
+        q: "Có mất phí cuộc gọi không?",
+        a: "Người gọi không mất thêm phí. Bạn chỉ trả phí thuê bao cuộc gọi theo gói cước thông thường. Đây là phí do Nhà mạng thu, Bonia không thu bất kỳ phí nào.",
+      },
+      {
+        q: "Bonia có nghe lén tôi không?",
+        a: "Không. Bonia chỉ kích hoạt khi có cuộc gọi đến mà bạn không bắt máy. Ngoài lúc đó, Bonia không truy cập micro.",
+      },
+      {
+        q: "Tôi có thể nghe lại nguyên văn cuộc gọi không?",
+        a: "Bạn có thể xem lại bản chuyển ngữ (Transcription) của cuộc gọi.",
+      },
+      {
+        q: "Bonia có chặn được lừa đảo giả danh không?",
+        a: "Bonia nhận diện được nhiều mẫu lừa đảo phổ biến và cảnh báo bạn. Nhưng bạn vẫn nên cẩn trọng và xác minh thông tin.",
+      },
+      {
+        q: "Tôi có thể tạm tắt Bonia không?",
+        a: "Có. Bạn tắt chuyển hướng cuộc gọi là Bonia ngừng hoạt động. Bật lại bất cứ khi nào.",
+      },
+      {
+        q: "Có hỗ trợ tiếng Anh không?",
+        a: "Trong giai đoạn này, Bonia chỉ hỗ trợ tiếng Việt. Tiếng Anh sẽ được thêm vào trong tương lai.",
+      },
+      {
+        q: "Làm sao đăng ký dùng thử?",
+        a: "Bạn nhập số điện thoại ở cuối trang. Đội ngũ Bonia sẽ liên hệ để hướng dẫn cài đặt.",
+      },
+    ],
+  },
+  cta: {
+    eyebrow: "Bắt đầu",
+    title: "Đăng ký dùng thử Bonia.",
+    sub: "Để lại số điện thoại — đội ngũ Bonia sẽ liên hệ để gửi tin nhắn hướng dẫn cài đặt và sử dụng.",
+    label: "Số điện thoại của bạn",
+    placeholder: "091 234 5678",
+    button: "Gửi đăng ký",
+    note: "Chỉ gửi tin nhắn hướng dẫn cài đặt và sử dụng",
+  },
+  footer: {
+    company: "Công ty TNHH Duy Nhiên Investment",
+    addr: "120 N2 Mega Village, Đường Võ Chí Công, phường Long Trường, TP.HCM",
+    mst: "MST: 0319376631",
+    rights: "© 2026 Bonia. Mọi quyền được bảo lưu.",
+  },
+};
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Hero transcript scenes (5 cycling)
+// ─────────────────────────────────────────────────────────────────────────────
+const TRANSCRIPTS = [
+  {
+    label: "Shipper · 14:32",
+    tag: "Quan trọng",
+    lines: [
+      { who: "b", text: "Dạ alo, mình gọi có việc gì ạ?" },
+      {
+        who: "t",
+        text: "Em là shipper Giao Hàng Tiết Kiệm, đang ở dưới nhà chị.",
+      },
+      {
+        who: "b",
+        text: "Dạ chị Nhiên đang dở tay xíu. Đơn này bao nhiêu vậy ạ?",
+      },
+      { who: "t", text: "Đơn 198 nghìn, chị xuống lấy liền giùm em nha." },
+      { who: "b", text: "Dạ rồi, để em báo chị Nhiên xuống lấy liền nha." },
+    ],
+  },
+  {
+    label: "Nhân sự · 10:15",
+    tag: "Cần gọi lại",
+    lines: [
+      { who: "b", text: "Dạ alo, mình gọi có việc gì ạ?" },
+      {
+        who: "t",
+        text: "Tôi là Linh, phòng nhân sự công ty XYZ. Muốn hẹn anh phỏng vấn.",
+      },
+      {
+        who: "b",
+        text: "Dạ anh Duy đang dở tay xíu, chị đề xuất thời gian nào em báo lại cho ạ?",
+      },
+      { who: "t", text: "Thứ Sáu này, 9 giờ sáng, văn phòng quận 1." },
+      { who: "b", text: "Dạ em ghi nhận rồi ạ, lát em báo lại anh Duy ngay." },
+    ],
+  },
+  {
+    label: "Tiếp thị · 16:48",
+    tag: "Đã chặn",
+    lines: [
+      { who: "b", text: "Dạ alo, mình gọi có việc gì ạ?" },
+      {
+        who: "t",
+        text: "Em chào anh, em bên bảo hiểm nhân thọ ABC, em muốn giới thiệu…",
+      },
+      { who: "b", text: "À dạ bên em không có nhu cầu nha, em cảm ơn." },
+      { who: "t", text: "Dạ vâng, cảm ơn anh." },
+      { who: "b", text: "Dạ chào anh." },
+    ],
+  },
+  {
+    label: "Cô giáo · 09:02",
+    tag: "Quan trọng",
+    lines: [
+      { who: "b", text: "Dạ alo, mình gọi có việc gì ạ?" },
+      {
+        who: "t",
+        text: "Em là cô giáo lớp Tiếng Anh của bé Vân. Bé để quên cặp ở lớp.",
+      },
+      {
+        who: "b",
+        text: "Dạ chị Nhiên đang dở tay xíu. Con cần lấy ngay bây giờ hay để hôm sau ạ?",
+      },
+      { who: "t", text: "Cô giữ ở văn phòng, lúc nào tiện thì sang lấy." },
+      {
+        who: "b",
+        text: "Dạ em ghi nhận rồi á, lát em báo chị Nhiên gọi lại cô nha.",
+      },
+    ],
+  },
+  {
+    label: "Số lạ · 20:11",
+    tag: "Đã chặn",
+    lines: [
+      { who: "b", text: "Dạ alo, mình tìm ai ạ?" },
+      { who: "t", text: "…" },
+      { who: "b", text: "Ủa alo, mình gọi có việc gì không ạ?" },
+      { who: "t", text: "(không trả lời)" },
+      { who: "b", text: "Dạ em xin phép tắt máy nha." },
+    ],
+  },
+];
+
+function useSceneCycle(intervalMs = 5800) {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const t = setInterval(
+      () => setI((x) => (x + 1) % TRANSCRIPTS.length),
+      intervalMs,
+    );
+    return () => clearInterval(t);
+  }, [intervalMs]);
+  return [i, setI];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Reusable pieces
+// ─────────────────────────────────────────────────────────────────────────────
+function SceneDots({ active, accent = ACC }) {
   return (
-    <div
-      ref={ref}
-      className={`transition-all duration-700 ease-out ${
-        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-      } ${className}`}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
-      {children}
+    <div className="flex items-center gap-1.5">
+      {TRANSCRIPTS.map((_, i) => (
+        <span
+          key={i}
+          className="scene-dot"
+          style={{ background: i === active ? accent : "#D9D0BF" }}
+        />
+      ))}
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Data
-// ---------------------------------------------------------------------------
-// Demo calls for animated hero sequence
-const demoSpamCall = {
-  phone: "028 7300 1234",
-  tag: "Rác",
-  summary: "Tư vấn bảo hiểm nhân thọ miễn phí",
-  transcript: [
-    {
-      role: "bonia",
-      text: "Xin chào, đây là trợ lý của Charlie. Bạn gọi có việc gì ạ?",
-    },
-    { role: "caller", text: "Bên em tư vấn bảo hiểm nhân thọ cho anh ạ." },
-    { role: "bonia", text: "Dạ, mình ghi nhận. Cảm ơn bạn." },
-  ],
-};
-
-const demoImportantCall = {
-  phone: "0901 234 567",
-  tag: "Quan trọng",
-  summary: "Giao hàng Shopee, giao lúc 5h được không?",
-  transcript: [
-    {
-      role: "bonia",
-      text: "Xin chào, đây là trợ lý của Charlie. Bạn gọi có việc gì ạ?",
-    },
-    { role: "caller", text: "Mình giao hàng Shopee, giao lúc 5h được không?" },
-    { role: "bonia", text: "Dạ để mình nhắn lại cho Charlie nhé." },
-  ],
-};
-
-const faqs = [
-  {
-    q: "Bonia có nghe lén cuộc gọi của tôi không?",
-    a: "Không. Bonia chỉ hoạt động khi bạn không bắt máy. Khi bạn nghe điện thoại, Bonia hoàn toàn không can thiệp và không nghe nội dung cuộc gọi.",
-  },
-  {
-    q: "Bonia có ảnh hưởng đến OTP ngân hàng không?",
-    a: "Không. Bonia không chặn SMS, không can thiệp OTP. Mọi mã xác thực vẫn hoạt động bình thường.",
-  },
-  {
-    q: "Bonia có ghi âm cuộc gọi của tôi không?",
-    a: "Không ghi âm cuộc gọi bạn trực tiếp nghe. Bonia chỉ xử lý cuộc gọi được chuyển hướng khi bạn không trả lời và lưu tóm tắt để bạn xem lại.",
-  },
-  {
-    q: "Danh bạ của tôi có bị lộ không?",
-    a: "Không. Danh bạ được mã hóa một chiều ngay trên điện thoại trước khi gửi đi. Bonia không lưu số gốc và không dùng danh bạ cho quảng cáo.",
-  },
-  {
-    q: "Tôi có mất phí khi dùng Bonia không?",
-    a: "Bonia hoàn toàn miễn phí. Phí chuyển hướng (nếu có) phụ thuộc vào nhà mạng của bạn. Bạn có thể tắt bất cứ lúc nào.",
-  },
-  {
-    q: "Tôi có thể tắt Bonia bất cứ lúc nào không?",
-    a: "Có. Bạn chỉ cần hủy chuyển hướng cuộc gọi trong phần cài đặt nhà mạng. Không ràng buộc dài hạn.",
-  },
-  {
-    q: "Cuộc gọi có bị chuyển ngay lập tức không?",
-    a: "Không. Điện thoại vẫn đổ chuông bình thường. Chỉ khi bạn không trả lời sau ~15–20 giây, cuộc gọi mới chuyển sang Bonia.",
-  },
-  {
-    q: "Nếu là cuộc gọi khẩn cấp thì sao?",
-    a: "Nếu bạn nghe máy, Bonia không hoạt động. Nếu lỡ cuộc gọi quan trọng, bạn có thể gọi lại ngay sau khi nhận thông báo.",
-  },
-  {
-    q: "Nếu là người thân gọi thì sao?",
-    a: "Nếu bạn không bắt máy, Bonia sẽ trả lời lịch sự như một trợ lý. Bạn sẽ nhận thông báo ngay để quyết định có cần gọi lại hay không.",
-  },
-  {
-    q: "Bonia có phân loại chính xác không?",
-    a: "Bonia sử dụng AI để phân tích nội dung cuộc gọi. Bạn có thể báo lại nếu phân loại chưa đúng để hệ thống cải thiện theo thời gian.",
-  },
-  {
-    q: "Người gọi có biết tôi đang dùng Bonia không?",
-    a: "Họ chỉ nghe một trợ lý AI trả lời. Không có thông báo nào cho biết bạn đang dùng ứng dụng.",
-  },
-  {
-    q: "Bonia có làm hao pin hay làm chậm điện thoại không?",
-    a: "Không. Bonia hoạt động thông qua chuyển hướng cuộc gọi, không chạy nền liên tục trên điện thoại.",
-  },
-  {
-    q: "Bonia có thay thế ứng dụng điện thoại mặc định không?",
-    a: "Không. Bạn vẫn dùng điện thoại như bình thường. Bonia chỉ xử lý khi bạn không trả lời.",
-  },
-  {
-    q: "Bonia có lưu trữ nội dung cuộc gọi lâu dài không?",
-    a: "Bonia chỉ lưu thông tin cần thiết để bạn xem lại trong app. Bạn có thể xóa lịch sử bất cứ lúc nào.",
-  },
-];
-
-// ---------------------------------------------------------------------------
-// App
-// ---------------------------------------------------------------------------
-function App() {
-  // Form
-  const [phone, setPhone] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [modalMessage, setModalMessage] = useState("");
-  const [modalType, setModalType] = useState("success");
-
-  // Hero phone animation — 5 scenes cycling
-  // 0: lock screen + spam notif  1: spam detail  2: lock screen + important notif  3: important detail  4: calling
-  const [scene, setScene] = useState(0);
-  const [notifVisible, setNotifVisible] = useState(false);
+function TranscriptCard({ idx }) {
+  const t = TRANSCRIPTS[idx];
+  const [shown, setShown] = useState(t.lines.length);
   useEffect(() => {
-    const durations = [3200, 3800, 3200, 3500, 2800];
-    let notifTimer;
-    if (scene === 0 || scene === 2) {
-      setNotifVisible(false);
-      notifTimer = setTimeout(() => setNotifVisible(true), 600);
-    }
-    const sceneTimer = setTimeout(() => {
-      setScene((prev) => (prev + 1) % 5);
-    }, durations[scene]);
-    return () => {
-      clearTimeout(sceneTimer);
-      if (notifTimer) clearTimeout(notifTimer);
+    setShown(0);
+    let n = 0;
+    let timer;
+    const tick = () => {
+      n += 1;
+      setShown(n);
+      if (n < t.lines.length) timer = setTimeout(tick, 600);
     };
-  }, [scene]);
-  const isLockScreen = scene === 0 || scene === 2;
-  const isDetail = scene === 1 || scene === 3;
-  const isCalling = scene === 4;
-  const isSpam = scene <= 1;
-  const currentCall = isSpam ? demoSpamCall : demoImportantCall;
+    timer = setTimeout(tick, 300);
+    return () => clearTimeout(timer);
+  }, [idx]);
+  const tagColor = t.tag === "Đã chặn" ? "#7A6F62" : ACC;
+  return (
+    <div
+      className="bg-white border w-full max-w-md"
+      style={{ borderColor: "#D9D0BF" }}
+    >
+      <div
+        className="flex items-center justify-between px-5 py-3 border-b"
+        style={{ borderColor: "#EFE9DD" }}
+      >
+        <div className="flex items-center gap-2">
+          <span
+            className="w-2 h-2 rounded-full"
+            style={{ background: tagColor }}
+          />
+          <span className="text-[12px] ff-mono" style={{ color: "#4A4239" }}>
+            {t.label}
+          </span>
+        </div>
+        <span
+          className="text-[10px] uppercase tracking-[0.2em]"
+          style={{ color: tagColor }}
+        >
+          {t.tag}
+        </span>
+      </div>
+      <div className="p-5 space-y-2.5 min-h-[280px]">
+        {t.lines.slice(0, shown).map((l, i) => (
+          <div
+            key={i}
+            className={`flex ${l.who === "b" ? "justify-end" : "justify-start"}`}
+          >
+            <div
+              className={`max-w-[78%] px-3.5 py-2 text-[14px] leading-snug ${
+                l.who === "b" ? "bubble-you" : "bubble-them"
+              }`}
+            >
+              {l.text}
+            </div>
+          </div>
+        ))}
+        {shown < t.lines.length && (
+          <div className="flex justify-end">
+            <div className="bubble-you px-3.5 py-2.5 inline-flex gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse" />
+              <span
+                className="w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse"
+                style={{ animationDelay: "0.15s" }}
+              />
+              <span
+                className="w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse"
+                style={{ animationDelay: "0.3s" }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+      <div
+        className="px-5 py-3 border-t flex items-center justify-between text-[11px]"
+        style={{ borderColor: "#EFE9DD", color: "#7A6F62" }}
+      >
+        <span className="uppercase tracking-[0.18em]">Bản ghi tự động</span>
+        <span className="ff-mono">2:14</span>
+      </div>
+    </div>
+  );
+}
 
-  // FAQ
-  const [openFaq, setOpenFaq] = useState(null);
+function CallListPhone({ accent = ACC }) {
+  const calls = [
+    {
+      name: "Linh — NS XYZ",
+      desc: "Hẹn phỏng vấn thứ Sáu 9:00",
+      time: "10:15",
+      tag: "Quan trọng",
+    },
+    {
+      name: "Shipper GHTK",
+      desc: "Đơn 198k, đang dưới nhà",
+      time: "14:32",
+      tag: "Quan trọng",
+    },
+    {
+      name: "Cô giáo lớp con",
+      desc: "Con quên cặp ở lớp",
+      time: "09:02",
+      tag: "Quan trọng",
+    },
+    {
+      name: "+84 28 xxx xxx",
+      desc: "Tiếp thị bảo hiểm ABC",
+      time: "16:48",
+      tag: "Đã chặn",
+    },
+    {
+      name: "+84 9x xxx xxx",
+      desc: "Robocall — không rõ",
+      time: "20:11",
+      tag: "Đã chặn",
+    },
+    {
+      name: "Anh Tuấn — đối tác",
+      desc: "Hỏi về hợp đồng tháng 6",
+      time: "Hôm qua",
+      tag: "Cần gọi lại",
+    },
+  ];
+  return (
+    <div className="iphone">
+      <div className="iphone-screen" style={{ background: "#FAF7F2" }}>
+        <div className="iphone-notch" />
+        <div
+          className="absolute top-0 left-0 right-0 px-7 pt-4 flex justify-between text-[11px] font-medium z-20"
+          style={{ color: "#1F1B16" }}
+        >
+          <span>9:41</span>
+          <span>5G ●●●●</span>
+        </div>
+        <div className="pt-12 px-4 h-full flex flex-col">
+          <div
+            className="flex items-center justify-between pb-3 border-b"
+            style={{ borderColor: "#E5DDCC" }}
+          >
+            <span
+              className="text-[18px] font-semibold ff-serif"
+              style={{ color: "#1F1B16" }}
+            >
+              Hôm nay
+            </span>
+            <span
+              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs"
+              style={{ background: accent }}
+            >
+              B
+            </span>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            {calls.map((c, i) => (
+              <div
+                key={i}
+                className="py-2.5 border-b flex gap-2.5 items-start"
+                style={{ borderColor: "#EFE9DD" }}
+              >
+                <span
+                  className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{
+                    background: c.tag === "Đã chặn" ? "#C9C0AE" : accent,
+                  }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span
+                      className="text-[12px] font-medium truncate"
+                      style={{ color: "#1F1B16" }}
+                    >
+                      {c.name}
+                    </span>
+                    <span className="text-[10px]" style={{ color: "#7A6F62" }}>
+                      {c.time}
+                    </span>
+                  </div>
+                  <div
+                    className="text-[11px] truncate"
+                    style={{ color: "#4A4239" }}
+                  >
+                    {c.desc}
+                  </div>
+                  <div
+                    className="text-[9px] uppercase tracking-wider mt-0.5"
+                    style={{ color: c.tag === "Đã chặn" ? "#7A6F62" : accent }}
+                  >
+                    {c.tag}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  const GOOGLE_SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbxOsS2N_LZnJ335QtATbdOckCfTuk-a0-iKDqEXAK8YEkbMN1W8AUn_yocfj3CGjXyX/exec";
+function TopNav({ accent = ACC }) {
+  return (
+    <nav
+      className="flex items-center justify-between py-6 px-6 sm:px-12 border-b"
+      style={{ borderColor: "#D9D0BF" }}
+    >
+      <a href="#hero" className="flex items-center gap-2.5 group">
+        <img src="/logo-mark.png" alt="Bonia" className="h-9 w-auto" />
+        <span
+          className="text-[22px] font-medium tracking-tight ff-serif"
+          style={{ color: "#1F1B16" }}
+        >
+          Bonia
+        </span>
+        <span
+          className="text-[11px] uppercase tracking-[0.22em] ml-1 hidden sm:inline"
+          style={{ color: "#4A4239" }}
+        >
+          beta · tiếng việt
+        </span>
+      </a>
+      <div className="hidden md:flex items-baseline gap-8">
+        {COPY.nav.map((n, i) => (
+          <a
+            key={i}
+            href={i === 0 ? "#solution" : i === 1 ? "#how" : "#faq"}
+            className="text-[14px] transition-colors hover:opacity-100"
+            style={{ color: "#4A4239" }}
+          >
+            {n}
+          </a>
+        ))}
+        <a
+          href="#cta"
+          className="text-[14px] font-medium flex items-center gap-1.5"
+          style={{ color: accent }}
+        >
+          Đăng ký <IconArrow size={12} />
+        </a>
+      </div>
+      <a
+        href="#cta"
+        className="md:hidden text-[14px] font-medium flex items-center gap-1.5"
+        style={{ color: accent }}
+      >
+        Đăng ký <IconArrow size={12} />
+      </a>
+    </nav>
+  );
+}
 
-  const showNotification = (message, type = "success") => {
-    setModalMessage(message);
-    setModalType(type);
-    setShowModal(true);
-    setTimeout(() => setShowModal(false), 4000);
-  };
+function SectionHead({
+  eyebrow,
+  title,
+  sub,
+  accent = ACC,
+  kicker,
+  align = "left",
+}) {
+  const isCenter = align === "center";
+  return (
+    <header className={`max-w-3xl ${isCenter ? "mx-auto text-center" : ""}`}>
+      <div
+        className={`flex items-baseline gap-3 mb-6 ${isCenter ? "justify-center" : ""}`}
+      >
+        {kicker && (
+          <span className="text-[12px] ff-mono" style={{ color: accent }}>
+            {kicker}
+          </span>
+        )}
+        <span
+          className="text-[11px] uppercase tracking-[0.22em]"
+          style={{ color: "#7A6F62" }}
+        >
+          {eyebrow}
+        </span>
+      </div>
+      <h2
+        className="text-[36px] sm:text-[44px] md:text-[52px] leading-[1.05] tracking-tight ff-serif"
+        style={{ color: "#1F1B16", fontWeight: 400 }}
+      >
+        {title}
+      </h2>
+      {sub && (
+        <p
+          className={`mt-5 text-[17px] sm:text-[18px] leading-relaxed max-w-2xl ${isCenter ? "mx-auto" : ""}`}
+          style={{ color: "#4A4239" }}
+        >
+          {sub}
+        </p>
+      )}
+    </header>
+  );
+}
+
+function SignupForm({ accent = ACC2_WARM, dark = false, onResult }) {
+  const [phone, setPhone] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
 
   const isValidPhone = (value) => {
     const digits = value.replace(/\D/g, "");
@@ -197,16 +671,13 @@ function App() {
     );
   };
 
-  const handleSubmit = async (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     if (!isValidPhone(phone)) {
-      showNotification(
-        "Số điện thoại không hợp lệ. Vui lòng kiểm tra lại.",
-        "error",
-      );
+      onResult?.("Số điện thoại không hợp lệ. Vui lòng kiểm tra lại.", "error");
       return;
     }
-    setIsSubmitting(true);
+    setSubmitting(true);
     try {
       const formData = new URLSearchParams();
       formData.append("phone", phone);
@@ -215,808 +686,779 @@ function App() {
         mode: "no-cors",
         body: formData,
       });
-      showNotification("Cảm ơn bạn đã đăng ký! Chúng tôi sẽ liên hệ sớm.");
+      setSent(true);
       setPhone("");
+      onResult?.("Cảm ơn bạn đã đăng ký! Chúng tôi sẽ liên hệ sớm.", "success");
     } catch {
-      showNotification("Có lỗi xảy ra. Vui lòng thử lại.", "error");
+      onResult?.("Có lỗi xảy ra. Vui lòng thử lại.", "error");
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
+  const labelClass = dark ? "text-white/60" : "text-[#7A6F62]";
+  const containerBorder = dark ? "border-white/15" : "border-[#D9D0BF]";
+  const containerBg = dark ? "bg-white/5" : "bg-white";
+  const inputClass = dark
+    ? "text-white placeholder-white/40"
+    : "text-[#1F1B16] placeholder-[#A89A86]";
+  const noteClass = dark ? "text-white/50" : "text-[#7A6F62]";
+
   return (
-    <div className="min-h-screen bg-white text-gray-800 overflow-x-hidden">
-      {/* ── Toast ── */}
-      {showModal && (
+    <form onSubmit={onSubmit} className="w-full max-w-md">
+      <label
+        className={`block text-[12px] uppercase tracking-[0.18em] mb-3 ${labelClass}`}
+      >
+        {COPY.cta.label}
+      </label>
+      <div className={`flex border ${containerBorder} ${containerBg}`}>
+        <input
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder={COPY.cta.placeholder}
+          required
+          className={`flex-1 px-4 py-3.5 text-[16px] outline-none border-0 bg-transparent ${inputClass}`}
+        />
+        <button
+          type="submit"
+          disabled={submitting}
+          className="px-5 py-3.5 text-[14px] font-medium tracking-wide flex items-center gap-2 transition-colors disabled:opacity-60"
+          style={{ background: accent, color: "#fff" }}
+        >
+          {submitting ? "Đang gửi…" : sent ? "Đã gửi ✓" : COPY.cta.button}
+          {!submitting && !sent && <IconArrow size={14} />}
+        </button>
+      </div>
+      <p className={`mt-3 text-[12px] ${noteClass}`}>{COPY.cta.note}</p>
+    </form>
+  );
+}
+
+function FAQList({ items, accent = ACC, columns = 2 }) {
+  const half = Math.ceil(items.length / columns);
+  const cols = Array.from({ length: columns }, (_, c) =>
+    items.slice(c * half, c * half + half),
+  );
+  return (
+    <div
+      className={`grid grid-cols-1 ${columns === 2 ? "md:grid-cols-2" : ""} gap-x-12 gap-y-0`}
+    >
+      {cols.map((col, ci) => (
+        <div key={ci}>
+          {col.map((it, i) => (
+            <details
+              key={i}
+              className="border-b py-5"
+              style={{ borderColor: "#D9D0BF" }}
+            >
+              <summary className="flex items-baseline gap-4 group">
+                <span
+                  className="text-[12px] ff-mono mt-1"
+                  style={{ color: "#7A6F62" }}
+                >
+                  {String(ci * half + i + 1).padStart(2, "0")}
+                </span>
+                <span
+                  className="flex-1 text-[16px] sm:text-[17px] leading-snug ff-serif"
+                  style={{ color: "#1F1B16" }}
+                >
+                  {it.q}
+                </span>
+                <span
+                  className="text-base mt-1 transition-transform group-open:rotate-45"
+                  style={{ color: accent }}
+                >
+                  +
+                </span>
+              </summary>
+              <p
+                className="ml-10 mt-3 text-[14px] sm:text-[15px] leading-relaxed"
+                style={{ color: "#4A4239" }}
+              >
+                {it.a}
+              </p>
+            </details>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PageFooter({ accent = ACC }) {
+  return (
+    <footer
+      className="border-t px-6 sm:px-12 py-10"
+      style={{ borderColor: "#D9D0BF" }}
+    >
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        <div className="md:col-span-4">
+          <div className="flex items-center gap-2.5 mb-3">
+            <img src="/logo-mark.png" alt="Bonia" className="h-8 w-auto" />
+            <span
+              className="text-[18px] font-medium ff-serif"
+              style={{ color: "#1F1B16" }}
+            >
+              Bonia
+            </span>
+            <span
+              className="text-[11px] uppercase tracking-[0.22em]"
+              style={{ color: accent }}
+            >
+              beta
+            </span>
+          </div>
+          <p
+            className="text-[13px] leading-relaxed max-w-xs"
+            style={{ color: "#4A4239" }}
+          >
+            Trợ lý nghe máy bằng tiếng Việt, thiết kế dành riêng cho người Việt.
+          </p>
+        </div>
+        <div className="md:col-span-3">
+          <div
+            className="text-[11px] uppercase tracking-[0.18em] mb-3"
+            style={{ color: "#7A6F62" }}
+          >
+            Liên kết
+          </div>
+          <ul
+            className="text-[13px] leading-[1.9]"
+            style={{ color: "#4A4239" }}
+          >
+            <li>
+              <a href="/privacy.html" className="hover:underline">
+                Chính sách bảo mật
+              </a>
+            </li>
+            <li>
+              <a href="/terms.html" className="hover:underline">
+                Điều khoản sử dụng
+              </a>
+            </li>
+            <li>
+              <a href="/support.html" className="hover:underline">
+                Hỗ trợ
+              </a>
+            </li>
+            <li>
+              <a href="/delete-account.html" className="hover:underline">
+                Xoá tài khoản
+              </a>
+            </li>
+            <li>
+              <a href="mailto:duynguyen@bonia.net" className="hover:underline">
+                Liên hệ
+              </a>
+            </li>
+          </ul>
+        </div>
+        <div className="md:col-span-5">
+          <div
+            className="text-[11px] uppercase tracking-[0.18em] mb-3"
+            style={{ color: "#7A6F62" }}
+          >
+            Pháp lý
+          </div>
+          <div
+            className="text-[13px] leading-relaxed"
+            style={{ color: "#4A4239" }}
+          >
+            <div>{COPY.footer.company}</div>
+            <div>{COPY.footer.addr}</div>
+            <div className="mt-1 ff-mono text-[12px]">{COPY.footer.mst}</div>
+          </div>
+        </div>
+      </div>
+      <div
+        className="mt-8 pt-5 border-t text-[12px]"
+        style={{ borderColor: "#D9D0BF", color: "#7A6F62" }}
+      >
+        {COPY.footer.rights}
+      </div>
+    </footer>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sections
+// ─────────────────────────────────────────────────────────────────────────────
+function Hero() {
+  const [i] = useSceneCycle(5800);
+  return (
+    <section id="hero" style={{ background: BG }}>
+      <TopNav accent={ACC} />
+      <div className="px-6 sm:px-12 pt-12 sm:pt-16 pb-20 sm:pb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+          <div className="lg:col-span-7 lg:pt-8">
+            <div className="mb-7">
+              <span
+                className="text-[11px] uppercase tracking-[0.22em]"
+                style={{ color: "#7A6F62" }}
+              >
+                {COPY.hero.eyebrow}
+              </span>
+            </div>
+            <h1
+              className="text-[40px] sm:text-[52px] lg:text-[64px] xl:text-[72px] leading-[1.05] tracking-tight ff-serif"
+              style={{ color: "#1F1B16", fontWeight: 400 }}
+            >
+              <span className="block">{COPY.hero.title.replace(/,$/, "")}</span>
+              <span
+                className="block mt-2"
+                style={{ color: ACC, fontStyle: "italic", fontWeight: 380 }}
+              >
+                {COPY.hero.titleAccent}
+              </span>
+            </h1>
+            <p
+              className="mt-7 text-[17px] sm:text-[18px] leading-[1.65] max-w-md"
+              style={{ color: "#4A4239" }}
+            >
+              {COPY.hero.sub}
+            </p>
+            <div className="mt-9 flex flex-wrap items-center gap-5">
+              <a
+                href="#cta"
+                className="inline-flex items-center gap-2.5 px-6 py-3.5 text-[15px] tracking-wide"
+                style={{ background: ACC, color: "#fff" }}
+              >
+                {COPY.hero.cta} <IconArrow size={14} />
+              </a>
+              <span className="text-[13px]" style={{ color: "#7A6F62" }}>
+                {COPY.hero.ctaSub}
+              </span>
+            </div>
+            <div
+              className="mt-12 pt-5 border-t flex items-center justify-between max-w-sm"
+              style={{ borderColor: "#D9D0BF" }}
+            >
+              <span
+                className="text-[11px] uppercase tracking-[0.2em]"
+                style={{ color: "#7A6F62" }}
+              >
+                Cuộc thoại {String(i + 1).padStart(2, "0")} / 05
+              </span>
+              <SceneDots active={i} accent={ACC} />
+            </div>
+          </div>
+          <div className="lg:col-span-5 flex justify-center">
+            <TranscriptCard idx={i} />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Problem() {
+  return (
+    <section
+      id="problem"
+      className="px-6 sm:px-12 py-20 sm:py-24"
+      style={{ background: "#fff" }}
+    >
+      <SectionHead
+        eyebrow={COPY.problem.eyebrow}
+        title={COPY.problem.title}
+        sub={COPY.problem.sub}
+        accent={ACC}
+        kicker="№ 02"
+      />
+      <div className="mt-14 sm:mt-16 grid grid-cols-1 md:grid-cols-2 gap-12">
+        <div className="relative pt-8">
+          <div
+            className="absolute top-0 left-0 right-0 h-px"
+            style={{ background: "#D9D0BF" }}
+          />
+          <div className="flex items-baseline gap-3 mb-6">
+            <span
+              className="text-[11px] ff-mono uppercase tracking-[0.2em]"
+              style={{ color: "#7A6F62" }}
+            >
+              Cột A
+            </span>
+            <span
+              className="text-[14px] sm:text-[15px] uppercase tracking-[0.18em]"
+              style={{ color: "#7A6F62" }}
+            >
+              {COPY.problem.spam.label}
+            </span>
+          </div>
+          <ul className="space-y-0">
+            {COPY.problem.spam.items.map((it, i) => (
+              <li
+                key={i}
+                className="flex items-baseline gap-4 py-4 border-b"
+                style={{ borderColor: "#EFE9DD" }}
+              >
+                <IconX size={14} className="opacity-50 mt-0.5" />
+                <span
+                  className="text-[17px] sm:text-[19px] ff-serif"
+                  style={{ color: "#4A4239", fontWeight: 380 }}
+                >
+                  {it}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="relative pt-8">
+          <div
+            className="absolute top-0 left-0 right-0 h-px"
+            style={{ background: ACC }}
+          />
+          <div className="flex items-baseline gap-3 mb-6">
+            <span
+              className="text-[11px] ff-mono uppercase tracking-[0.2em]"
+              style={{ color: ACC }}
+            >
+              Cột B
+            </span>
+            <span
+              className="text-[14px] sm:text-[15px] uppercase tracking-[0.18em]"
+              style={{ color: ACC }}
+            >
+              {COPY.problem.important.label}
+            </span>
+          </div>
+          <ul className="space-y-0">
+            {COPY.problem.important.items.map((it, i) => (
+              <li
+                key={i}
+                className="flex items-baseline gap-4 py-4 border-b"
+                style={{ borderColor: "#EFE9DD" }}
+              >
+                <IconCheck
+                  size={14}
+                  style={{ color: ACC }}
+                  className="mt-0.5"
+                />
+                <span
+                  className="text-[17px] sm:text-[19px] ff-serif"
+                  style={{ color: "#1F1B16", fontWeight: 400 }}
+                >
+                  {it}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <p
+        className="mt-12 sm:mt-14 max-w-2xl text-[15px] sm:text-[16px] leading-relaxed italic ff-serif"
+        style={{ color: "#4A4239" }}
+      >
+        Mỗi cuộc gọi nhỡ là một câu hỏi: có quan trọng không? Bonia trả lời câu
+        hỏi đó cho bạn, trước khi bạn phải bận tâm.
+      </p>
+    </section>
+  );
+}
+
+function Solution() {
+  return (
+    <section
+      id="solution"
+      className="px-6 sm:px-12 py-20 sm:py-24"
+      style={{ background: BG }}
+    >
+      <SectionHead
+        eyebrow={COPY.solution.eyebrow}
+        title={COPY.solution.title}
+        sub={COPY.solution.sub}
+        accent={ACC}
+        kicker="№ 03"
+      />
+      <div className="mt-14 sm:mt-16 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+        <div className="lg:col-span-7">
+          <ol className="space-y-0">
+            {COPY.solution.features.map((f, i) => (
+              <li
+                key={i}
+                className="grid grid-cols-12 gap-4 sm:gap-6 py-6 sm:py-7 border-b"
+                style={{ borderColor: "#D9D0BF" }}
+              >
+                <span
+                  className="col-span-2 sm:col-span-1 ff-mono text-[13px] mt-1"
+                  style={{ color: ACC }}
+                >
+                  0{i + 1}
+                </span>
+                <div className="col-span-10 sm:col-span-11">
+                  <h3
+                    className="text-[20px] sm:text-[22px] leading-tight ff-serif"
+                    style={{ color: "#1F1B16", fontWeight: 500 }}
+                  >
+                    {f.title}
+                  </h3>
+                  <p
+                    className="mt-2 text-[15px] sm:text-[16px] leading-relaxed max-w-xl"
+                    style={{ color: "#4A4239" }}
+                  >
+                    {f.body}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div className="lg:col-span-5 flex justify-center lg:sticky lg:top-8">
+          <div className="relative">
+            <CallListPhone accent={ACC} />
+            <div
+              className="absolute -bottom-8 left-0 right-0 text-center text-[11px] uppercase tracking-[0.22em]"
+              style={{ color: "#7A6F62" }}
+            >
+              Danh sách cuộc gọi — Bonia
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HowItWorks() {
+  return (
+    <section
+      id="how"
+      className="px-6 sm:px-12 py-20 sm:py-24"
+      style={{ background: "#fff" }}
+    >
+      <SectionHead
+        eyebrow={COPY.how.eyebrow}
+        title={COPY.how.title}
+        accent={ACC}
+        kicker="№ 04"
+      />
+      <div className="mt-14 sm:mt-16 relative">
+        {/* Horizontal hairline connecting the 3 circles (desktop only) */}
+        <div
+          className="hidden md:block absolute top-7 left-[16.66%] right-[16.66%] h-px"
+          style={{ background: "#D9D0BF" }}
+        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          {COPY.how.steps.map((s, i) => (
+            <div key={i} className="flex flex-col items-center text-center">
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center text-[15px] ff-mono mb-6 relative z-10"
+                style={{
+                  background: "#fff",
+                  color: ACC,
+                  border: "1px solid #D9D0BF",
+                }}
+              >
+                {s.n}
+              </div>
+              <h3
+                className="text-[22px] sm:text-[24px] leading-snug ff-serif"
+                style={{ color: "#1F1B16", fontWeight: 500 }}
+              >
+                {s.title}
+              </h3>
+              <p
+                className="mt-3 text-[15px] sm:text-[16px] leading-relaxed max-w-xs"
+                style={{ color: "#4A4239" }}
+              >
+                {s.body}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Examples() {
+  // Per-card accent color, chosen as muted earth tones to fit the editorial palette
+  const COLORS = {
+    Telesales: "#A04545", // muted rust — call rejected
+    Shipper: "#7B4A2D", // clay — urgent action
+    "Nhà tuyển dụng": "#3B5269", // muted blue — important
+  };
+  return (
+    <section
+      id="examples"
+      className="px-6 sm:px-12 py-20 sm:py-24"
+      style={{ background: BG }}
+    >
+      <SectionHead
+        eyebrow={COPY.examples.eyebrow}
+        title={COPY.examples.title}
+        accent={ACC}
+        kicker="№ 05"
+      />
+      <div className="mt-12 sm:mt-14 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        {COPY.examples.cards.map((c, i) => {
+          const cardColor = COLORS[c.kind] || ACC;
+          return (
+            <figure
+              key={i}
+              className="bg-white border p-6 flex flex-col relative overflow-hidden"
+              style={{ borderColor: "#D9D0BF" }}
+            >
+              {/* Top accent bar */}
+              <div
+                className="absolute top-0 left-0 right-0 h-[3px]"
+                style={{ background: cardColor }}
+              />
+              <div
+                className="flex items-center justify-between pb-4 mb-4 border-b"
+                style={{ borderColor: "#EFE9DD" }}
+              >
+                <span
+                  className="text-[11px] uppercase tracking-[0.18em] font-medium"
+                  style={{ color: cardColor }}
+                >
+                  {c.kind}
+                </span>
+                <span
+                  className="text-[11px] ff-mono"
+                  style={{ color: "#7A6F62" }}
+                >
+                  {c.time}
+                </span>
+              </div>
+              <div className="mb-3" style={{ color: cardColor }}>
+                <IconQuote size={20} />
+              </div>
+              <blockquote
+                className="flex-1 text-[17px] sm:text-[18px] leading-[1.5] ff-serif"
+                style={{ color: "#1F1B16", fontWeight: 380 }}
+              >
+                "{c.quote}"
+              </blockquote>
+              <figcaption
+                className="mt-5 pt-4 border-t text-[12px] flex items-center gap-2"
+                style={{ borderColor: "#EFE9DD", color: "#7A6F62" }}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: cardColor }}
+                />
+                {c.meta}
+              </figcaption>
+            </figure>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function FAQSection() {
+  return (
+    <section
+      id="faq"
+      className="px-6 sm:px-12 py-20 sm:py-24"
+      style={{ background: "#fff" }}
+    >
+      <SectionHead
+        eyebrow={COPY.concerns.eyebrow}
+        title={COPY.concerns.title}
+        accent={ACC}
+        kicker="№ 06"
+        align="center"
+      />
+
+      {/* Top 3 concerns — exposed as cards with answers visible */}
+      <div className="mt-14 sm:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
+        {COPY.concerns.items.map((it, i) => (
+          <article
+            key={i}
+            className="bg-white border p-7 flex flex-col"
+            style={{ borderColor: "#D9D0BF" }}
+          >
+            <div
+              className="text-[11px] ff-mono uppercase tracking-[0.2em] mb-4"
+              style={{ color: ACC }}
+            >
+              Băn khoăn {String(i + 1).padStart(2, "0")}
+            </div>
+            <h3
+              className="text-[20px] sm:text-[22px] leading-snug ff-serif"
+              style={{ color: "#1F1B16", fontWeight: 500 }}
+            >
+              {it.q}
+            </h3>
+            <p
+              className="mt-4 text-[14px] sm:text-[15px] leading-relaxed flex-1"
+              style={{ color: "#4A4239" }}
+            >
+              {it.a}
+            </p>
+          </article>
+        ))}
+      </div>
+
+      {/* Privacy preamble — two commitments, balanced 2-col */}
+      <div className="mt-20 sm:mt-24 max-w-5xl mx-auto">
+        <div
+          className="text-center text-[11px] uppercase tracking-[0.22em] mb-8"
+          style={{ color: "#7A6F62" }}
+        >
+          Riêng tư & tin cậy
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          {COPY.privacy.items.map((p, i) => (
+            <div
+              key={i}
+              className="border-t-2 pt-5 text-center flex flex-col items-center"
+              style={{ borderColor: ACC }}
+            >
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <IconShield size={14} style={{ color: ACC }} />
+                <span
+                  className="text-[11px] uppercase tracking-[0.18em]"
+                  style={{ color: ACC }}
+                >
+                  {i === 0 ? "Riêng tư" : "Tin cậy"}
+                </span>
+              </div>
+              <h4
+                className="text-[17px] sm:text-[18px] ff-serif leading-snug max-w-xs"
+                style={{ color: "#1F1B16", fontWeight: 500 }}
+              >
+                {p.title}
+              </h4>
+              <p
+                className="mt-2 text-[14px] leading-relaxed max-w-sm"
+                style={{ color: "#4A4239" }}
+              >
+                {p.body}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Full FAQ list */}
+      <div className="mt-20 sm:mt-24 max-w-6xl mx-auto">
+        <div className="flex items-baseline gap-3 justify-center mb-10">
+          <span className="text-[12px] ff-mono" style={{ color: ACC }}>
+            № 06.2
+          </span>
+          <span
+            className="text-[11px] uppercase tracking-[0.22em]"
+            style={{ color: "#7A6F62" }}
+          >
+            {COPY.faq.eyebrow}
+          </span>
+        </div>
+        <FAQList items={COPY.faq.items} accent={ACC} columns={2} />
+      </div>
+    </section>
+  );
+}
+
+function FinalCTA({ onResult }) {
+  return (
+    <section
+      id="cta"
+      className="px-6 sm:px-12 py-20 sm:py-24 relative overflow-hidden navy-grad"
+    >
+      <div
+        className="absolute inset-0 opacity-[0.05]"
+        style={{
+          backgroundImage:
+            "linear-gradient(transparent 95%, rgba(255,255,255,0.4) 95%), linear-gradient(90deg, transparent 95%, rgba(255,255,255,0.4) 95%)",
+          backgroundSize: "64px 64px",
+        }}
+      />
+      <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+        <div>
+          <span className="text-[11px] uppercase tracking-[0.22em] text-white/55">
+            № 07 — {COPY.cta.eyebrow}
+          </span>
+          <h2
+            className="mt-4 text-[36px] sm:text-[48px] lg:text-[60px] leading-[1.04] tracking-tight text-white ff-serif"
+            style={{ fontWeight: 400 }}
+          >
+            {COPY.cta.title}
+          </h2>
+          <p className="mt-5 text-[16px] sm:text-[17px] leading-relaxed max-w-md text-white/75">
+            {COPY.cta.sub}
+          </p>
+          <div className="mt-10 grid grid-cols-2 gap-6 max-w-md">
+            <div className="border-t pt-3 border-white/15">
+              <div className="text-[22px] sm:text-[24px] font-medium text-white ff-serif">
+                2 phút
+              </div>
+              <div className="text-[12px] uppercase tracking-wider text-white/55 mt-1">
+                Thời gian cài
+              </div>
+            </div>
+            <div className="border-t pt-3 border-white/15">
+              <div className="text-[22px] sm:text-[24px] font-medium text-white ff-serif">
+                0đ
+              </div>
+              <div className="text-[12px] uppercase tracking-wider text-white/55 mt-1">
+                Miễn phí trọn đời
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="lg:pl-8">
+          <SignupForm accent={ACC2_WARM} dark onResult={onResult} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// App
+// ─────────────────────────────────────────────────────────────────────────────
+function App() {
+  const [toast, setToast] = useState(null); // { msg, type } | null
+
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  return (
+    <div className="font-sans" style={{ background: BG, color: "#1F1B16" }}>
+      {toast && (
         <div className="fixed top-4 right-4 z-50 animate-fade-in-up">
           <div
             className={`${
-              modalType === "success"
-                ? "bg-green-50 border-green-500 text-green-800"
-                : "bg-red-50 border-red-500 text-red-800"
-            } border-l-4 p-4 rounded-lg shadow-lg max-w-sm`}
+              toast.type === "success"
+                ? "bg-white text-[#1F1B16] border-l-4"
+                : "bg-white text-[#7B2D2D] border-l-4 border-red-500"
+            } shadow-lg px-4 py-3 rounded-r max-w-sm border`}
+            style={{
+              borderColor: toast.type === "success" ? ACC : "#D9D0BF",
+              borderLeftColor: toast.type === "success" ? ACC : "#B91C1C",
+            }}
           >
-            <div className="flex items-center gap-3">
-              {modalType === "success" ? (
-                <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-              ) : (
-                <PhoneOff className="h-5 w-5 text-red-500 flex-shrink-0" />
-              )}
-              <p className="text-sm font-medium flex-1">{modalMessage}</p>
+            <div className="flex items-start gap-3">
+              <p className="text-sm font-medium flex-1">{toast.msg}</p>
               <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                onClick={() => setToast(null)}
+                className="text-[#7A6F62] hover:text-[#1F1B16] mt-0.5"
+                aria-label="Close"
               >
-                <svg
-                  className="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <IconX size={14} />
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Header ── */}
-      <header className="fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div className="container mx-auto px-5 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="Bonia" className="h-8" />
-            <span className="text-lg font-bold text-[#191970] tracking-tight">
-              Bonia
-            </span>
-          </div>
-          <a
-            href="#signup"
-            className="text-sm font-medium text-[#191970] hover:text-indigo-600 transition-colors"
-          >
-            Đăng ký miễn phí
-          </a>
-        </div>
-      </header>
-
-      {/* ── 1. Hero ── */}
-      <section className="pt-28 pb-20 md:pt-36 md:pb-28 bg-gradient-to-b from-blue-50/70 to-white">
-        <div className="container mx-auto px-5 sm:px-6">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center max-w-6xl mx-auto">
-            {/* Left — Copy */}
-            <div>
-              <FadeIn>
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#191970] leading-tight md:leading-[1.15] lg:leading-[1.2] tracking-tight">
-                  80% cuộc gọi lạ là spam.
-                  <br />
-                  Đừng bắt máy vô ích nữa.
-                </h1>
-              </FadeIn>
-              <FadeIn delay={100}>
-                <p className="mt-6 text-gray-600 text-lg leading-relaxed max-w-lg">
-                  Bonia nghe máy thay bạn khi bạn không trả lời.
-                </p>
-                <p className="mt-1 text-gray-600 text-lg leading-relaxed max-w-lg">
-                  AI hỏi lý do cuộc gọi và báo lại cho bạn ngay lập tức.
-                </p>
-                <p className="mt-1 text-gray-600 text-lg leading-relaxed max-w-lg">
-                  Bạn chỉ trả lời những cuộc gọi đáng nghe.
-                </p>
-              </FadeIn>
-              <FadeIn delay={200}>
-                <div className="mt-8 flex flex-wrap gap-4">
-                  <a
-                    href="#signup"
-                    className="inline-flex items-center gap-2 bg-[#191970] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#0f0f50] transition-colors shadow-lg shadow-indigo-900/20"
-                  >
-                    Đăng ký miễn phí
-                    <ArrowRight className="w-4 h-4" />
-                  </a>
-                  <a
-                    href="#how-it-works"
-                    className="inline-flex items-center gap-2 text-[#191970] px-6 py-3 rounded-xl font-semibold border-2 border-gray-200 hover:border-[#191970] transition-colors"
-                  >
-                    Xem cách hoạt động
-                  </a>
-                </div>
-              </FadeIn>
-            </div>
-
-            {/* Right — Animated phone demo */}
-            <FadeIn delay={300} className="flex justify-center">
-              <div className="relative">
-                <div className="w-[280px] sm:w-[300px] bg-gray-950 rounded-[3rem] p-3 shadow-2xl">
-                  <div className="rounded-[2.4rem] overflow-hidden h-[520px] sm:h-[560px] relative">
-                    {/* ── Layer 1: Lock Screen ── */}
-                    <div
-                      className={`absolute inset-0 flex flex-col transition-opacity duration-500 ${isLockScreen ? "opacity-100 z-20" : "opacity-0 z-0"}`}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-950" />
-                      <div className="relative z-10 flex items-center justify-between px-7 pt-4 pb-1">
-                        <span className="text-xs font-medium text-white/80">
-                          9:41
-                        </span>
-                        <div className="w-24 h-[26px] bg-black rounded-full" />
-                        <div className="w-4 h-2.5 border border-white/50 rounded-sm relative">
-                          <div className="absolute inset-0.5 bg-white/50 rounded-[1px]" />
-                        </div>
-                      </div>
-                      <div className="relative z-10 text-center mt-10">
-                        <p className="text-white/50 text-xs">
-                          Chủ nhật, 1 tháng 3
-                        </p>
-                        <p className="text-white text-5xl font-extralight mt-1 tracking-tight">
-                          9:41
-                        </p>
-                      </div>
-                      <div
-                        className={`relative z-10 mx-3 mt-8 transition-all duration-500 ease-out ${notifVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-6"}`}
-                      >
-                        <div className="bg-white/15 backdrop-blur-xl rounded-2xl p-3.5 border border-white/10">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <img
-                              src="/logo.png"
-                              alt=""
-                              className="w-4 h-4 rounded"
-                            />
-                            <span className="text-[10px] font-semibold text-white/60 uppercase tracking-wider">
-                              Bonia
-                            </span>
-                            <span className="text-[10px] text-white/40 ml-auto">
-                              bây giờ
-                            </span>
-                          </div>
-                          <p
-                            className={`text-xs font-bold mb-0.5 ${isSpam ? "text-[#FCA5A5]" : "text-[#5EEAD4]"}`}
-                          >
-                            {currentCall.tag.toUpperCase()}
-                          </p>
-                          <p className="text-xs font-medium text-white/90">
-                            {currentCall.phone}
-                          </p>
-                          <p className="text-[11px] text-white/50 mt-0.5 line-clamp-1">
-                            {currentCall.summary}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* ── Layer 2: Call Detail (real screenshots) ── */}
-                    <div
-                      className={`absolute inset-0 transition-opacity duration-500 ${isDetail ? "opacity-100 z-20" : "opacity-0 z-0"}`}
-                    >
-                      <img
-                        src={
-                          isSpam
-                            ? "/screenshots/detail-spam.png"
-                            : "/screenshots/detail-important.png"
-                        }
-                        alt="Bonia call detail"
-                        className="w-full h-full object-cover object-top"
-                      />
-                    </div>
-
-                    {/* ── Layer 3: Calling Screen ── */}
-                    <div
-                      className={`absolute inset-0 flex flex-col transition-opacity duration-500 ${isCalling ? "opacity-100 z-20" : "opacity-0 z-0"}`}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-950" />
-                      <div className="relative z-10 flex items-center justify-between px-7 pt-4 pb-1">
-                        <span className="text-xs font-medium text-white/80">
-                          9:41
-                        </span>
-                        <div className="w-24 h-[26px] bg-black rounded-full" />
-                        <div className="w-4 h-2.5 border border-white/50 rounded-sm relative">
-                          <div className="absolute inset-0.5 bg-white/50 rounded-[1px]" />
-                        </div>
-                      </div>
-                      <div className="relative z-10 flex-1 flex flex-col items-center justify-center -mt-10">
-                        <p className="text-white/90 text-xl font-bold">
-                          {demoImportantCall.phone}
-                        </p>
-                        <p className="text-white/50 text-sm mt-2">
-                          đang gọi...
-                        </p>
-                      </div>
-                      <div className="relative z-10 flex justify-center pb-14">
-                        <div className="w-14 h-14 bg-red-500 rounded-full flex items-center justify-center shadow-lg shadow-red-500/30">
-                          <PhoneOff className="w-6 h-6 text-white" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </FadeIn>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 2. Problem Framing ── */}
-      <section className="py-24 md:py-32 bg-gray-50">
-        <div className="container mx-auto px-5 sm:px-6 max-w-4xl">
-          <FadeIn>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#191970] leading-tight tracking-tight">
-              Bao nhiêu cuộc gọi mỗi ngày <br className="hidden sm:block" />
-              là không đáng trả lời?
-            </h2>
-          </FadeIn>
-
-          <div className="mt-14 grid md:grid-cols-2 gap-10 md:gap-16">
-            <FadeIn delay={100}>
-              <div>
-                <p className="text-sm font-semibold text-red-500 uppercase tracking-wider mb-5">
-                  Những cuộc gọi phiền
-                </p>
-                <ul className="space-y-3.5">
-                  {[
-                    "Chào vay, thẻ tín dụng",
-                    "Lừa đảo, mạo danh cơ quan",
-                    "Tư vấn tài chính, chứng khoán",
-                    "Khảo sát, quảng cáo",
-                    "Đòi nợ người liên quan",
-                  ].map((item) => (
-                    <li
-                      key={item}
-                      className="flex items-center gap-3 text-gray-600"
-                    >
-                      <PhoneOff className="w-4 h-4 text-red-400 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={200}>
-              <div>
-                <p className="text-sm font-semibold text-teal-600 uppercase tracking-wider mb-5">
-                  Nhưng cũng có thể là
-                </p>
-                <ul className="space-y-3.5">
-                  {[
-                    "Shipper giao hàng",
-                    "Tài xế Grab, XanhSM",
-                    "HR gọi phỏng vấn",
-                    "Đối tác công việc",
-                    "Người quen gọi từ số lạ",
-                  ].map((item) => (
-                    <li
-                      key={item}
-                      className="flex items-center gap-3 text-gray-700 font-medium"
-                    >
-                      <Phone className="w-4 h-4 text-teal-500 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </FadeIn>
-          </div>
-
-          <FadeIn delay={300}>
-            <p className="mt-14 text-lg text-[#191970] font-semibold">
-              Vấn đề không phải là cuộc gọi.
-            </p>
-            <p className="mt-2 text-lg text-[#191970] font-semibold">
-              Vấn đề là bạn không biết đó là gì trước khi bắt máy.
-            </p>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ── 3. Solution + Benefits (Consolidated) ── */}
-      <section className="py-24 md:py-32">
-        <div className="container mx-auto px-5 sm:px-6 max-w-6xl">
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
-            {/* Left — Content */}
-            <div>
-              <FadeIn>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#191970] leading-tight tracking-tight">
-                  Bonia là lớp bảo vệ giữa bạn và spam
-                </h2>
-                <p className="mt-4 text-gray-500 text-lg leading-relaxed">
-                  Khi bạn không bắt máy sau 15-20s, Bonia tự động tiếp nhận cuộc
-                  gọi và cho bạn biết mọi thứ.
-                </p>
-              </FadeIn>
-
-              <div className="mt-10 space-y-6">
-                {[
-                  {
-                    icon: <Phone className="w-5 h-5" />,
-                    title: "Nghe máy thay bạn",
-                    desc: "Trò chuyện ngắn với người gọi bằng giọng AI tự nhiên.",
-                  },
-                  {
-                    icon: <Eye className="w-5 h-5" />,
-                    title: "Xác định lý do gọi",
-                    desc: "Phân loại cuộc gọi: quan trọng, spam, giao hàng, telesale...",
-                  },
-                  {
-                    icon: <Bell className="w-5 h-5" />,
-                    title: "Thông báo tóm tắt ngay",
-                    desc: "Push notification tóm tắt nội dung cuộc gọi.",
-                  },
-                  {
-                    icon: <Shield className="w-5 h-5" />,
-                    title: "Bạn toàn quyền kiểm soát",
-                    desc: "Gọi lại, chặn số, hoặc bỏ qua. Bật / tắt bất cứ lúc nào.",
-                  },
-                ].map((item, i) => (
-                  <FadeIn key={i} delay={i * 100}>
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-[#191970]/10 text-[#191970] flex items-center justify-center flex-shrink-0 mt-0.5">
-                        {item.icon}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-[#191970] text-base">
-                          {item.title}
-                        </h3>
-                        <p className="text-gray-500 text-sm mt-1 leading-relaxed">
-                          {item.desc}
-                        </p>
-                      </div>
-                    </div>
-                  </FadeIn>
-                ))}
-              </div>
-            </div>
-
-            {/* Right — Call list screenshot in phone frame */}
-            <FadeIn delay={200} className="flex justify-center">
-              <div className="w-[240px] sm:w-[260px] bg-gray-950 rounded-[2.8rem] p-2.5 shadow-2xl">
-                <div className="rounded-[2.2rem] overflow-hidden">
-                  <img
-                    src="/screenshots/calllist.png"
-                    alt="Bonia danh sách cuộc gọi"
-                    className="w-full"
-                  />
-                </div>
-              </div>
-            </FadeIn>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 4. How It Works — Visual Timeline ── */}
-      <section id="how-it-works" className="py-24 md:py-32 bg-gray-50">
-        <div className="container mx-auto px-5 sm:px-6 max-w-5xl">
-          <FadeIn>
-            <p className="text-sm font-semibold text-[#191970] uppercase tracking-wider mb-3">
-              Cách hoạt động
-            </p>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#191970] tracking-tight">
-              Chỉ 3 bước đơn giản
-            </h2>
-          </FadeIn>
-
-          {/* Desktop: horizontal timeline */}
-          <div className="mt-16 hidden md:block">
-            <div className="relative">
-              {/* Connecting line */}
-              <div className="absolute top-6 left-[calc(16.67%-0px)] right-[calc(16.67%-0px)] h-0.5 bg-[#191970]/15" />
-
-              <div className="grid grid-cols-3 gap-6">
-                {[
-                  {
-                    step: "1",
-                    icon: <PhoneForwarded className="w-5 h-5" />,
-                    title: "Bật chuyển hướng",
-                    desc: "Điện thoại vẫn đổ chuông bình thường. Chỉ khi bạn không bắt máy, cuộc gọi mới chuyển sang Bonia.",
-                  },
-                  {
-                    step: "2",
-                    icon: <Phone className="w-5 h-5" />,
-                    title: "Bonia tiếp nhận",
-                    desc: "Bonia hỏi mục đích cuộc gọi, trò chuyện ngắn với người gọi, và phân loại nội dung.",
-                  },
-                  {
-                    step: "3",
-                    icon: <Bell className="w-5 h-5" />,
-                    title: "Bạn nhận thông báo",
-                    desc: "Biết người gọi là ai, gọi vì việc gì. Chọn hành động chỉ với một chạm.",
-                  },
-                ].map((item, i) => (
-                  <FadeIn key={i} delay={i * 150}>
-                    <div className="flex flex-col items-center text-center">
-                      {/* Step circle on the line */}
-                      <div className="w-12 h-12 rounded-full bg-[#191970] text-white flex items-center justify-center mb-6 relative z-10 shadow-lg shadow-[#191970]/20">
-                        {item.icon}
-                      </div>
-                      <h3 className="text-lg font-semibold text-[#191970] mb-2">
-                        {item.title}
-                      </h3>
-                      <p className="text-gray-500 text-sm leading-relaxed max-w-[260px]">
-                        {item.desc}
-                      </p>
-                    </div>
-                  </FadeIn>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile: vertical timeline */}
-          <div className="mt-14 md:hidden">
-            <div className="relative">
-              {/* Vertical connecting line */}
-              <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-[#191970]/15" />
-
-              <div className="space-y-10">
-                {[
-                  {
-                    step: "1",
-                    icon: <PhoneForwarded className="w-5 h-5" />,
-                    title: "Bật chuyển hướng",
-                    desc: "Điện thoại vẫn đổ chuông bình thường. Chỉ khi bạn không bắt máy, cuộc gọi mới chuyển sang Bonia.",
-                  },
-                  {
-                    step: "2",
-                    icon: <Phone className="w-5 h-5" />,
-                    title: "Bonia tiếp nhận",
-                    desc: "Bonia hỏi mục đích cuộc gọi, trò chuyện ngắn với người gọi, và phân loại nội dung.",
-                  },
-                  {
-                    step: "3",
-                    icon: <Bell className="w-5 h-5" />,
-                    title: "Bạn nhận thông báo",
-                    desc: "Biết người gọi là ai, gọi vì việc gì. Chọn hành động chỉ với một chạm.",
-                  },
-                ].map((item, i) => (
-                  <FadeIn key={i} delay={i * 150}>
-                    <div className="flex items-start gap-5">
-                      <div className="w-10 h-10 rounded-full bg-[#191970] text-white flex items-center justify-center flex-shrink-0 relative z-10 shadow-lg shadow-[#191970]/20">
-                        {item.icon}
-                      </div>
-                      <div className="pt-1">
-                        <h3 className="text-base font-semibold text-[#191970] mb-1">
-                          {item.title}
-                        </h3>
-                        <p className="text-gray-500 text-sm leading-relaxed">
-                          {item.desc}
-                        </p>
-                      </div>
-                    </div>
-                  </FadeIn>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 5. Real-World Examples ── */}
-      <section className="py-24 md:py-32">
-        <div className="container mx-auto px-5 sm:px-6 max-w-5xl">
-          <FadeIn>
-            <p className="text-sm font-semibold text-[#191970] uppercase tracking-wider mb-3">
-              Ví dụ thực tế
-            </p>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#191970] tracking-tight">
-              Bonia xử lý cho bạn
-            </h2>
-          </FadeIn>
-
-          <div className="mt-14 grid md:grid-cols-3 gap-6">
-            {[
-              {
-                scenario: "Khi shipper gọi",
-                quote: "Giao hàng Shopee, mình giao lúc 5h được không?",
-                result: "Bạn biết đó là giao hàng — gọi lại ngay nếu cần.",
-                borderColor: "border-l-teal-400",
-                tagClass: "bg-teal-50 text-teal-700",
-                tag: "Giao hàng",
-              },
-              {
-                scenario: "Khi HR gọi phỏng vấn",
-                quote: "Bên anh muốn trao đổi về CV ứng tuyển...",
-                result: "Không bỏ lỡ cơ hội quan trọng.",
-                borderColor: "border-l-blue-400",
-                tagClass: "bg-blue-50 text-blue-700",
-                tag: "Quan trọng",
-              },
-              {
-                scenario: "Khi là quảng cáo",
-                quote: "Tư vấn bảo hiểm miễn phí...",
-                result: "Bonia nhận diện — bạn không mất thời gian.",
-                borderColor: "border-l-red-400",
-                tagClass: "bg-red-50 text-red-700",
-                tag: "Spam",
-              },
-            ].map((item, i) => (
-              <FadeIn key={i} delay={i * 150}>
-                <div
-                  className={`bg-white rounded-2xl p-6 border border-gray-100 border-l-4 ${item.borderColor} h-full flex flex-col hover:shadow-md hover:border-gray-200 transition-all duration-300`}
-                >
-                  <span
-                    className={`text-xs font-semibold px-2.5 py-1 rounded-full ${item.tagClass} w-fit mb-4`}
-                  >
-                    {item.tag}
-                  </span>
-                  <h3 className="font-semibold text-[#191970] mb-3">
-                    {item.scenario}
-                  </h3>
-                  <p className="text-gray-500 text-sm italic mb-4 flex-1">
-                    "{item.quote}"
-                  </p>
-                  <p className="text-sm text-gray-700 font-medium">
-                    {item.result}
-                  </p>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 6. Privacy & Trust ── */}
-      <section className="py-24 md:py-32 bg-gray-50">
-        <div className="container mx-auto px-5 sm:px-6 max-w-4xl">
-          <FadeIn>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#191970] tracking-tight">
-              Riêng tư & an toàn
-            </h2>
-          </FadeIn>
-
-          <div className="mt-14 grid md:grid-cols-2 gap-12">
-            <FadeIn delay={100}>
-              <div className="flex items-start gap-5">
-                <div className="w-11 h-11 rounded-xl bg-[#191970]/10 text-[#191970] flex items-center justify-center flex-shrink-0 mt-1">
-                  <Shield className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-[#191970] mb-2">
-                    Chỉ xử lý khi bạn không bắt máy
-                  </h3>
-                  <p className="text-gray-500 text-sm leading-relaxed">
-                    Bonia không nghe lén. Không can thiệp cuộc gọi đang diễn ra.
-                    Bonia chỉ hoạt động khi bạn không trả lời cuộc gọi sau
-                    khoảng 15s.
-                  </p>
-                  <p className="mt-4 text-gray-500 text-sm leading-relaxed">
-                    Bạn có thể hủy chuyển hướng bất kỳ lúc nào.
-                  </p>
-                </div>
-              </div>
-            </FadeIn>
-            <FadeIn delay={200}>
-              <div className="flex items-start gap-5">
-                <div className="w-11 h-11 rounded-xl bg-[#191970]/10 text-[#191970] flex items-center justify-center flex-shrink-0 mt-1">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-[#191970] mb-2">
-                    Danh bạ của bạn được bảo vệ
-                  </h3>
-                  <p className="text-gray-500 text-sm leading-relaxed mb-4">
-                    Số điện thoại trong danh bạ được chuyển thành chuỗi mã một
-                    chiều trên thiết bị của bạn trước khi gửi đi.
-                  </p>
-                  <p className="text-gray-500 text-sm leading-relaxed mb-4">
-                    Chúng tôi không lưu danh bạ gốc của bạn.
-                  </p>
-                  {/* <div className="bg-white rounded-xl p-4 font-mono text-sm border border-gray-100">
-                    <span className="text-gray-400">0909 291 268</span>
-                    <span className="mx-2 text-gray-300">→</span>
-                    <span className="text-[#191970] font-medium">
-                      7f3a9c1d...
-                    </span>
-                  </div>
-                  <p className="mt-3 text-gray-400 text-xs">
-                    Chuỗi này không thể đảo ngược lại số gốc.
-                  </p> */}
-                </div>
-              </div>
-            </FadeIn>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 7. FAQ — 2 columns ── */}
-      <section className="py-24 md:py-32">
-        <div className="container mx-auto px-5 sm:px-6 max-w-5xl">
-          <FadeIn>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#191970] tracking-tight mb-14">
-              Câu hỏi thường gặp
-            </h2>
-          </FadeIn>
-
-          <div className="grid md:grid-cols-2 gap-3">
-            {faqs.map((faq, i) => (
-              <FadeIn key={i} delay={i * 50}>
-                <div className="bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden hover:border-gray-200 transition-colors duration-300 h-fit">
-                  <button
-                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                    className="w-full flex items-center justify-between p-5 text-left"
-                  >
-                    <span className="font-semibold text-[#191970] text-sm pr-3">
-                      {faq.q}
-                    </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-300 ${
-                        openFaq === i ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                  <div
-                    className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                      openFaq === i
-                        ? "max-h-48 opacity-100"
-                        : "max-h-0 opacity-0"
-                    }`}
-                  >
-                    <p className="px-5 pb-5 text-gray-500 text-sm leading-relaxed">
-                      {faq.a}
-                    </p>
-                  </div>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 8. Final CTA — Navy Gradient ── */}
-      <section id="signup" className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#191970] via-[#0f0f50] to-[#191970]" />
-        {/* Subtle dot pattern for depth */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, white 1px, transparent 1px)",
-            backgroundSize: "24px 24px",
-          }}
-        />
-
-        <div className="relative z-10 container mx-auto px-5 sm:px-6 py-24 md:py-32">
-          <div className="max-w-2xl mx-auto text-center">
-            <FadeIn>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight tracking-tight">
-                Đừng để spam quyết định
-                <span className="sm:hidden"> </span>
-                <br className="hidden sm:block" />
-                thời gian của bạn.
-              </h2>
-              <p className="mt-4 text-white/60 text-lg">
-                Hãy để Bonia giúp bạn chỉ trả lời những cuộc gọi đáng nghe.
-              </p>
-            </FadeIn>
-
-            <FadeIn delay={150}>
-              <form
-                onSubmit={handleSubmit}
-                className="mt-10 flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-              >
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Nhập số điện thoại của bạn"
-                  className="flex-1 px-5 py-3.5 rounded-xl border-2 border-white/20 bg-white/10 backdrop-blur-sm focus:border-white/50 focus:outline-none transition-colors text-white placeholder-white/40"
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="bg-white hover:bg-gray-100 disabled:bg-gray-400 disabled:cursor-not-allowed text-[#191970] px-7 py-3.5 rounded-xl font-semibold transition-colors shadow-lg whitespace-nowrap"
-                >
-                  {isSubmitting ? "Đang gửi..." : "Đăng ký trải nghiệm"}
-                </button>
-              </form>
-            </FadeIn>
-
-            <FadeIn delay={250}>
-              <div className="mt-6 flex flex-wrap justify-center gap-5 text-white/50 text-sm">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Miễn phí dùng thử</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Hủy bất cứ khi nào</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Mọi nhà mạng</span>
-                </div>
-              </div>
-            </FadeIn>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Footer ── */}
-      <footer className="border-t border-gray-100">
-        <div className="container mx-auto px-5 sm:px-6 py-10">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div className="md:col-span-2">
-              <div className="flex items-center gap-2 mb-3">
-                <img src="/logo.png" alt="Bonia" className="h-8" />
-                <span className="text-lg font-bold text-[#191970] tracking-tight">
-                  Bonia
-                </span>
-              </div>
-              <p className="text-gray-500 text-sm max-w-sm mb-4">
-                Trợ lý AI sàng lọc cuộc gọi.
-              </p>
-              <div className="text-sm text-gray-400 space-y-1">
-                <p className="font-medium text-gray-500">
-                  Duy Nhien Investment Co., Ltd
-                </p>
-                <p>120 N2, Mega Village, Phường Long Trường, TP. Hồ Chí Minh</p>
-                <p>Mã số thuế: 0319376631</p>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-gray-900 text-sm mb-3">
-                Liên kết
-              </h3>
-              <ul className="space-y-2 text-sm text-gray-500">
-                <li>
-                  <a
-                    href="#how-it-works"
-                    className="hover:text-[#191970] transition-colors"
-                  >
-                    Cách hoạt động
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#signup"
-                    className="hover:text-[#191970] transition-colors"
-                  >
-                    Đăng ký
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-gray-900 text-sm mb-3">
-                Pháp lý
-              </h3>
-              <ul className="space-y-2 text-sm text-gray-500">
-                <li>
-                  <a
-                    href="/privacy.html"
-                    className="hover:text-[#191970] transition-colors"
-                  >
-                    Chính sách bảo mật
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/terms.html"
-                    className="hover:text-[#191970] transition-colors"
-                  >
-                    Điều khoản dịch vụ
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/support.html"
-                    className="hover:text-[#191970] transition-colors"
-                  >
-                    Hỗ trợ
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="pt-6 border-t border-gray-100 text-center">
-            <p className="text-sm text-gray-400">
-              © 2026 Bonia. Tất cả quyền được bảo lưu.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Hero />
+      <Problem />
+      <Solution />
+      <HowItWorks />
+      <Examples />
+      <FAQSection />
+      <FinalCTA onResult={showToast} />
+      <div style={{ background: BG }}>
+        <PageFooter accent={ACC} />
+      </div>
     </div>
   );
 }
