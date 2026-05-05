@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Real store URLs (live as of 2026-05-06: iOS Build 22, Play Console v3).
+const APP_STORE_URL = "https://apps.apple.com/vn/app/bonia/id6761518423";
+const PLAY_STORE_URL =
+  "https://play.google.com/store/apps/details?id=net.bonia.app&pcampaignid=web_share";
+
 // Design tokens (clay accent, softened navy CTA)
 // ─────────────────────────────────────────────────────────────────────────────
 const ACC = "#7B4A2D"; // clay (primary)
 const ACC2_WARM = "#9C6D4E"; // muted amber (CTA accent)
 const BG = "#F2EEE6";
-
-// Production endpoint for the signup form (preserved from previous version)
-const GOOGLE_SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbxOsS2N_LZnJ335QtATbdOckCfTuk-a0-iKDqEXAK8YEkbMN1W8AUn_yocfj3CGjXyX/exec";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Inline icons (1.5px stroke, currentColor)
@@ -60,8 +61,7 @@ const COPY = {
     title: "Bonia nghe máy giúp bạn,",
     titleAccent: "khi bạn không tiện trả lời.",
     sub: "Khi bạn không bắt máy, Bonia tự động trả lời, khéo léo tìm hiểu mục đích cuộc gọi và gửi tóm tắt về điện thoại của bạn — bằng tiếng Việt, chi tiết và rõ ràng.",
-    cta: "Đăng ký dùng thử",
-    ctaSub: "Luôn luôn miễn phí!",
+    storesNote: "Có mặt trên iOS & Android — miễn phí, không quảng cáo",
   },
   problem: {
     eyebrow: "Vấn đề",
@@ -228,19 +228,19 @@ const COPY = {
         a: "Trong giai đoạn này, Bonia chỉ hỗ trợ tiếng Việt. Tiếng Anh sẽ được thêm vào trong tương lai.",
       },
       {
-        q: "Làm sao đăng ký dùng thử?",
-        a: "Bạn nhập số điện thoại ở cuối trang. Đội ngũ Bonia sẽ liên hệ để hướng dẫn cài đặt.",
+        q: "Làm sao bắt đầu sử dụng?",
+        a: "Bạn tải Bonia trên App Store hoặc Google Play, mở app và làm theo hướng dẫn. Việc kích hoạt chuyển hướng cuộc gọi mất khoảng 2 phút.",
       },
     ],
   },
   cta: {
-    eyebrow: "Bắt đầu",
-    title: "Đăng ký dùng thử Bonia.",
-    sub: "Để lại số điện thoại — đội ngũ Bonia sẽ liên hệ để gửi tin nhắn hướng dẫn cài đặt và sử dụng.",
-    label: "Số điện thoại của bạn",
-    placeholder: "091 234 5678",
-    button: "Đăng ký",
-    note: "Chỉ gửi tin nhắn hướng dẫn cài đặt và sử dụng",
+    eyebrow: "Tải ứng dụng",
+    titleLead: "Đã có mặt trên",
+    titleAccent: "iOS & Android.",
+    sub: "Tải Bonia, kích hoạt chuyển hướng cuộc gọi trong hai phút — và không bao giờ phải nghe spam nữa.",
+    stat1: { value: "2 phút", label: "Thời gian cài" },
+    stat2: { value: "0đ", label: "Miễn phí trọn đời" },
+    stat3: { value: "SIM Việt Nam", label: "Mọi nhà mạng" },
   },
   footer: {
     company: "Công ty TNHH Duy Nhiên Investment",
@@ -599,7 +599,7 @@ function TopNav({ accent = ACC }) {
           className="text-[14px] font-medium flex items-center gap-1.5"
           style={{ color: accent }}
         >
-          Đăng ký <IconArrow size={12} />
+          Tải app <IconArrow size={12} />
         </a>
       </div>
       <a
@@ -607,7 +607,7 @@ function TopNav({ accent = ACC }) {
         className="md:hidden text-[14px] font-medium flex items-center gap-1.5"
         style={{ color: accent }}
       >
-        Đăng ký <IconArrow size={12} />
+        Tải app <IconArrow size={12} />
       </a>
     </nav>
   );
@@ -657,81 +657,58 @@ function SectionHead({
   );
 }
 
-function SignupForm({ accent = ACC2_WARM, dark = false, onResult }) {
-  const [phone, setPhone] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [sent, setSent] = useState(false);
-
-  const isValidPhone = (value) => {
-    const digits = value.replace(/\D/g, "");
-    return (
-      (digits.length === 10 && digits.startsWith("0")) ||
-      (digits.length === 11 && digits.startsWith("84")) ||
-      (digits.length === 12 && digits.startsWith("84"))
-    );
-  };
-
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    if (!isValidPhone(phone)) {
-      onResult?.("Số điện thoại không hợp lệ. Vui lòng kiểm tra lại.", "error");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      const formData = new URLSearchParams();
-      formData.append("phone", phone);
-      await fetch(GOOGLE_SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        body: formData,
-      });
-      setSent(true);
-      setPhone("");
-      onResult?.("Cảm ơn bạn đã đăng ký! Chúng tôi sẽ liên hệ sớm.", "success");
-    } catch {
-      onResult?.("Có lỗi xảy ra. Vui lòng thử lại.", "error");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const labelClass = dark ? "text-white/60" : "text-[#7A6F62]";
-  const containerBorder = dark ? "border-white/15" : "border-[#D9D0BF]";
-  const containerBg = dark ? "bg-white/5" : "bg-white";
-  const inputClass = dark
-    ? "text-white placeholder-white/40"
-    : "text-[#1F1B16] placeholder-[#A89A86]";
-  const noteClass = dark ? "text-white/50" : "text-[#7A6F62]";
-
+// Store badges — editorial style matching the cream/serif aesthetic instead of
+// using Apple/Google's plastic stock badges. Two visual variants:
+//   "light" — cream paper, dark ink (use over BG sections, e.g. hero)
+//   "dark"  — translucent surface, light ink (use over the navy CTA gradient)
+function StoreBadges({ variant = "light", size = "md" }) {
+  const isDark = variant === "dark";
+  const surface = isDark
+    ? "bg-white/[0.06] border border-white/15 hover:bg-white/[0.10]"
+    : "bg-white border border-[#D9D0BF] hover:border-[#1F1B16]/40";
+  const ink = isDark ? "text-white" : "text-[#1F1B16]";
+  const sub = isDark ? "text-white/55" : "text-[#7A6F62]";
+  const pad = size === "sm" ? "px-4 py-2.5" : "px-5 py-3";
   return (
-    <form onSubmit={onSubmit} className="w-full max-w-md">
-      <label
-        className={`block text-[12px] uppercase tracking-[0.18em] mb-3 ${labelClass}`}
+    <div className="flex flex-wrap items-center gap-3">
+      <a
+        href={APP_STORE_URL}
+        target="_blank"
+        rel="noopener"
+        aria-label="Tải Bonia trên App Store"
+        className={`group flex items-center gap-3 ${pad} ${surface} transition-colors`}
       >
-        {COPY.cta.label}
-      </label>
-      <div className={`flex border ${containerBorder} ${containerBg}`}>
-        <input
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder={COPY.cta.placeholder}
-          required
-          className={`flex-1 px-4 py-3.5 text-[16px] outline-none border-0 bg-transparent ${inputClass}`}
-        />
-        <button
-          type="submit"
-          disabled={submitting}
-          className="px-5 py-3.5 text-[14px] font-medium tracking-wide flex items-center gap-2 transition-colors disabled:opacity-60"
-          style={{ background: accent, color: "#fff" }}
-        >
-          {submitting ? "Đang gửi…" : sent ? "Đã gửi ✓" : COPY.cta.button}
-          {!submitting && !sent && <IconArrow size={14} />}
-        </button>
-      </div>
-      <p className={`mt-3 text-[12px] ${noteClass}`}>{COPY.cta.note}</p>
-    </form>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className={ink}>
+          <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+        </svg>
+        <div className="flex flex-col items-start leading-none">
+          <span className={`text-[10px] uppercase tracking-[0.18em] ${sub}`}>Tải trên</span>
+          <span className={`text-[16px] ff-serif mt-0.5 ${ink}`} style={{ fontWeight: 500 }}>
+            App Store
+          </span>
+        </div>
+      </a>
+      <a
+        href={PLAY_STORE_URL}
+        target="_blank"
+        rel="noopener"
+        aria-label="Tải Bonia trên Google Play"
+        className={`group flex items-center gap-3 ${pad} ${surface} transition-colors`}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" className={ink}>
+          <path
+            d="M3.6 2.3c-.4.3-.6.7-.6 1.3v17c0 .5.2 1 .6 1.3l9.6-9.9-9.6-9.7zM14.4 13.2l2.6 2.7-11.5 6.5 8.9-9.2zM14.4 11l-8.9-9.2 11.5 6.6-2.6 2.6zM18.5 9.7l3.1 1.8c.7.4.7 1.4 0 1.8l-3.1 1.8-2.9-3 2.9-2.4z"
+            fill="currentColor"
+          />
+        </svg>
+        <div className="flex flex-col items-start leading-none">
+          <span className={`text-[10px] uppercase tracking-[0.18em] ${sub}`}>Tải trên</span>
+          <span className={`text-[16px] ff-serif mt-0.5 ${ink}`} style={{ fontWeight: 500 }}>
+            Google Play
+          </span>
+        </div>
+      </a>
+    </div>
   );
 }
 
@@ -904,12 +881,18 @@ function Hero() {
               className="text-[40px] sm:text-[52px] lg:text-[64px] xl:text-[72px] leading-[1.05] tracking-tight ff-serif"
               style={{ color: "#1F1B16", fontWeight: 400 }}
             >
-              <span className="block">{COPY.hero.title.replace(/,$/, "")}</span>
+              <span className="block">
+                Bonia nghe máy
+                <br className="sm:hidden" />{" "}
+                giúp bạn
+              </span>
               <span
                 className="block mt-2"
                 style={{ color: ACC, fontStyle: "italic", fontWeight: 380 }}
               >
-                {COPY.hero.titleAccent}
+                khi bạn không tiện
+                <br className="sm:hidden" />{" "}
+                trả lời.
               </span>
             </h1>
             <p
@@ -918,17 +901,18 @@ function Hero() {
             >
               {COPY.hero.sub}
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-5">
-              <a
-                href="#cta"
-                className="inline-flex items-center gap-2.5 px-6 py-3.5 text-[15px] tracking-wide"
-                style={{ background: ACC, color: "#fff" }}
+            <div className="mt-9">
+              <StoreBadges variant="light" />
+              <div
+                className="mt-4 flex items-center gap-2 text-[13px]"
+                style={{ color: "#7A6F62" }}
               >
-                {COPY.hero.cta} <IconArrow size={14} />
-              </a>
-              <span className="text-[13px]" style={{ color: "#7A6F62" }}>
-                {COPY.hero.ctaSub}
-              </span>
+                <span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: ACC }}
+                />
+                <span>{COPY.hero.storesNote}</span>
+              </div>
             </div>
             <div
               className="mt-12 pt-5 border-t flex items-center justify-between max-w-sm"
@@ -1354,7 +1338,7 @@ function FAQSection() {
   );
 }
 
-function FinalCTA({ onResult }) {
+function FinalCTA() {
   return (
     <section
       id="cta"
@@ -1368,41 +1352,39 @@ function FinalCTA({ onResult }) {
           backgroundSize: "64px 64px",
         }}
       />
-      <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
-        <div>
-          <span className="text-[11px] uppercase tracking-[0.22em] text-white/55">
-            № 07 — {COPY.cta.eyebrow}
-          </span>
-          <h2
-            className="mt-4 text-[36px] sm:text-[48px] lg:text-[60px] leading-[1.04] tracking-tight text-white ff-serif"
-            style={{ fontWeight: 400 }}
+      <div className="relative max-w-5xl mx-auto text-center">
+        <span className="text-[11px] uppercase tracking-[0.22em] text-white/55">
+          № 07 — {COPY.cta.eyebrow}
+        </span>
+        <h2
+          className="mt-5 text-[40px] sm:text-[52px] lg:text-[72px] leading-[1.04] tracking-tight text-white ff-serif"
+          style={{ fontWeight: 400 }}
+        >
+          {COPY.cta.titleLead}
+          <br className="sm:hidden" />{" "}
+          <span
+            style={{ color: ACC2_WARM, fontStyle: "italic", fontWeight: 380 }}
           >
-            {COPY.cta.title}
-          </h2>
-          <p className="mt-5 text-[16px] sm:text-[17px] leading-relaxed max-w-md text-white/75">
-            {COPY.cta.sub}
-          </p>
-          <div className="mt-10 grid grid-cols-2 gap-6 max-w-md">
-            <div className="border-t pt-3 border-white/15">
-              <div className="text-[22px] sm:text-[24px] font-medium text-white ff-serif">
-                2 phút
-              </div>
-              <div className="text-[12px] uppercase tracking-wider text-white/55 mt-1">
-                Thời gian cài
-              </div>
-            </div>
-            <div className="border-t pt-3 border-white/15">
-              <div className="text-[22px] sm:text-[24px] font-medium text-white ff-serif">
-                0đ
-              </div>
-              <div className="text-[12px] uppercase tracking-wider text-white/55 mt-1">
-                Miễn phí trọn đời
-              </div>
-            </div>
-          </div>
+            {COPY.cta.titleAccent}
+          </span>
+        </h2>
+        <p className="mt-7 text-[16px] sm:text-[18px] leading-[1.6] max-w-xl mx-auto text-white/75">
+          {COPY.cta.sub}
+        </p>
+        <div className="mt-12 flex justify-center">
+          <StoreBadges variant="dark" />
         </div>
-        <div className="lg:pl-8">
-          <SignupForm accent={ACC2_WARM} dark onResult={onResult} />
+        <div className="mt-16 grid grid-cols-3 gap-6 max-w-2xl mx-auto">
+          {[COPY.cta.stat1, COPY.cta.stat2, COPY.cta.stat3].map((s, idx) => (
+            <div key={idx} className="border-t pt-4 border-white/15">
+              <div className="text-[20px] sm:text-[22px] font-medium text-white ff-serif">
+                {s.value}
+              </div>
+              <div className="text-[11px] uppercase tracking-wider text-white/55 mt-1.5">
+                {s.label}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -1413,49 +1395,15 @@ function FinalCTA({ onResult }) {
 // App
 // ─────────────────────────────────────────────────────────────────────────────
 function App() {
-  const [toast, setToast] = useState(null); // { msg, type } | null
-
-  const showToast = (msg, type = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 4000);
-  };
-
   return (
     <div className="font-sans" style={{ background: BG, color: "#1F1B16" }}>
-      {toast && (
-        <div className="fixed top-4 right-4 z-50 animate-fade-in-up">
-          <div
-            className={`${
-              toast.type === "success"
-                ? "bg-white text-[#1F1B16] border-l-4"
-                : "bg-white text-[#7B2D2D] border-l-4 border-red-500"
-            } shadow-lg px-4 py-3 rounded-r max-w-sm border`}
-            style={{
-              borderColor: toast.type === "success" ? ACC : "#D9D0BF",
-              borderLeftColor: toast.type === "success" ? ACC : "#B91C1C",
-            }}
-          >
-            <div className="flex items-start gap-3">
-              <p className="text-sm font-medium flex-1">{toast.msg}</p>
-              <button
-                onClick={() => setToast(null)}
-                className="text-[#7A6F62] hover:text-[#1F1B16] mt-0.5"
-                aria-label="Close"
-              >
-                <IconX size={14} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <Hero />
       <Problem />
       <Solution />
       <HowItWorks />
       <Examples />
       <FAQSection />
-      <FinalCTA onResult={showToast} />
+      <FinalCTA />
       <div style={{ background: BG }}>
         <PageFooter accent={ACC} />
       </div>
