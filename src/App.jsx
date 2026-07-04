@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import HuongDan from "./HuongDan";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Real store URLs (live as of 2026-05-06: iOS Build 22, Play Console v3).
@@ -55,7 +56,7 @@ const IconX = (p) => <Icon {...p} d="M18 6 6 18M6 6l12 12" />;
 // ─────────────────────────────────────────────────────────────────────────────
 const COPY = {
   brand: "Bonia",
-  nav: ["Tính năng", "Cách dùng", "Câu hỏi"],
+  nav: ["Tính năng", "Hướng dẫn", "Câu hỏi"],
   hero: {
     eyebrow: "Trợ lý nghe máy bằng tiếng Việt",
     title: "Bonia nghe máy giúp bạn,",
@@ -104,8 +105,8 @@ const COPY = {
         body: "Tiếp thị, robocall, lừa đảo bị nhận diện và đánh dấu — không làm phiền bạn nữa.",
       },
       {
-        title: "Bạn vẫn là người quyết định",
-        body: "Bonia không thay bạn xử lý — chỉ thu thập thông tin để bạn chọn gọi lại, nhắn tin, hoặc bỏ qua.",
+        title: "Nghe trực tiếp khi cần",
+        body: "Khi Bonia đang xử lý một cuộc gọi quan trọng, bạn có thể theo dõi trực tiếp và nhận máy chỉ với một chạm — nói chuyện ngay với người gọi. Bạn luôn là người quyết định.",
       },
     ],
   },
@@ -193,7 +194,7 @@ const COPY = {
     items: [
       {
         q: "Bonia có thay tôi nghe máy hoàn toàn không?",
-        a: "Không. Bonia chỉ nhận khi bạn không bắt máy. Khi bạn đang nghe điện thoại bình thường, Bonia không can thiệp.",
+        a: "Bonia nhận khi bạn không bắt máy hoặc đang bận. Và bất cứ lúc nào bạn muốn, bạn có thể nhận máy trực tiếp để tự nói chuyện với người gọi — bạn luôn là người quyết định.",
       },
       {
         q: "Tôi có cần cài thêm app gì không?",
@@ -587,7 +588,7 @@ function TopNav({ accent = ACC }) {
         {COPY.nav.map((n, i) => (
           <a
             key={i}
-            href={i === 0 ? "#solution" : i === 1 ? "#how" : "#faq"}
+            href={i === 0 ? "#solution" : i === 1 ? "#huong-dan" : "#faq"}
             className="text-[14px] transition-colors hover:opacity-100"
             style={{ color: "#4A4239" }}
           >
@@ -1400,7 +1401,7 @@ function App() {
       <Hero />
       <Problem />
       <Solution />
-      <HowItWorks />
+      <HuongDan />
       <Examples />
       <FAQSection />
       <FinalCTA />
