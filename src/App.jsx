@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import HuongDan from "./HuongDan";
+import { LangProvider, useLang, LangToggle } from "./lang.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Real store URLs (live as of 2026-05-06: iOS Build 22, Play Console v3).
@@ -54,202 +55,6 @@ const IconX = (p) => <Icon {...p} d="M18 6 6 18M6 6l12 12" />;
 // ─────────────────────────────────────────────────────────────────────────────
 // Vietnamese copy (preserved verbatim from design)
 // ─────────────────────────────────────────────────────────────────────────────
-const COPY = {
-  brand: "Bonia",
-  nav: ["Tính năng", "Hướng dẫn", "Câu hỏi"],
-  hero: {
-    eyebrow: "Trợ lý nghe máy bằng tiếng Việt",
-    title: "Bonia nghe máy giúp bạn,",
-    titleAccent: "khi bạn không tiện trả lời.",
-    sub: "Khi bạn không bắt máy, Bonia tự động trả lời, khéo léo tìm hiểu mục đích cuộc gọi và gửi tóm tắt về điện thoại của bạn — bằng tiếng Việt, chi tiết và rõ ràng.",
-    storesNote: "Có mặt trên iOS & Android — miễn phí, không quảng cáo",
-  },
-  problem: {
-    eyebrow: "Vấn đề",
-    title: "Mỗi ngày bạn nhận hàng chục cuộc gọi.",
-    sub: "Phần lớn là Telesales, lừa đảo, hoặc số lạ. Một số ít là quan trọng — và bạn không có cách nào biết trước.",
-    spam: {
-      label: "Cuộc gọi không mong muốn",
-      items: [
-        "Telesales bảo hiểm, bất động sản",
-        "Số lạ gọi nhiều lần trong ngày",
-        "Lừa đảo giả danh ngân hàng, công an",
-        "Đòi nợ thay, đe doạ",
-      ],
-    },
-    important: {
-      label: "Cuộc gọi bạn cần biết",
-      items: [
-        "Shipper giao hàng đến nơi",
-        "Nhà tuyển dụng, đối tác công việc",
-        "Bệnh viện, trường học của con",
-        "Người thân dùng số điện thoại lạ",
-      ],
-    },
-  },
-  solution: {
-    eyebrow: "Giải pháp",
-    title: "Một trợ lý lịch sự, trả lời bằng tiếng Việt tự nhiên.",
-    sub: "Bonia hoạt động như một thư ký riêng — khéo léo tìm hiểu mục đích cuộc gọi, ghi lại nội dung, và để bạn quyết định có gọi lại hay không.",
-    features: [
-      {
-        title: "Trả lời tự nhiên bằng tiếng Việt",
-        body: "Bonia hiểu giọng vùng miền và các tình huống thường gặp ở Việt Nam — từ shipper, đối tác, đến số lạ.",
-      },
-      {
-        title: "Tóm tắt gửi ngay về điện thoại",
-        body: "Sau mỗi cuộc gọi, bạn nhận một thông báo ngắn gọn: ai gọi, vì việc gì, có cần gọi lại không.",
-      },
-      {
-        title: "Chặn quấy rối tự động",
-        body: "Tiếp thị, robocall, lừa đảo bị nhận diện và đánh dấu — không làm phiền bạn nữa.",
-      },
-      {
-        title: "Nghe trực tiếp khi cần",
-        body: "Khi Bonia đang xử lý một cuộc gọi quan trọng, bạn có thể theo dõi trực tiếp và nhận máy chỉ với một chạm — nói chuyện ngay với người gọi. Bạn luôn là người quyết định.",
-      },
-    ],
-  },
-  how: {
-    eyebrow: "Cách dùng",
-    title: "Cài đặt một lần, Yên tâm trọn đời!",
-    steps: [
-      {
-        n: "01",
-        title: "Chuyển hướng cuộc gọi nhỡ",
-        body: "Bật chuyển hướng cuộc gọi sang số Bonia khi bạn không bắt máy hoặc cuộc gọi nhỡ. Mất khoảng 30 giây.",
-      },
-      {
-        n: "02",
-        title: "Bonia trả lời thay bạn",
-        body: "Khi bạn không nghe máy, Bonia nhận cuộc gọi, hỏi tên người gọi và mục đích, ghi lại nội dung.",
-      },
-      {
-        n: "03",
-        title: "Bạn nhận tóm tắt qua thông báo",
-        body: "Mở điện thoại — bạn thấy ngay ai gọi, vì việc gì, và có thể quyết định bước tiếp theo.",
-      },
-    ],
-  },
-  examples: {
-    eyebrow: "Ví dụ thực tế",
-    title: "Ba tình huống bạn gặp mỗi tuần.",
-    cards: [
-      {
-        kind: "Telesales",
-        time: "16:48",
-        quote:
-          "Em chào anh, em bên bảo hiểm nhân thọ ABC, em muốn giới thiệu gói sản phẩm mới…",
-        meta: "Đã chặn — không cần phản hồi",
-      },
-      {
-        kind: "Shipper",
-        time: "14:32",
-        quote:
-          "Em là shipper Giao Hàng Tiết Kiệm, đang ở dưới nhà chị. Đơn 198k, chị xuống nhận giúp em ạ.",
-        meta: "Quan trọng — gọi lại ngay",
-      },
-      {
-        kind: "Nhà tuyển dụng",
-        time: "10:15",
-        quote:
-          "Tôi là Linh, phòng nhân sự công ty XYZ. Muốn hẹn anh phỏng vấn vào thứ Sáu này, 9 giờ sáng.",
-        meta: "Quan trọng — gọi lại hôm nay",
-      },
-    ],
-  },
-  privacy: {
-    items: [
-      {
-        title: "Dữ liệu tự động xoá sau 30 ngày",
-        body: "Sau 30 ngày, dữ liệu tự động xoá khỏi máy chủ — bạn cũng có thể xoá bất kỳ lúc nào.",
-      },
-      {
-        title: "Không bán dữ liệu, không quảng cáo",
-        body: "Bonia không dùng dữ liệu của bạn để kinh doanh hay bán cho bên thứ ba.",
-      },
-    ],
-  },
-  concerns: {
-    eyebrow: "Băn khoăn thường gặp",
-    title: "Ba điều người Việt lo lắng nhất.",
-    items: [
-      {
-        q: "Có bất lịch sự khi để AI nghe máy thay không?",
-        a: 'Bonia chỉ nghe máy khi bạn nhỡ cuộc gọi hoặc đang bận. Bonia mở lời như một người thân/thư ký đang cầm máy giùm — "Dạ alo, mình gọi có việc gì ạ?" — đúng phép xã giao tiếng Việt, không xưng mình là máy hay AI. Với người thân hoặc bạn bè trong danh bạ, bạn có thể cài đặt để Bonia trả lời theo ý bạn.',
-      },
-      {
-        q: "Bonia nói có tự nhiên như người không?",
-        a: 'Bonia được huấn luyện riêng cho tiếng Việt — giọng Bắc, Nam đều hiểu, biết dùng "dạ", "ạ", xưng hô đúng vai. Không phải giọng tổng đài đọc kịch bản. Bạn có thể nghe thử khi cài đặt App trước khi sử dụng.',
-      },
-      {
-        q: "Nếu là cuộc gọi khẩn cấp thì sao?",
-        a: 'Bonia nhận diện từ khoá khẩn cấp ("tai nạn", "bệnh viện", "cấp cứu"…), ghi nhận thông tin, kết thúc cuộc gọi gọn gàng và lập tức báo cho bạn biết. Số trong danh bạ ưu tiên (bố mẹ, vợ/chồng, con) cũng được Bonia xử lý gọn ghẽ.',
-      },
-    ],
-  },
-  faq: {
-    eyebrow: "Câu hỏi thường gặp",
-    title: "Những điều bạn có thể đang băn khoăn.",
-    items: [
-      {
-        q: "Bonia có thay tôi nghe máy hoàn toàn không?",
-        a: "Bonia nhận khi bạn không bắt máy hoặc đang bận. Và bất cứ lúc nào bạn muốn, bạn có thể nhận máy trực tiếp để tự nói chuyện với người gọi — bạn luôn là người quyết định.",
-      },
-      {
-        q: "Tôi có cần cài thêm app gì không?",
-        a: "Không. Bonia hoạt động qua tính năng chuyển hướng cuộc gọi sẵn có trên điện thoại của bạn.",
-      },
-      {
-        q: "Bonia hoạt động trên điện thoại nào?",
-        a: "Mọi điện thoại di động dùng SIM Việt Nam đều dùng được — iPhone, Android, hay điện thoại cơ bản.",
-      },
-      {
-        q: "Có mất phí cuộc gọi không?",
-        a: "Người gọi không mất thêm phí. Bạn chỉ trả phí thuê bao cuộc gọi theo gói cước thông thường. Đây là phí do Nhà mạng thu, Bonia không thu bất kỳ phí nào.",
-      },
-      {
-        q: "Bonia có nghe lén tôi không?",
-        a: "Không. Bonia chỉ kích hoạt khi có cuộc gọi đến mà bạn không bắt máy. Ngoài lúc đó, Bonia không truy cập micro.",
-      },
-      {
-        q: "Tôi có thể nghe lại nguyên văn cuộc gọi không?",
-        a: "Bạn có thể xem lại bản chuyển ngữ (Transcription) của cuộc gọi.",
-      },
-      {
-        q: "Bonia có chặn được lừa đảo giả danh không?",
-        a: "Bonia nhận diện được nhiều mẫu lừa đảo phổ biến và cảnh báo bạn. Nhưng bạn vẫn nên cẩn trọng và xác minh thông tin.",
-      },
-      {
-        q: "Tôi có thể tạm tắt Bonia không?",
-        a: "Có. Bạn tắt chuyển hướng cuộc gọi là Bonia ngừng hoạt động. Bật lại bất cứ khi nào.",
-      },
-      {
-        q: "Có hỗ trợ tiếng Anh không?",
-        a: "Trong giai đoạn này, Bonia chỉ hỗ trợ tiếng Việt. Tiếng Anh sẽ được thêm vào trong tương lai.",
-      },
-      {
-        q: "Làm sao bắt đầu sử dụng?",
-        a: "Bạn tải Bonia trên App Store hoặc Google Play, mở app và làm theo hướng dẫn. Việc kích hoạt chuyển hướng cuộc gọi mất khoảng 2 phút.",
-      },
-    ],
-  },
-  cta: {
-    eyebrow: "Tải ứng dụng",
-    titleLead: "Đã có mặt trên",
-    titleAccent: "iOS & Android.",
-    sub: "Tải Bonia, kích hoạt chuyển hướng cuộc gọi trong hai phút — và không bao giờ phải nghe spam nữa.",
-    stat1: { value: "2 phút", label: "Thời gian cài" },
-    stat2: { value: "0đ", label: "Miễn phí trọn đời" },
-    stat3: { value: "SIM Việt Nam", label: "Mọi nhà mạng" },
-  },
-  footer: {
-    company: "Công ty TNHH Duy Nhiên Investment",
-    addr: "120 N2 Mega Village, Đường Võ Chí Công, phường Long Trường, TP.HCM",
-    mst: "MST: 0319376631",
-    rights: "© 2026 Bonia. Mọi quyền được bảo lưu.",
-  },
-};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Hero transcript scenes (5 cycling)
@@ -564,6 +369,7 @@ function CallListPhone({ accent = ACC }) {
 }
 
 function TopNav({ accent = ACC }) {
+  const { copy: COPY, chrome } = useLang();
   return (
     <nav
       className="flex items-center justify-between py-6 px-6 sm:px-12 border-b"
@@ -581,10 +387,10 @@ function TopNav({ accent = ACC }) {
           className="text-[11px] uppercase tracking-[0.22em] ml-1 hidden sm:inline"
           style={{ color: "#4A4239" }}
         >
-          beta · tiếng việt
+          {chrome.navTag}
         </span>
       </a>
-      <div className="hidden md:flex items-baseline gap-8">
+      <div className="hidden md:flex items-center gap-8">
         {COPY.nav.map((n, i) => (
           <a
             key={i}
@@ -600,16 +406,20 @@ function TopNav({ accent = ACC }) {
           className="text-[14px] font-medium flex items-center gap-1.5"
           style={{ color: accent }}
         >
-          Tải app <IconArrow size={12} />
+          {chrome.navCta} <IconArrow size={12} />
+        </a>
+        <LangToggle accent={accent} />
+      </div>
+      <div className="md:hidden flex items-center gap-3">
+        <LangToggle accent={accent} />
+        <a
+          href="#cta"
+          className="text-[14px] font-medium flex items-center gap-1.5"
+          style={{ color: accent }}
+        >
+          {chrome.navCta} <IconArrow size={12} />
         </a>
       </div>
-      <a
-        href="#cta"
-        className="md:hidden text-[14px] font-medium flex items-center gap-1.5"
-        style={{ color: accent }}
-      >
-        Tải app <IconArrow size={12} />
-      </a>
     </nav>
   );
 }
@@ -663,6 +473,7 @@ function SectionHead({
 //   "light" — cream paper, dark ink (use over BG sections, e.g. hero)
 //   "dark"  — translucent surface, light ink (use over the navy CTA gradient)
 function StoreBadges({ variant = "light", size = "md" }) {
+  const { chrome } = useLang();
   const isDark = variant === "dark";
   const surface = isDark
     ? "bg-white/[0.06] border border-white/15 hover:bg-white/[0.10]"
@@ -683,7 +494,7 @@ function StoreBadges({ variant = "light", size = "md" }) {
           <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
         </svg>
         <div className="flex flex-col items-start leading-none">
-          <span className={`text-[10px] uppercase tracking-[0.18em] ${sub}`}>Tải trên</span>
+          <span className={`text-[10px] uppercase tracking-[0.18em] ${sub}`}>{chrome.storeBadgeLead}</span>
           <span className={`text-[16px] ff-serif mt-0.5 ${ink}`} style={{ fontWeight: 500 }}>
             App Store
           </span>
@@ -703,7 +514,7 @@ function StoreBadges({ variant = "light", size = "md" }) {
           />
         </svg>
         <div className="flex flex-col items-start leading-none">
-          <span className={`text-[10px] uppercase tracking-[0.18em] ${sub}`}>Tải trên</span>
+          <span className={`text-[10px] uppercase tracking-[0.18em] ${sub}`}>{chrome.storeBadgeLead}</span>
           <span className={`text-[16px] ff-serif mt-0.5 ${ink}`} style={{ fontWeight: 500 }}>
             Google Play
           </span>
@@ -765,13 +576,18 @@ function FAQList({ items, accent = ACC, columns = 2 }) {
 }
 
 function PageFooter({ accent = ACC }) {
+  const { copy: COPY, chrome } = useLang();
   return (
     <footer
       className="border-t px-6 sm:px-12 py-10"
       style={{ borderColor: "#D9D0BF" }}
     >
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-        <div className="md:col-span-4">
+        {/* Brand block: logo + slogan, with the legal identity directly
+            beneath (layout per product 2026-08-04 — the link list grew, so
+            Pháp lý moved under the slogan and the links split into two
+            columns). */}
+        <div className="md:col-span-6">
           <div className="flex items-center gap-2.5 mb-3">
             <img src="/logo-mark.png" alt="Bonia" className="h-8 w-auto" />
             <span
@@ -780,77 +596,76 @@ function PageFooter({ accent = ACC }) {
             >
               Bonia
             </span>
-            <span
-              className="text-[11px] uppercase tracking-[0.22em]"
-              style={{ color: accent }}
-            >
-              beta
-            </span>
           </div>
           <p
             className="text-[13px] leading-relaxed max-w-xs"
             style={{ color: "#4A4239" }}
           >
-            Trợ lý nghe máy bằng tiếng Việt, thiết kế dành riêng cho người Việt.
+            {chrome.footerSlogan}
           </p>
-        </div>
-        <div className="md:col-span-3">
           <div
-            className="text-[11px] uppercase tracking-[0.18em] mb-3"
+            className="mt-6 text-[11px] uppercase tracking-[0.18em] mb-3"
             style={{ color: "#7A6F62" }}
           >
-            Liên kết
-          </div>
-          <ul
-            className="text-[13px] leading-[1.9]"
-            style={{ color: "#4A4239" }}
-          >
-            <li>
-              <a href="/privacy.html" className="hover:underline">
-                Chính sách bảo mật
-              </a>
-            </li>
-            <li>
-              <a href="/terms.html" className="hover:underline">
-                Điều khoản sử dụng
-              </a>
-            </li>
-            <li>
-              <a href="/so-chinh-thuc.html" className="hover:underline">
-                Số chính thức
-              </a>
-            </li>
-            <li>
-              <a href="/support.html" className="hover:underline">
-                Hỗ trợ
-              </a>
-            </li>
-            <li>
-              <a href="/delete-account.html" className="hover:underline">
-                Xoá tài khoản
-              </a>
-            </li>
-            <li>
-              <a href="mailto:duynguyen@bonia.net" className="hover:underline">
-                Liên hệ
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div className="md:col-span-5">
-          <div
-            className="text-[11px] uppercase tracking-[0.18em] mb-3"
-            style={{ color: "#7A6F62" }}
-          >
-            Pháp lý
+            {chrome.footerLegalLabel}
           </div>
           <div
-            className="text-[13px] leading-relaxed"
+            className="text-[13px] leading-relaxed max-w-sm"
             style={{ color: "#4A4239" }}
           >
             <div>{COPY.footer.company}</div>
             <div>{COPY.footer.addr}</div>
             <div className="mt-1 ff-mono text-[12px]">{COPY.footer.mst}</div>
+          </div>
+        </div>
+        <div className="md:col-span-6">
+          <div
+            className="text-[11px] uppercase tracking-[0.18em] mb-3"
+            style={{ color: "#7A6F62" }}
+          >
+            {chrome.footerLinksLabel}
+          </div>
+          <div className="grid grid-cols-2 gap-x-8">
+            <ul
+              className="text-[13px] leading-[1.9]"
+              style={{ color: "#4A4239" }}
+            >
+              <li>
+                <a href="/privacy.html" className="hover:underline">
+                  {chrome.links.privacy}
+                </a>
+              </li>
+              <li>
+                <a href="/terms.html" className="hover:underline">
+                  {chrome.links.terms}
+                </a>
+              </li>
+              <li>
+                <a href="/so-chinh-thuc.html" className="hover:underline">
+                  {chrome.links.officialNumbers}
+                </a>
+              </li>
+            </ul>
+            <ul
+              className="text-[13px] leading-[1.9]"
+              style={{ color: "#4A4239" }}
+            >
+              <li>
+                <a href="/support.html" className="hover:underline">
+                  {chrome.links.support}
+                </a>
+              </li>
+              <li>
+                <a href="/delete-account.html" className="hover:underline">
+                  {chrome.links.deleteAccount}
+                </a>
+              </li>
+              <li>
+                <a href="mailto:duynguyen@bonia.net" className="hover:underline">
+                  {chrome.links.contact}
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
@@ -868,6 +683,7 @@ function PageFooter({ accent = ACC }) {
 // Sections
 // ─────────────────────────────────────────────────────────────────────────────
 function Hero() {
+  const { copy: COPY } = useLang();
   const [i] = useSceneCycle(5800);
   return (
     <section id="hero" style={{ background: BG }}>
@@ -887,18 +703,12 @@ function Hero() {
               className="text-[40px] sm:text-[52px] lg:text-[64px] xl:text-[72px] leading-[1.05] tracking-tight ff-serif"
               style={{ color: "#1F1B16", fontWeight: 400 }}
             >
-              <span className="block">
-                Bonia nghe máy
-                <br className="sm:hidden" />{" "}
-                giúp bạn
-              </span>
+              <span className="block">{COPY.hero.title}</span>
               <span
                 className="block mt-2"
                 style={{ color: ACC, fontStyle: "italic", fontWeight: 380 }}
               >
-                khi bạn không tiện
-                <br className="sm:hidden" />{" "}
-                trả lời.
+                {COPY.hero.titleAccent}
               </span>
             </h1>
             <p
@@ -943,6 +753,7 @@ function Hero() {
 }
 
 function Problem() {
+  const { copy: COPY, chrome } = useLang();
   return (
     <section
       id="problem"
@@ -967,7 +778,7 @@ function Problem() {
               className="text-[11px] ff-mono uppercase tracking-[0.2em]"
               style={{ color: "#7A6F62" }}
             >
-              Cột A
+              {chrome.colA}
             </span>
             <span
               className="text-[14px] sm:text-[15px] uppercase tracking-[0.18em]"
@@ -1004,7 +815,7 @@ function Problem() {
               className="text-[11px] ff-mono uppercase tracking-[0.2em]"
               style={{ color: ACC }}
             >
-              Cột B
+              {chrome.colB}
             </span>
             <span
               className="text-[14px] sm:text-[15px] uppercase tracking-[0.18em]"
@@ -1040,14 +851,14 @@ function Problem() {
         className="mt-12 sm:mt-14 max-w-2xl text-[15px] sm:text-[16px] leading-relaxed italic ff-serif"
         style={{ color: "#4A4239" }}
       >
-        Mỗi cuộc gọi nhỡ là một câu hỏi: có quan trọng không? Bonia trả lời câu
-        hỏi đó cho bạn, trước khi bạn phải bận tâm.
+        {chrome.problemQuote}
       </p>
     </section>
   );
 }
 
 function Solution() {
+  const { copy: COPY } = useLang();
   return (
     <section
       id="solution"
@@ -1111,6 +922,7 @@ function Solution() {
 }
 
 function HowItWorks() {
+  const { copy: COPY } = useLang();
   return (
     <section
       id="how"
@@ -1163,6 +975,7 @@ function HowItWorks() {
 }
 
 function Examples() {
+  const { copy: COPY } = useLang();
   // Per-card accent color, chosen as muted earth tones to fit the editorial palette
   const COLORS = {
     Telesales: "#A04545", // muted rust — call rejected
@@ -1240,6 +1053,7 @@ function Examples() {
 }
 
 function FAQSection() {
+  const { copy: COPY, chrome } = useLang();
   return (
     <section
       id="faq"
@@ -1266,7 +1080,7 @@ function FAQSection() {
               className="text-[11px] ff-mono uppercase tracking-[0.2em] mb-4"
               style={{ color: ACC }}
             >
-              Băn khoăn {String(i + 1).padStart(2, "0")}
+              {chrome.concernWord} {String(i + 1).padStart(2, "0")}
             </div>
             <h3
               className="text-[20px] sm:text-[22px] leading-snug ff-serif"
@@ -1290,7 +1104,7 @@ function FAQSection() {
           className="text-center text-[11px] uppercase tracking-[0.22em] mb-8"
           style={{ color: "#7A6F62" }}
         >
-          Riêng tư & tin cậy
+          {chrome.privacyTag}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           {COPY.privacy.items.map((p, i) => (
@@ -1305,7 +1119,7 @@ function FAQSection() {
                   className="text-[11px] uppercase tracking-[0.18em]"
                   style={{ color: ACC }}
                 >
-                  {i === 0 ? "Riêng tư" : "Tin cậy"}
+                  {i === 0 ? chrome.privacyWord : chrome.trustWord}
                 </span>
               </div>
               <h4
@@ -1345,6 +1159,7 @@ function FAQSection() {
 }
 
 function FinalCTA() {
+  const { copy: COPY } = useLang();
   return (
     <section
       id="cta"
@@ -1402,6 +1217,7 @@ function FinalCTA() {
 // ─────────────────────────────────────────────────────────────────────────────
 function App() {
   return (
+    <LangProvider>
     <div className="font-sans" style={{ background: BG, color: "#1F1B16" }}>
       <Hero />
       <Problem />
@@ -1414,6 +1230,7 @@ function App() {
         <PageFooter accent={ACC} />
       </div>
     </div>
+    </LangProvider>
   );
 }
 

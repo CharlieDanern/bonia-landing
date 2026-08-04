@@ -1,4 +1,5 @@
 import React from "react";
+import { useLang } from "./lang.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Install & onboarding guide — real app screenshots in an iPhone frame, laid
@@ -83,45 +84,19 @@ function StepNote({ children }) {
   );
 }
 
-// ─── The 5 steps (carrier selection removed; explainer added back) ───
-const STEPS = [
-  {
-    n: "01",
-    img: "/onboarding/phone.png",
-    title: "Nhập số điện thoại",
-    body: "Nhập số và cách xưng hô (ví dụ “anh Duy”). Bonia dùng tên này để nói chuyện thay bạn.",
-  },
-  {
-    n: "02",
-    img: "/onboarding/explainer.png",
-    title: "Hiểu cách Bonia hoạt động",
-    body: "Bonia trả lời thay bạn bằng cách chuyển hướng cuộc gọi bạn nhỡ hoặc từ chối về số của Bonia.",
-  },
-  {
-    n: "03",
-    img: "/onboarding/activation.png",
-    title: "Bật chuyển hướng cuộc gọi",
-    body: "Nhấn từng nút để bật chuyển hướng khi bạn nhỡ hoặc từ chối cuộc gọi.",
-    note: "iOS27: app sao chép mã, bạn dán vào bàn phím số.",
-  },
-  {
-    n: "04",
-    img: "/onboarding/verification.png",
-    title: "Kiểm tra chuyển hướng",
-    body: "Bonia tự gọi thử đến số của bạn để chắc chắn mọi thứ hoạt động. Khoảng 20–30 giây.",
-    note: "Đảm bảo thuê bao còn tiền và không bị khóa chiều gọi đi — nếu không, máy sẽ không chuyển hướng được.",
-  },
-  {
-    n: "05",
-    img: "/onboarding/success.png",
-    title: "Xong! Tuỳ chỉnh lời chào",
-    body: "Chuyển hướng đã hoạt động. Tuỳ chỉnh giọng nói & lời chào, hoặc để mặc định “Alo” và bắt đầu ngay.",
-  },
+// ─── The 5 steps (text lives in copy.js; screenshots stay VN app UI) ───
+const STEP_IMGS = [
+  "/onboarding/phone.png",
+  "/onboarding/explainer.png",
+  "/onboarding/activation.png",
+  "/onboarding/verification.png",
+  "/onboarding/success.png",
 ];
 
 // The "press dial" tile — a real iOS dialer screenshot with the CF code typed
 // in, placed right after the activation step to show the action it triggers.
 function DialerCard() {
+  const { guide } = useLang();
   return (
     <div
       className="flex flex-col p-5"
@@ -133,26 +108,28 @@ function DialerCard() {
     >
       <IPhoneFrame
         src="/onboarding/dialer.png"
-        alt="Bấm gọi mã chuyển hướng"
+        alt={guide.dialer.title}
         width={168}
       />
       <div className="mt-5">
         <span className="ff-mono text-[12px]" style={{ color: ACC }}>
-          Sau bước 03
+          {guide.dialer.afterStep}
         </span>
         <h3
           className="mt-1.5 text-[19px] leading-snug ff-serif"
           style={{ color: "#1F1B16", fontWeight: 500 }}
         >
-          Bấm nút Gọi
+          {guide.dialer.title}
         </h3>
         <p
           className="mt-2 text-[14px] leading-relaxed"
           style={{ color: "#4A4239" }}
         >
-          Điện thoại mở màn hình gọi với mã đã điền sẵn. Bạn chỉ cần bấm nút{" "}
-          <span style={{ color: "#1B8A4B", fontWeight: 600 }}>Gọi</span> và đợi
-          hệ thống trả lời — không cần nhập gì thêm.
+          {guide.dialer.bodyLead}
+          <span style={{ color: "#1B8A4B", fontWeight: 600 }}>
+            {guide.dialer.bodyCallWord}
+          </span>
+          {guide.dialer.bodyTail}
         </p>
       </div>
     </div>
@@ -160,6 +137,7 @@ function DialerCard() {
 }
 
 function StepCard({ step }) {
+  const { guide } = useLang();
   return (
     <div
       className="flex flex-col p-5"
@@ -172,7 +150,7 @@ function StepCard({ step }) {
       <IPhoneFrame src={step.img} alt={step.title} width={168} />
       <div className="mt-5">
         <span className="ff-mono text-[12px]" style={{ color: ACC }}>
-          Bước {step.n}
+          {guide.stepWord} {step.n}
         </span>
         <h3
           className="mt-1.5 text-[19px] leading-snug ff-serif"
@@ -200,6 +178,8 @@ const HOTLINES = [
 ];
 
 export default function HuongDan() {
+  const { guide } = useLang();
+  const steps = guide.steps.map((s, i) => ({ ...s, img: STEP_IMGS[i] }));
   return (
     <section
       id="huong-dan"
@@ -215,43 +195,42 @@ export default function HuongDan() {
             className="text-[11px] uppercase tracking-[0.22em]"
             style={{ color: "#7A6F62" }}
           >
-            Hướng dẫn cài đặt
+            {guide.header.tag}
           </span>
         </div>
         <h2
           className="text-[36px] sm:text-[44px] md:text-[52px] leading-[1.05] tracking-tight ff-serif"
           style={{ color: "#1F1B16", fontWeight: 400 }}
         >
-          Cài một lần, yên tâm trọn đời.
+          {guide.header.title}
         </h2>
         <p
           className="mt-5 text-[17px] sm:text-[18px] leading-relaxed max-w-2xl"
           style={{ color: "#4A4239" }}
         >
-          Không cần rành công nghệ. Hãy liên hệ hotline để chúng tôi hỗ trợ nếu
-          bạn gặp vấn đề trong lúc cài đặt.
+          {guide.header.sub}
         </p>
       </header>
 
       {/* Compact grid of steps. The dialer tile is injected right after step
           03 (activation) so "bật mã → bấm gọi" reads in order. */}
       <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StepCard step={STEPS[0]} />
-        <StepCard step={STEPS[1]} />
-        <StepCard step={STEPS[2]} />
+        <StepCard step={steps[0]} />
+        <StepCard step={steps[1]} />
+        <StepCard step={steps[2]} />
         <DialerCard />
-        <StepCard step={STEPS[3]} />
-        <StepCard step={STEPS[4]} />
+        <StepCard step={steps[3]} />
+        <StepCard step={steps[4]} />
       </div>
 
       {/* Troubleshooting subsection heading */}
       <div className="mt-20 sm:mt-24 max-w-3xl">
         <span className="text-[11px] uppercase tracking-[0.22em]" style={{ color: "#7A6F62" }}>
-          Xử lý sự cố
+          {guide.troubleshooting.tag}
         </span>
         <h3 className="mt-4 text-[23px] sm:text-[32px] leading-snug tracking-tight ff-serif"
           style={{ color: "#1F1B16", fontWeight: 400 }}>
-          Vấn đề có thể gặp phải trong quá trình cài đặt
+          {guide.troubleshooting.title}
         </h3>
       </div>
 
@@ -268,39 +247,37 @@ export default function HuongDan() {
           <div className="md:col-span-4 flex justify-center">
             <IPhoneFrame
               src="/onboarding/support.png"
-              alt="Gọi tổng đài nhà mạng"
+              alt={guide.carrierCard.title}
               width={190}
             />
           </div>
           <div className="md:col-span-8">
             <span className="ff-mono text-[13px]" style={{ color: ACC }}>
-              Một số SIM có thể gặp tình trạng nhà mạng tạm ẩn chức năng chuyển
-              hướng
+              {guide.carrierCard.eyebrow}
             </span>
             <h3
               className="mt-2 text-[26px] sm:text-[30px] leading-tight ff-serif"
               style={{ color: "#1F1B16", fontWeight: 500 }}
             >
-              Gọi tổng đài — chỉ mất 1–2 phút.
+              {guide.carrierCard.title}
             </h3>
             <p
               className="mt-3 text-[16px] leading-relaxed max-w-xl"
               style={{ color: "#4A4239" }}
             >
-              Đừng lo — tổng đài viên sẽ hỗ trợ bật chức năng chuyển hướng giúp
-              bạn ngay trong cuộc gọi.
+              {guide.carrierCard.p1}
             </p>
             <p
               className="mt-3 text-[16px] leading-relaxed max-w-xl"
               style={{ color: "#4A4239" }}
             >
-              Cuộc gọi tổng đài thường chỉ mất khoảng 30s.
+              {guide.carrierCard.p2}
             </p>
 
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-5">
               <div>
                 <p className="ff-mono text-[12px] mb-2" style={{ color: ACC }}>
-                  01 · GỌI TỔNG ĐÀI
+                  {guide.carrierCard.step1Label}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {HOTLINES.map((h) => (
@@ -324,7 +301,7 @@ export default function HuongDan() {
               </div>
               <div className="sm:col-span-2">
                 <p className="ff-mono text-[12px] mb-2" style={{ color: ACC }}>
-                  02 · ĐỌC CÂU NÀY
+                  {guide.carrierCard.step2Label}
                 </p>
                 <blockquote
                   className="p-3.5 text-[14px] leading-relaxed italic ff-serif"
@@ -334,8 +311,7 @@ export default function HuongDan() {
                     color: "#1F1B16",
                   }}
                 >
-                  “SIM của tôi không bật được chức năng chuyển hướng cuộc gọi,
-                  vui lòng hỗ trợ bật giúp tôi.”
+                  {guide.carrierCard.quote}
                 </blockquote>
               </div>
             </div>
@@ -343,8 +319,7 @@ export default function HuongDan() {
               <span className="ff-mono text-[12px]" style={{ color: ACC }}>
                 03 ·{" "}
               </span>
-              Quay lại app, bấm “Thử lại”. Vẫn chưa được? Nhắn Zalo hoặc gọi hỗ
-              trợ Bonia — chúng tôi bật giúp bạn.
+              {guide.carrierCard.step3}
             </p>
           </div>
         </div>
