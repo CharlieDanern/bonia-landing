@@ -816,6 +816,11 @@ function PageFooter({ accent = ACC }) {
               </a>
             </li>
             <li>
+              <a href="/so-chinh-thuc.html" className="hover:underline">
+                Số chính thức
+              </a>
+            </li>
+            <li>
               <a href="/support.html" className="hover:underline">
                 Hỗ trợ
               </a>
