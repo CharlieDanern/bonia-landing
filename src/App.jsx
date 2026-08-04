@@ -583,12 +583,11 @@ function PageFooter({ accent = ACC }) {
       style={{ borderColor: "#D9D0BF" }}
     >
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-        {/* Brand block: logo + slogan, with the legal identity directly
-            beneath (layout per product 2026-08-04 — the link list grew, so
-            Pháp lý moved under the slogan and the links split into two
-            columns). */}
+        {/* Brand block: logo + legal identity, nothing else (layout per
+            product 2026-08-04 — the link list grew, so the links split
+            into two columns on the right). */}
         <div className="md:col-span-6">
-          <div className="flex items-center gap-2.5 mb-3">
+          <div className="flex items-center gap-2.5 mb-4">
             <img src="/logo-mark.png" alt="Bonia" className="h-8 w-auto" />
             <span
               className="text-[18px] font-medium ff-serif"
@@ -596,18 +595,6 @@ function PageFooter({ accent = ACC }) {
             >
               Bonia
             </span>
-          </div>
-          <p
-            className="text-[13px] leading-relaxed max-w-xs"
-            style={{ color: "#4A4239" }}
-          >
-            {chrome.footerSlogan}
-          </p>
-          <div
-            className="mt-6 text-[11px] uppercase tracking-[0.18em] mb-3"
-            style={{ color: "#7A6F62" }}
-          >
-            {chrome.footerLegalLabel}
           </div>
           <div
             className="text-[13px] leading-relaxed max-w-sm"

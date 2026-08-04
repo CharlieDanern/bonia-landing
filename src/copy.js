@@ -538,9 +538,7 @@ export const CHROME_VI = {
   privacyWord: "Riêng tư",
   trustWord: "Tin cậy",
   navCta: "Tải app",
-  footerSlogan: "Trợ lý nghe máy bằng tiếng Việt, thiết kế dành riêng cho người Việt.",
   footerLinksLabel: "Liên kết",
-  footerLegalLabel: "Pháp lý",
   links: {
     privacy: "Chính sách bảo mật",
     terms: "Điều khoản sử dụng",
@@ -563,9 +561,7 @@ export const CHROME_EN = {
   privacyWord: "Privacy",
   trustWord: "Trust",
   navCta: "Get the app",
-  footerSlogan: "A Vietnamese-speaking call assistant, built for Vietnam.",
   footerLinksLabel: "Links",
-  footerLegalLabel: "Legal",
   links: {
     privacy: "Privacy policy",
     terms: "Terms of service",
