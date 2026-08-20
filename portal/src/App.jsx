@@ -1,0 +1,644 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { api, getToken, setToken, clearToken, vnd, STAGE_LABEL, STAGE_FILTERS } from "./api.js";
+import { Softphone } from "./softphone.js";
+import {
+  BID_MIN, BID_STEP, Countdown, Stepper, Ladder, GapCallout,
+  Toast, useToast, CallOverlay, PaymentModal,
+} from "./components.jsx";
+import logo from "./logo-mark.png";
+
+const POLL_MS = 15_000; // marketplace/pipeline refresh — the ladder must feel live
+
+export default function App() {
+  const [authed, setAuthed] = useState(!!getToken());
+  useEffect(() => {
+    const onOut = () => setAuthed(false);
+    window.addEventListener("bonia:signed-out", onOut);
+    return () => window.removeEventListener("bonia:signed-out", onOut);
+  }, []);
+  return authed ? <Portal onSignOut={() => setAuthed(false)} /> : <Login onIn={() => setAuthed(true)} />;
+}
+
+/* ══ Login ═══════════════════════════════════════════════════ */
+function Login({ onIn }) {
+  const [u, setU] = useState("");
+  const [p, setP] = useState("");
+  const [err, setErr] = useState(null);
+  const [tries, setTries] = useState(0);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const res = await api.login(u.trim(), p);
+      setToken(res.token);
+      onIn();
+    } catch (ex) {
+      const n = tries + 1;
+      setTries(n);
+      setErr(
+        ex.body?.error === "locked_out"
+          ? "Bạn đã thử quá nhiều lần. Đợi ít phút rồi thử lại, hoặc nhắn Zalo Bonia để được cấp lại mật khẩu."
+          : n >= 3
+            ? "Bạn đã thử 3 lần. Đợi 60 giây rồi thử lại, hoặc nhắn Zalo Bonia để được cấp lại mật khẩu."
+            : `Sai tên đăng nhập hoặc mật khẩu. Còn ${3 - n} lần thử.`
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="login-page">
+      <div className="login-box">
+        <div style={{ display: "flex", gap: 9, alignItems: "center", justifyContent: "center" }}>
+          <img src={logo} alt="" style={{ width: 34, height: 34, objectFit: "contain" }} />
+          <span className="wordmark" style={{ fontSize: 16 }}>Bonia <span>Connect</span></span>
+        </div>
+        <h1 className="login-h1">Khách cần thẻ.<br />Bạn bid. Bạn gọi.</h1>
+        <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--ink-55)" }}>
+          Sàn nhu cầu mở thẻ tín dụng. Bạn tự quyết mức phí, chỉ trả khi khách được duyệt.
+        </p>
+        <form className="login-card" onSubmit={submit}>
+          {err && <div className="err-panel">{err}</div>}
+          <input className="input" placeholder="Tên đăng nhập" value={u} onChange={(e) => setU(e.target.value)} autoCapitalize="none" autoComplete="username" />
+          <input className="input" type="password" placeholder="Mật khẩu" value={p} onChange={(e) => setP(e.target.value)} autoComplete="current-password" />
+          <button className="btn btn-primary btn-block" disabled={busy || !u || !p}>
+            {busy ? "Đang vào…" : "Đăng nhập"}
+          </button>
+          <div style={{ fontSize: 11.5, color: "var(--ink-35)", textAlign: "center", marginTop: 12 }}>
+            Tài khoản do Bonia cấp · Liên hệ Zalo Bonia
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ══ Portal shell ════════════════════════════════════════════ */
+function Portal({ onSignOut }) {
+  const [route, setRoute] = useState("deals");
+  const [me, setMe] = useState(null);
+  const [auctions, setAuctions] = useState([]);
+  const [leads, setLeads] = useState([]);
+  const [toast, showToast] = useToast();
+
+  // Softphone + call state
+  const phoneRef = useRef(null);
+  const [call, setCall] = useState(null); // { leadId, name, phase }
+  const [callSec, setCallSec] = useState(0);
+  const [muted, setMuted] = useState(false);
+
+  const refresh = useCallback(async () => {
+    try {
+      const [m, mk, ld] = await Promise.all([api.me(), api.marketplace(), api.leads()]);
+      setMe(m);
+      setAuctions(mk.auctions || []);
+      setLeads(ld.leads || []);
+    } catch {
+      /* 401 handled globally */
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    const t = setInterval(refresh, POLL_MS);
+    return () => clearInterval(t);
+  }, [refresh]);
+
+  // Connect the softphone once we know the SIP credentials.
+  useEffect(() => {
+    if (!me?.softphone || phoneRef.current) return;
+    const phone = new Softphone({
+      onPhase: (phase) => {
+        if (phase === "ended") {
+          setCall((c) => (c ? { ...c, phase: "ended" } : null));
+          setTimeout(() => setCall(null), 300);
+          refresh();
+        } else {
+          setCall((c) => (c ? { ...c, phase } : c));
+        }
+      },
+      onError: () => showToast("Không kết nối được cuộc gọi"),
+    });
+    phoneRef.current = phone;
+    phone.connect(me.softphone).catch(() => showToast("Không kết nối được tổng đài"));
+    return () => { phone.disconnect(); phoneRef.current = null; };
+  }, [me?.softphone?.username]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Call timer
+  useEffect(() => {
+    if (call?.phase !== "connected") { setCallSec(0); return; }
+    const t = setInterval(() => setCallSec((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [call?.phase]);
+
+  const startCall = async (lead) => {
+    if (!phoneRef.current?.ready) return showToast("Tổng đài chưa sẵn sàng, thử lại sau vài giây");
+    setMuted(false);
+    setCall({ leadId: lead.lead_id, name: lead.first_name, phase: "connecting" });
+    try {
+      await phoneRef.current.call(lead.lead_id);
+    } catch {
+      setCall((c) => (c ? { ...c, phase: "failed" } : null));
+    }
+  };
+
+  const leadCounts = useMemo(() => leads.filter((l) => !["duoc_duyet", "that_bai", "cancelled"].includes(l.state)).length, [leads]);
+  const budgetPct = me ? Math.min(100, Math.round((me.budget.committedVnd / me.budget.capVnd) * 100)) : 0;
+
+  const nav = [
+    { key: "deals", label: "Nhu cầu mới", short: "Deals" },
+    { key: "pipeline", label: "Pipeline", short: "Pipeline", count: leadCounts },
+    { key: "account", label: "Tài khoản", short: "Tôi" },
+  ];
+
+  return (
+    <>
+      <div className="mobile-header">
+        <img src={logo} alt="" />
+        <span style={{ fontSize: 14, fontWeight: 600 }}>
+          {nav.find((n) => n.key === route)?.label}
+        </span>
+      </div>
+      <div className="shell">
+        <aside className="sidebar">
+          <div className="logo-row">
+            <img src={logo} alt="" />
+            <span className="wordmark">Bonia <span>Connect</span></span>
+          </div>
+          <nav className="nav">
+            {nav.map((n) => (
+              <button key={n.key} className={`nav-item ${route === n.key ? "active" : ""}`} onClick={() => setRoute(n.key)}>
+                <span className="nav-dot" />
+                {n.label}
+                {n.count ? <span className="nav-count">{n.count}</span> : null}
+              </button>
+            ))}
+          </nav>
+          <div style={{ flex: 1 }} />
+          {me && (
+            <div className="budget-card">
+              <div className="budget-label">Phí đã cam kết tháng này</div>
+              <div className="budget-amount mono">{vnd(me.budget.committedVnd)}</div>
+              <div className="budget-track">
+                <div className={`budget-fill ${budgetPct > 85 ? "over" : ""}`} style={{ width: `${budgetPct}%` }} />
+              </div>
+              <div className="budget-foot">trên hạn mức {vnd(me.budget.capVnd)}</div>
+            </div>
+          )}
+          {me && (
+            <div className="user-row">
+              <div className="avatar">{me.profile.displayName.trim().slice(-1).toUpperCase()}</div>
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 600 }}>{me.profile.displayName}</div>
+                <div style={{ fontSize: 11, color: "var(--ink-45)" }}>{me.profile.bank}</div>
+              </div>
+            </div>
+          )}
+        </aside>
+
+        <main className="content">
+          {route === "deals" && <Deals auctions={auctions} onBid={refresh} showToast={showToast} />}
+          {route === "pipeline" && (
+            <Pipeline leads={leads} onCall={startCall} refresh={refresh} showToast={showToast} />
+          )}
+          {route === "account" && (
+            <Account me={me} onSignOut={() => { clearToken(); onSignOut(); }} showToast={showToast} />
+          )}
+        </main>
+      </div>
+
+      <nav className="tabbar">
+        {nav.map((n) => (
+          <button key={n.key} className={`tab ${route === n.key ? "active" : ""}`} onClick={() => setRoute(n.key)}>
+            <span className="tab-block" />
+            {n.short}
+          </button>
+        ))}
+      </nav>
+
+      {call && call.phase !== "ended" && (
+        <CallOverlay
+          name={call.name}
+          phase={call.phase}
+          seconds={callSec}
+          muted={muted}
+          onMute={() => { const m = !muted; setMuted(m); phoneRef.current?.setMuted(m); }}
+          onHangup={() => phoneRef.current?.hangup()}
+          onRetry={() => { const l = leads.find((x) => x.lead_id === call.leadId); if (l) startCall(l); }}
+          onClose={() => setCall(null)}
+        />
+      )}
+      <Toast msg={toast} />
+    </>
+  );
+}
+
+/* ══ Screen 1 — New Deals ════════════════════════════════════ */
+function Deals({ auctions, onBid, showToast }) {
+  const [drafts, setDrafts] = useState({});
+  const fresh = auctions.filter((a) => a.my_bid_vnd == null);
+  const mine = auctions.filter((a) => a.my_bid_vnd != null);
+
+  const draftFor = (a) =>
+    drafts[a.intent_id] ?? (a.my_bid_vnd != null ? a.my_bid_vnd + BID_STEP : Math.max(BID_MIN, (a.top_bid_vnd || 0) + BID_STEP));
+
+  const setDraft = (id, fn) =>
+    setDrafts((d) => ({ ...d, [id]: fn(d[id] ?? 0) }));
+
+  const submit = async (a) => {
+    const amount = draftFor(a);
+    try {
+      await api.bid(a.intent_id, amount);
+      showToast(`Đã bid ${vnd(amount)}`);
+      setDrafts((d) => ({ ...d, [a.intent_id]: amount + BID_STEP }));
+      onBid();
+    } catch (ex) {
+      showToast(
+        ex.body?.error === "must_raise" ? `Bid mới phải cao hơn bid hiện tại (${vnd(ex.body.current)})`
+        : ex.body?.error === "invalid_amount" ? `Bid tối thiểu ${vnd(BID_MIN)} · mỗi bước ${vnd(BID_STEP)}`
+        : ex.body?.error === "auction_not_open" ? "Phiên đã đóng"
+        : "Không bid được, thử lại"
+      );
+    }
+  };
+
+  const now = new Date();
+  const dayNames = ["CHỦ NHẬT", "THỨ HAI", "THỨ BA", "THỨ TƯ", "THỨ NĂM", "THỨ SÁU", "THỨ BẢY"];
+
+  return (
+    <div className="wrap">
+      <div className="eyebrow">{dayNames[now.getDay()]} · {now.getDate()} THÁNG {now.getMonth() + 1}</div>
+      <h1 className="page">Nhu cầu đang mở</h1>
+      <p className="page-sub">
+        {fresh.length} nhu cầu mới · {mine.length} phiên đang bid
+      </p>
+
+      <div className="deal-grid" style={{ marginTop: 22 }}>
+        <section>
+          <div className="col-head">
+            <span className={`step-badge ${fresh.length ? "" : "dim"}`}>1</span>
+            <span className="col-title">Nhu cầu mới</span>
+            <span className="col-hint">bid nếu bạn muốn tư vấn</span>
+          </div>
+          <div className="stack">
+            {fresh.length === 0 && (
+              <div className="empty">Hết nhu cầu mới. Bonia sẽ báo ngay khi có phiên mới ở khu vực của bạn.</div>
+            )}
+            {fresh.map((a) => (
+              <div className="card" key={a.intent_id}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-.01em" }}>
+                    {a.first_name}{a.city ? ` · ${a.city}` : ""}
+                  </span>
+                  <Countdown iso={a.auction_ends_at} />
+                </div>
+                {a.note && <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--ink-55)", margin: "8px 0" }}>{a.note}</p>}
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "8px 0 12px" }}>
+                  {a.preferred_window && <span className="chip">{a.preferred_window}</span>}
+                  <span className="chip">{a.max_winners} suất gọi</span>
+                  <span className="chip">{a.bid_count} RM đang bid</span>
+                  <span className="chip green">🔒 SĐT được Bonia bảo vệ</span>
+                </div>
+                <div style={{ borderTop: "1px dashed var(--border)", paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <div>
+                    <div style={{ fontSize: 10.5, color: "var(--ink-45)" }}>Giá cao nhất</div>
+                    <div className="mono" style={{ fontSize: 16, fontWeight: 600 }}>
+                      {a.top_bid_vnd ? vnd(a.top_bid_vnd) : "Chưa có ai bid"}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <Stepper value={draftFor(a)} onChange={(fn) => setDraft(a.intent_id, (v) => fn(v || draftFor(a)))} />
+                    <button className="btn btn-primary" onClick={() => submit(a)}>Bid</button>
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: "var(--ink-35)", marginTop: 8 }}>
+                  Mỗi bước {vnd(BID_STEP)} · {a.top_bid_vnd ? `cần trên ${vnd(a.top_bid_vnd)} để dẫn đầu` : "bạn là người mở giá"}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <div className="col-head">
+            <span className={`step-badge ${mine.length ? "" : "dim"}`}>2</span>
+            <span className="col-title">Đang bid</span>
+            <span className="col-hint">vị trí của bạn theo thời gian thực</span>
+          </div>
+          <div className="stack">
+            {mine.length === 0 && (
+              <div className="empty">Chưa bid phiên nào. Bid từ cột bên trái — vị trí của bạn so với các RM khác sẽ hiện ở đây.</div>
+            )}
+            {mine.map((a) => (
+              <div className={`card ${a.my_bid_winning ? "winning" : "outbid"}`} key={a.intent_id}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 15, fontWeight: 600 }}>{a.first_name}</span>
+                    <Countdown iso={a.auction_ends_at} />
+                    <span className="chip">{a.max_winners} suất gọi</span>
+                  </div>
+                  <span className={`chip ${a.my_bid_winning ? "green" : "amber"}`}>
+                    {a.my_rank === 1 ? "Đang #1" : a.my_bid_winning ? "Đang thắng" : "Bị vượt"}
+                  </span>
+                </div>
+                <Ladder ladder={a.ladder} slots={a.max_winners} myBid={a.my_bid_vnd} />
+                <GapCallout ladder={a.ladder} slots={a.max_winners} myBid={a.my_bid_vnd} />
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 12, flexWrap: "wrap" }}>
+                  <Stepper value={draftFor(a)} onChange={(fn) => setDraft(a.intent_id, (v) => fn(v || draftFor(a)))} />
+                  <button className={`btn ${a.my_bid_winning ? "btn-ink" : "btn-primary"}`} onClick={() => submit(a)}>
+                    Nâng bid
+                  </button>
+                  {!a.my_bid_winning && a.cutoff_vnd != null && (
+                    <button
+                      className="btn btn-ghost mono"
+                      style={{ fontSize: 12.5 }}
+                      onClick={() => setDrafts((d) => ({ ...d, [a.intent_id]: a.cutoff_vnd + BID_STEP }))}
+                    >
+                      Vào top · {vnd(a.cutoff_vnd + BID_STEP)}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+/* ══ Screen 2 — Pipeline ═════════════════════════════════════ */
+function Pipeline({ leads, onCall, refresh, showToast }) {
+  const [filter, setFilter] = useState("all");
+  const [selId, setSelId] = useState(null);
+  const [mobileDetail, setMobileDetail] = useState(false);
+  const [notes, setNotes] = useState({});
+  const [payFor, setPayFor] = useState(null);
+  const noteTimers = useRef({});
+
+  const shown = leads.filter((l) => STAGE_FILTERS.find((f) => f.key === filter).match(l.state));
+  const sel = leads.find((l) => l.lead_id === selId) || shown[0] || null;
+
+  const counts = Object.fromEntries(
+    STAGE_FILTERS.map((f) => [f.key, leads.filter((l) => f.match(l.state)).length])
+  );
+
+  const setStage = async (lead, state) => {
+    try {
+      await api.disposition(lead.lead_id, state, notes[lead.lead_id]);
+      showToast("Đã cập nhật trạng thái");
+      refresh();
+    } catch {
+      showToast("Không cập nhật được");
+    }
+  };
+
+  const saveNote = (lead, text) => {
+    setNotes((n) => ({ ...n, [lead.lead_id]: text }));
+    clearTimeout(noteTimers.current[lead.lead_id]);
+    noteTimers.current[lead.lead_id] = setTimeout(() => {
+      api.disposition(lead.lead_id, lead.state, text).catch(() => {});
+    }, 600);
+  };
+
+  const openPayment = async (lead) => {
+    try {
+      const p = await api.claimPayment(lead.claim.id);
+      setPayFor({ lead, payment: p });
+    } catch {
+      showToast("Không mở được thông tin thanh toán");
+    }
+  };
+
+  return (
+    <div className="wrap-pipeline">
+      <h1 className="page">Pipeline</h1>
+      <p className="page-sub">{leads.length} khách bạn đã thắng · Bonia ghi lại mọi cuộc gọi</p>
+
+      <div className="filters" style={{ marginTop: 18 }}>
+        {STAGE_FILTERS.map((f) => (
+          <button key={f.key} className={`filter ${filter === f.key ? "active" : ""}`} onClick={() => setFilter(f.key)}>
+            {f.label}<span className="n">{counts[f.key]}</span>
+          </button>
+        ))}
+      </div>
+
+      {leads.length === 0 ? (
+        <div className="empty" style={{ marginTop: 14 }}>
+          Chưa thắng phiên nào. Bid ở tab Nhu cầu mới — khách bạn thắng sẽ hiện ở đây.
+        </div>
+      ) : (
+        <div className="pipe" style={{ marginTop: 6 }}>
+          <div className="pipe-list" style={{ display: mobileDetail ? "none" : "flex" }}>
+            {shown.map((l) => (
+              <button
+                key={l.lead_id}
+                className={`lead-btn ${sel?.lead_id === l.lead_id ? "sel" : ""}`}
+                onClick={() => { setSelId(l.lead_id); setMobileDetail(true); }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 14, fontWeight: 600 }}>{l.first_name}</span>
+                  <span className="mono" style={{ fontSize: 12.5, color: "var(--ink-55)" }}>{vnd(l.fee_vnd)}</span>
+                </div>
+                {l.note && <div style={{ fontSize: 12, lineHeight: 1.45, color: "var(--ink-45)", margin: "6px 0" }}>{l.note}</div>}
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <StageChip state={l.state} />
+                  <span style={{ fontSize: 11.5, color: "var(--ink-35)" }}>
+                    {l.call_attempts ? `${l.call_attempts} cuộc gọi` : "chưa gọi"}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {sel && (
+            <div className="pipe-detail" style={{ display: mobileDetail || window.innerWidth >= 1080 ? "block" : "none" }}>
+              <button
+                className="btn-ghost"
+                style={{ border: "none", padding: "0 0 12px", fontSize: 13, color: "var(--ink-55)", display: mobileDetail ? "block" : "none" }}
+                onClick={() => setMobileDetail(false)}
+              >
+                ← Danh sách
+              </button>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+                <div style={{ maxWidth: 440 }}>
+                  <h2 style={{ fontSize: 21, fontWeight: 600, letterSpacing: "-.015em" }}>{sel.first_name}</h2>
+                  {sel.note && <p style={{ fontSize: 13.5, lineHeight: 1.55, color: "var(--ink-55)", marginTop: 6 }}>{sel.note}</p>}
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 10.5, color: "var(--ink-45)" }}>Phí trả nếu duyệt</div>
+                  <div className="mono" style={{ fontSize: 20, fontWeight: 600 }}>{vnd(sel.fee_vnd)}</div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "14px 0" }}>
+                <StageChip state={sel.state} />
+                {sel.preferred_window && <span className="chip">{sel.preferred_window}</span>}
+                {sel.sla && <span className="chip amber">{sel.sla}</span>}
+                <span className="chip green">🔒 SĐT được Bonia bảo vệ</span>
+              </div>
+
+              {sel.claim && (
+                <div style={{ borderRadius: 14, padding: "15px 16px", border: "1px solid var(--green-border)", background: sel.claim.state === "settled" || sel.claim.state === "paid" ? "var(--green-tint-faint)" : "var(--green-tint-soft)", marginBottom: 16 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 600 }}>
+                    {sel.claim.state === "pending_rm" ? "Khách báo đã được duyệt" : "Hồ sơ đã duyệt"}
+                  </div>
+                  <div style={{ fontSize: 12.5, lineHeight: 1.55, color: "var(--ink-55)", margin: "6px 0 12px" }}>
+                    {sel.claim.state === "pending_rm"
+                      ? "Xác nhận nếu đúng — bạn sẽ thanh toán phí bạn đã bid, khách nhận lại 50%."
+                      : `Phí ${vnd(sel.claim.feeVnd)} · khách nhận ${vnd(sel.claim.userShareVnd)}`}
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {sel.claim.state === "pending_rm" && (
+                      <>
+                        <button className="btn btn-primary btn-sm" onClick={async () => {
+                          try { await api.confirmApproval(sel.lead_id); showToast("Đã xác nhận"); refresh(); }
+                          catch { showToast("Không xác nhận được"); }
+                        }}>Xác nhận đã duyệt</button>
+                        <button className="btn btn-ghost btn-sm" onClick={async () => {
+                          const reason = prompt("Lý do từ chối (bắt buộc):");
+                          if (!reason || reason.trim().length < 5) return;
+                          try { await api.denyApproval(sel.lead_id, reason); showToast("Đã từ chối"); refresh(); }
+                          catch { showToast("Không gửi được"); }
+                        }}>Từ chối</button>
+                      </>
+                    )}
+                    {["invoiced", "paid", "settled"].includes(sel.claim.state) && (
+                      <button className="btn btn-primary btn-sm" onClick={() => openPayment(sel)}>
+                        {sel.claim.state === "invoiced" ? `Thanh toán ${vnd(sel.claim.feeVnd)}` : "Xem hoá đơn"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+                <button className="btn btn-primary btn-call" onClick={() => onCall(sel)} disabled={sel.call_in_progress}>
+                  {sel.call_attempts ? "Gọi lại qua Bonia" : "Gọi qua Bonia"}
+                </button>
+                <button className="btn btn-ghost" onClick={() => setStage(sel, "da_nop_ho_so")}>Đã nộp hồ sơ</button>
+                <button className="btn btn-ghost" onClick={() => setStage(sel, "that_bai")}>Thất bại</button>
+              </div>
+
+              <div className="two-col">
+                <div>
+                  <div className="mono-eyebrow">Cuộc gọi · Bonia ghi lại</div>
+                  {(!sel.call_history || sel.call_history.length === 0) && (
+                    <div className="empty">Chưa gọi lần nào. Sau cuộc gọi đầu tiên, tóm tắt sẽ hiện ở đây.</div>
+                  )}
+                  <div className="stack">
+                    {(sel.call_history || []).map((h, i) => (
+                      <div className="call-card" key={i}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span className="dot" style={{ background: h.detail?.outcome === "answered" ? "var(--green)" : h.detail?.outcome === "forwarded_no_answer" ? "var(--amber-accent)" : "var(--ink-15)" }} />
+                          <span style={{ fontSize: 13, fontWeight: 600 }}>{outcomeLabel(h)}</span>
+                          <span className="mono" style={{ fontSize: 11, color: "var(--ink-35)", marginLeft: "auto" }}>
+                            {new Date(h.createdAt).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}
+                          </span>
+                        </div>
+                        {h.detail?.answered_sec > 0 && (
+                          <div style={{ fontSize: 12.5, color: "var(--ink-70)", marginTop: 6 }}>
+                            Nói chuyện {Math.floor(h.detail.answered_sec / 60)}ph{String(h.detail.answered_sec % 60).padStart(2, "0")}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--ink-25)", marginTop: 10 }}>
+                    Bonia không lưu ghi âm cuộc gọi.
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mono-eyebrow">Ghi chú của bạn</div>
+                  <textarea
+                    className="notes-area"
+                    value={notes[sel.lead_id] ?? sel.rm_notes ?? ""}
+                    onChange={(e) => saveNote(sel, e.target.value)}
+                    placeholder="Ghi chú riêng về khách này…"
+                  />
+                  <div style={{ fontSize: 11, color: "var(--ink-25)", marginTop: 6 }}>Chỉ bạn nhìn thấy · tự lưu</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {payFor && <PaymentModal lead={payFor.lead} payment={payFor.payment} onClose={() => setPayFor(null)} />}
+    </div>
+  );
+}
+
+function StageChip({ state }) {
+  const label = STAGE_LABEL[state] || state;
+  const cls = label === "Cần gọi" ? "blue" : label === "Đang tư vấn" ? "green" : label === "Thành công" ? "solid" : "grey";
+  return <span className={`chip ${cls}`}>{label}</span>;
+}
+
+function outcomeLabel(h) {
+  const o = h.detail?.outcome;
+  if (o === "answered") return "Đã tư vấn";
+  if (o === "forwarded_no_answer") return "Khách không nghe máy";
+  if (o === "no_answer") return "Không bắt máy";
+  if (o === "rm_abandoned") return "Bạn đã huỷ";
+  if (o === "denied") return "Không gọi được";
+  return h.event === "call_attempt" ? "Đã gọi" : "Cuộc gọi";
+}
+
+/* ══ Screen 3 — Tài khoản ════════════════════════════════════ */
+function Account({ me, onSignOut, showToast }) {
+  if (!me) return null;
+  const pct = Math.min(100, Math.round((me.budget.committedVnd / me.budget.capVnd) * 100));
+  return (
+    <div className="wrap-account">
+      <h1 className="page">Tài khoản</h1>
+      <div className="stack" style={{ marginTop: 18, gap: 14 }}>
+        <div className="card" style={{ display: "flex", gap: 14, alignItems: "center" }}>
+          <div className="avatar" style={{ width: 52, height: 52, fontSize: 17 }}>
+            {me.profile.displayName.trim().slice(-1).toUpperCase()}
+          </div>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 600 }}>{me.profile.displayName}</div>
+            <div style={{ fontSize: 13, color: "var(--ink-55)" }}>{me.profile.bank} · RM Thẻ tín dụng</div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Ngân sách phí mỗi tháng</div>
+          <div style={{ fontSize: 12.5, lineHeight: 1.55, color: "var(--ink-55)", marginBottom: 14 }}>
+            Bonia nhắc bạn khi tổng phí đã cam kết chạm hạn mức. Bạn vẫn bid được — đây là cảnh báo, không phải khoá.
+          </div>
+          <div style={{ fontSize: 12, color: "var(--ink-45)" }}>Đã cam kết tháng này</div>
+          <div className="mono" style={{ fontSize: 17, fontWeight: 600, margin: "4px 0 8px" }}>
+            {vnd(me.budget.committedVnd)} <span style={{ color: "var(--ink-35)", fontSize: 13 }}>/ {vnd(me.budget.capVnd)}</span>
+          </div>
+          <div className="budget-track" style={{ height: 10, borderRadius: 6 }}>
+            <div className={`budget-fill ${pct > 85 ? "over" : ""}`} style={{ width: `${pct}%` }} />
+          </div>
+          <div style={{ fontSize: 11.5, color: "var(--ink-45)", marginTop: 8 }}>
+            {pct > 85 ? "Sắp chạm hạn mức — cân nhắc trước khi bid thêm." : `Còn ${vnd(me.budget.capVnd - me.budget.committedVnd)} trong hạn mức tháng này.`}
+          </div>
+        </div>
+
+        <div className="card">
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Cần thêm khách?</div>
+          <div style={{ fontSize: 12.5, lineHeight: 1.55, color: "var(--ink-55)", marginBottom: 12 }}>
+            Báo Bonia khi bạn muốn nhận thêm nhu cầu — chúng tôi ưu tiên mở thêm phiên ở khu vực của bạn.
+          </div>
+          <button className="btn btn-ghost" onClick={async () => {
+            try { await api.requestLeads(); showToast("Đã gửi yêu cầu tới Bonia"); }
+            catch { showToast("Không gửi được"); }
+          }}>Xin thêm nhu cầu</button>
+        </div>
+
+        <button className="btn btn-ghost btn-block" style={{ height: 46, borderRadius: 12 }} onClick={onSignOut}>
+          Đăng xuất
+        </button>
+      </div>
+    </div>
+  );
+}
