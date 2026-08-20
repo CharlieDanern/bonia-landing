@@ -150,7 +150,7 @@ function Portal({ onSignOut }) {
 
   const nav = [
     { key: "deals", label: "Nhu cầu mới", short: "Nhu cầu" },
-    { key: "pipeline", label: "Khách hàng", short: "Khách hàng", count: leadCounts },
+    { key: "pipeline", label: "Pipeline", short: "Pipeline", count: leadCounts },
     { key: "account", label: "Tài khoản", short: "Tôi" },
   ];
 
@@ -252,13 +252,13 @@ function Deals({ auctions, onBid, showToast }) {
     const amount = draftFor(a);
     try {
       await api.bid(a.intent_id, amount);
-      showToast(`Đã đặt phí ${vnd(amount)}`);
+      showToast(`Đã bid ${vnd(amount)}`);
       setDrafts((d) => ({ ...d, [a.intent_id]: amount + BID_STEP }));
       onBid();
     } catch (ex) {
       showToast(
-        ex.body?.error === "must_raise" ? `Mức phí mới phải cao hơn mức hiện tại (${vnd(ex.body.current)})`
-        : ex.body?.error === "invalid_amount" ? `Mức phí tối thiểu ${vnd(BID_MIN)} · mỗi bước ${vnd(BID_STEP)}`
+        ex.body?.error === "must_raise" ? `Bid mới phải cao hơn bid hiện tại (${vnd(ex.body.current)})`
+        : ex.body?.error === "invalid_amount" ? `Bid tối thiểu ${vnd(BID_MIN)} · mỗi bước ${vnd(BID_STEP)}`
         : ex.body?.error === "auction_not_open" ? "Phiên đã đóng"
         : "Không gửi được, thử lại"
       );
@@ -281,7 +281,7 @@ function Deals({ auctions, onBid, showToast }) {
           <div className="col-head">
             <span className={`step-badge ${fresh.length ? "" : "dim"}`}>1</span>
             <span className="col-title">Nhu cầu mới</span>
-            <span className="col-hint">đặt phí để được kết nối</span>
+            <span className="col-hint">bid để được kết nối</span>
           </div>
           <div className="stack">
             {fresh.length === 0 && (
@@ -311,11 +311,11 @@ function Deals({ auctions, onBid, showToast }) {
                   </div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <Stepper value={draftFor(a)} onChange={(fn) => setDraft(a.intent_id, (v) => fn(v || draftFor(a)))} />
-                    <button className="btn btn-primary" onClick={() => submit(a)}>Đặt phí</button>
+                    <button className="btn btn-primary" onClick={() => submit(a)}>Bid</button>
                   </div>
                 </div>
                 <div style={{ fontSize: 11, color: "var(--ink-35)", marginTop: 8 }}>
-                  Mỗi bước {vnd(BID_STEP)} · {a.top_bid_vnd ? `trên ${vnd(a.top_bid_vnd)} để dẫn đầu` : "bạn là đơn vị đặt phí đầu tiên"}
+                  Mỗi bước {vnd(BID_STEP)} · {a.top_bid_vnd ? `trên ${vnd(a.top_bid_vnd)} để dẫn đầu` : "bạn là đơn vị bid đầu tiên"}
                 </div>
               </div>
             ))}
@@ -330,7 +330,7 @@ function Deals({ auctions, onBid, showToast }) {
           </div>
           <div className="stack">
             {mine.length === 0 && (
-              <div className="empty">Chưa tham gia phiên nào. Đặt phí ở cột bên trái để theo dõi vị trí của bạn.</div>
+              <div className="empty">Chưa tham gia phiên nào. Bid ở cột bên trái để theo dõi vị trí của bạn.</div>
             )}
             {mine.map((a) => (
               <div className={`card ${a.my_bid_winning ? "winning" : "outbid"}`} key={a.intent_id}>
@@ -349,7 +349,7 @@ function Deals({ auctions, onBid, showToast }) {
                 <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 12, flexWrap: "wrap" }}>
                   <Stepper value={draftFor(a)} onChange={(fn) => setDraft(a.intent_id, (v) => fn(v || draftFor(a)))} />
                   <button className={`btn ${a.my_bid_winning ? "btn-ink" : "btn-primary"}`} onClick={() => submit(a)}>
-                    Nâng mức phí
+                    Nâng bid
                   </button>
                   {!a.my_bid_winning && a.cutoff_vnd != null && (
                     <button
@@ -415,7 +415,7 @@ function Pipeline({ leads, onCall, refresh, showToast }) {
 
   return (
     <div className="wrap-pipeline">
-      <h1 className="page">Khách hàng</h1>
+      <h1 className="page">Pipeline</h1>
       <p className="page-sub">{leads.length} khách hàng · Bonia ghi nhận mọi cuộc gọi</p>
 
       <div className="filters" style={{ marginTop: 18 }}>
@@ -428,7 +428,7 @@ function Pipeline({ leads, onCall, refresh, showToast }) {
 
       {leads.length === 0 ? (
         <div className="empty" style={{ marginTop: 14 }}>
-          Chưa có khách hàng nào. Đặt phí ở mục Nhu cầu mới để được kết nối.
+          Chưa có khách hàng nào. Bid ở mục Nhu cầu mới để được kết nối.
         </div>
       ) : (
         <div className="pipe" style={{ marginTop: 6 }}>
@@ -610,7 +610,7 @@ function Account({ me, onSignOut, showToast }) {
         <div className="card">
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Ngân sách phí mỗi tháng</div>
           <div style={{ fontSize: 12.5, lineHeight: 1.55, color: "var(--ink-55)", marginBottom: 14 }}>
-            Bonia nhắc khi tổng phí đã cam kết chạm hạn mức. Bạn vẫn có thể đặt phí — đây là cảnh báo, không phải giới hạn cứng.
+            Bonia nhắc khi tổng phí đã cam kết chạm hạn mức. Bạn vẫn bid được — đây là cảnh báo, không phải giới hạn cứng.
           </div>
           <div style={{ fontSize: 12, color: "var(--ink-45)" }}>Đã cam kết tháng này</div>
           <div className="mono" style={{ fontSize: 17, fontWeight: 600, margin: "4px 0 8px" }}>
