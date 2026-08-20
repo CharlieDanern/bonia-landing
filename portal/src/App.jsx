@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { api, getToken, setToken, clearToken, vnd, STAGE_LABEL, STAGE_FILTERS } from "./api.js";
 import { Softphone } from "./softphone.js";
 import {
-  BID_MIN, BID_STEP, Countdown, Stepper, Ladder, GapCallout,
-  Toast, useToast, CallOverlay, PaymentModal,
+  BID_STEP, Stepper, Toast, useToast, CallOverlay, PaymentModal,
 } from "./components.jsx";
 import logo from "./logo-mark.png";
 
@@ -78,9 +77,9 @@ function Login({ onIn }) {
 
 /* ══ Portal shell ════════════════════════════════════════════ */
 function Portal({ onSignOut }) {
-  const [route, setRoute] = useState("deals");
+  const [route, setRoute] = useState("offers");
   const [me, setMe] = useState(null);
-  const [auctions, setAuctions] = useState([]);
+  const [offers, setOffers] = useState([]);
   const [leads, setLeads] = useState([]);
   const [toast, showToast] = useToast();
 
@@ -92,9 +91,9 @@ function Portal({ onSignOut }) {
 
   const refresh = useCallback(async () => {
     try {
-      const [m, mk, ld] = await Promise.all([api.me(), api.marketplace(), api.leads()]);
+      const [m, of, ld] = await Promise.all([api.me(), api.offers(), api.leads()]);
       setMe(m);
-      setAuctions(mk.auctions || []);
+      setOffers(of.products || []);
       setLeads(ld.leads || []);
     } catch {
       /* 401 handled globally */
@@ -149,7 +148,7 @@ function Portal({ onSignOut }) {
   const budgetPct = me ? Math.min(100, Math.round((me.budget.committedVnd / me.budget.capVnd) * 100)) : 0;
 
   const nav = [
-    { key: "deals", label: "Nhu cầu mới", short: "Nhu cầu" },
+    { key: "offers", label: "Ưu đãi của tôi", short: "Ưu đãi" },
     { key: "pipeline", label: "Pipeline", short: "Pipeline", count: leadCounts },
     { key: "account", label: "Tài khoản", short: "Tôi" },
   ];
@@ -200,7 +199,7 @@ function Portal({ onSignOut }) {
         </aside>
 
         <main className="content">
-          {route === "deals" && <Deals auctions={auctions} onBid={refresh} showToast={showToast} />}
+          {route === "offers" && <Offers products={offers} bank={me?.profile?.bank} onSet={refresh} showToast={showToast} />}
           {route === "pipeline" && (
             <Pipeline leads={leads} onCall={startCall} refresh={refresh} showToast={showToast} />
           )}
@@ -236,135 +235,123 @@ function Portal({ onSignOut }) {
   );
 }
 
-/* ══ Screen 1 — New Deals ════════════════════════════════════ */
-function Deals({ auctions, onBid, showToast }) {
+/* ══ Screen 1 — Standing offers ══════════════════════════════
+   Bonia lists each card product's BEST live offer to users; the highest
+   offer at a bank wins that introduction. Competition is with colleagues
+   at the same bank (different branches) — amounts are visible, identities
+   never are. Raising is the only lever, so the raise action is the
+   loudest thing on each card. */
+function Offers({ products, bank, onSet, showToast }) {
   const [drafts, setDrafts] = useState({});
-  const fresh = auctions.filter((a) => a.my_bid_vnd == null);
-  const mine = auctions.filter((a) => a.my_bid_vnd != null);
 
-  const draftFor = (a) =>
-    drafts[a.intent_id] ?? (a.my_bid_vnd != null ? a.my_bid_vnd + BID_STEP : Math.max(BID_MIN, (a.top_bid_vnd || 0) + BID_STEP));
+  const draftFor = (p) =>
+    drafts[p.product_id] ??
+    (p.my_offer_vnd != null
+      ? p.my_offer_vnd + BID_STEP
+      : Math.max(p.floor_vnd, (p.best_offer_vnd || 0) + BID_STEP));
 
-  const setDraft = (id, fn) =>
-    setDrafts((d) => ({ ...d, [id]: fn(d[id] ?? 0) }));
-
-  const submit = async (a) => {
-    const amount = draftFor(a);
+  const submit = async (p) => {
+    const amount = draftFor(p);
     try {
-      await api.bid(a.intent_id, amount);
-      showToast(`Đã bid ${vnd(amount)}`);
-      setDrafts((d) => ({ ...d, [a.intent_id]: amount + BID_STEP }));
-      onBid();
+      const res = await api.setOffer(p.product_id, amount);
+      showToast(`Đã đặt ${vnd(amount)} · khách nhận ${vnd(res.user_reward_vnd)}`);
+      setDrafts((d) => ({ ...d, [p.product_id]: amount + BID_STEP }));
+      onSet();
     } catch (ex) {
       showToast(
-        ex.body?.error === "must_raise" ? `Bid mới phải cao hơn bid hiện tại (${vnd(ex.body.current)})`
-        : ex.body?.error === "invalid_amount" ? `Bid tối thiểu ${vnd(BID_MIN)} · mỗi bước ${vnd(BID_STEP)}`
-        : ex.body?.error === "auction_not_open" ? "Phiên đã đóng"
-        : "Không gửi được, thử lại"
+        ex.body?.error === "invalid_amount"
+          ? `Tối thiểu ${vnd(ex.body.floor)} · mỗi bước ${vnd(ex.body.step)}`
+          : ex.body?.error === "not_your_bank"
+            ? "Sản phẩm không thuộc ngân hàng của bạn"
+            : "Không lưu được, thử lại"
       );
     }
   };
 
-  const now = new Date();
-  const dayNames = ["CHỦ NHẬT", "THỨ HAI", "THỨ BA", "THỨ TƯ", "THỨ NĂM", "THỨ SÁU", "THỨ BẢY"];
-
   return (
     <div className="wrap">
-      <div className="eyebrow">{dayNames[now.getDay()]} · {now.getDate()} THÁNG {now.getMonth() + 1}</div>
-      <h1 className="page">Nhu cầu đang mở</h1>
+      <div className="eyebrow">{bank || "Ngân hàng"}</div>
+      <h1 className="page">Ưu đãi của tôi</h1>
       <p className="page-sub">
-        {fresh.length} nhu cầu mới · {mine.length} phiên đang tham gia
+        Mức bạn trả cho Bonia khi khách mở thẻ thành công. Khách nhận 50% — ưu đãi cao nhất tại {bank || "ngân hàng"} được
+        hiển thị cho khách và nhận cuộc kết nối.
       </p>
 
       <div className="deal-grid" style={{ marginTop: 22 }}>
-        <section>
-          <div className="col-head">
-            <span className={`step-badge ${fresh.length ? "" : "dim"}`}>1</span>
-            <span className="col-title">Nhu cầu mới</span>
-            <span className="col-hint">bid để được kết nối</span>
+        {products.length === 0 && (
+          <div className="empty">
+            Chưa có sản phẩm thẻ nào của {bank || "ngân hàng bạn"} trên Bonia. Liên hệ Bonia để thêm.
           </div>
-          <div className="stack">
-            {fresh.length === 0 && (
-              <div className="empty">Hiện chưa có nhu cầu mới. Bonia sẽ thông báo khi có khách hàng phù hợp.</div>
-            )}
-            {fresh.map((a) => (
-              <div className="card" key={a.intent_id}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-.01em" }}>
-                    {a.first_name}{a.city ? ` · ${a.city}` : ""}
+        )}
+        {products.map((p) => {
+          const leading = p.my_offer_vnd != null && p.mine_is_top;
+          const gap = p.best_offer_vnd != null && p.my_offer_vnd != null
+            ? p.best_offer_vnd - p.my_offer_vnd
+            : null;
+          return (
+            <div className={`card ${p.my_offer_vnd == null ? "" : leading ? "winning" : "outbid"}`} key={p.product_id}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-.01em" }}>{p.name}</span>
+                {p.my_offer_vnd != null && (
+                  <span className={`chip ${leading ? "green" : "amber"}`}>
+                    {leading ? "Đang cao nhất" : "Đang thấp hơn"}
                   </span>
-                  <Countdown iso={a.auction_ends_at} />
-                </div>
-                {a.note && <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--ink-55)", margin: "8px 0" }}>{a.note}</p>}
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "8px 0 12px" }}>
-                  {a.preferred_window && <span className="chip">{a.preferred_window}</span>}
-                  <span className="chip">{a.max_winners} suất kết nối</span>
-                  <span className="chip">{a.bid_count} đơn vị tham gia</span>
-                  <span className="chip green">Số điện thoại được bảo mật</span>
-                </div>
-                <div style={{ borderTop: "1px dashed var(--border)", paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  <div>
-                    <div style={{ fontSize: 10.5, color: "var(--ink-45)" }}>Mức phí cao nhất</div>
-                    <div className="mono" style={{ fontSize: 16, fontWeight: 600 }}>
-                      {a.top_bid_vnd ? vnd(a.top_bid_vnd) : "Chưa có mức phí"}
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <Stepper value={draftFor(a)} onChange={(fn) => setDraft(a.intent_id, (v) => fn(v || draftFor(a)))} />
-                    <button className="btn btn-primary" onClick={() => submit(a)}>Bid</button>
-                  </div>
-                </div>
-                <div style={{ fontSize: 11, color: "var(--ink-35)", marginTop: 8 }}>
-                  Mỗi bước {vnd(BID_STEP)} · {a.top_bid_vnd ? `trên ${vnd(a.top_bid_vnd)} để dẫn đầu` : "bạn là đơn vị bid đầu tiên"}
-                </div>
+                )}
               </div>
-            ))}
-          </div>
-        </section>
 
-        <section>
-          <div className="col-head">
-            <span className={`step-badge ${mine.length ? "" : "dim"}`}>2</span>
-            <span className="col-title">Đang tham gia</span>
-            <span className="col-hint">vị trí của bạn theo thời gian thực</span>
-          </div>
-          <div className="stack">
-            {mine.length === 0 && (
-              <div className="empty">Chưa tham gia phiên nào. Bid ở cột bên trái để theo dõi vị trí của bạn.</div>
-            )}
-            {mine.map((a) => (
-              <div className={`card ${a.my_bid_winning ? "winning" : "outbid"}`} key={a.intent_id}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 15, fontWeight: 600 }}>{a.first_name}</span>
-                    <Countdown iso={a.auction_ends_at} />
-                    <span className="chip">{a.max_winners} suất kết nối</span>
-                  </div>
-                  <span className={`chip ${a.my_bid_winning ? "green" : "amber"}`}>
-                    {a.my_rank === 1 ? "Cao nhất" : a.my_bid_winning ? "Trong nhóm kết nối" : "Ngoài nhóm"}
+              <div className="ladder" style={{ marginTop: 12 }}>
+                <div className="ladder-head">
+                  <span className="ladder-title">Ưu đãi tại {bank}</span>
+                  <span className="ladder-rank">{p.offer_count} người đang chào</span>
+                </div>
+                <div className="ladder-row">
+                  <span className="amt">Cao nhất</span>
+                  <span className="mono" style={{ fontWeight: 600 }}>
+                    {p.best_offer_vnd ? vnd(p.best_offer_vnd) : "Chưa có"}
                   </span>
                 </div>
-                <Ladder ladder={a.ladder} slots={a.max_winners} myBid={a.my_bid_vnd} />
-                <GapCallout ladder={a.ladder} slots={a.max_winners} myBid={a.my_bid_vnd} />
-                <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 12, flexWrap: "wrap" }}>
-                  <Stepper value={draftFor(a)} onChange={(fn) => setDraft(a.intent_id, (v) => fn(v || draftFor(a)))} />
-                  <button className={`btn ${a.my_bid_winning ? "btn-ink" : "btn-primary"}`} onClick={() => submit(a)}>
-                    Nâng bid
-                  </button>
-                  {!a.my_bid_winning && a.cutoff_vnd != null && (
-                    <button
-                      className="btn btn-ghost mono"
-                      style={{ fontSize: 12.5 }}
-                      onClick={() => setDrafts((d) => ({ ...d, [a.intent_id]: a.cutoff_vnd + BID_STEP }))}
-                    >
-                      Vào nhóm · {vnd(a.cutoff_vnd + BID_STEP)}
-                    </button>
-                  )}
+                <div className={`ladder-row ${p.my_offer_vnd != null ? "me" : ""}`}>
+                  <span className="amt">Của bạn</span>
+                  <span className="mono" style={{ fontWeight: 600 }}>
+                    {p.my_offer_vnd != null ? vnd(p.my_offer_vnd) : "Chưa chào"}
+                  </span>
+                </div>
+                <div className="ladder-row">
+                  <span className="amt" style={{ color: "var(--ink-45)" }}>Khách nhận</span>
+                  <span className="mono" style={{ color: "var(--green-text-alt)" }}>
+                    {p.best_offer_vnd ? vnd(Math.floor(p.best_offer_vnd / 2)) : "—"}
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
+
+              {!p.listed && (
+                <div className="callout lose">
+                  Chưa hiển thị với khách — cần tối thiểu {vnd(p.floor_vnd)}.
+                </div>
+              )}
+              {p.listed && p.my_offer_vnd != null && !leading && gap != null && (
+                <div className="callout lose">Cần thêm {vnd(gap + BID_STEP)} để nhận kết nối tại sản phẩm này.</div>
+              )}
+              {p.listed && leading && (
+                <div className="callout win">Bạn đang nhận kết nối cho sản phẩm này.</div>
+              )}
+
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 12, flexWrap: "wrap" }}>
+                <Stepper
+                  value={draftFor(p)}
+                  min={p.floor_vnd}
+                  onChange={(fn) => setDrafts((d) => ({ ...d, [p.product_id]: fn(d[p.product_id] ?? draftFor(p)) }))}
+                />
+                <button className={`btn ${leading ? "btn-ink" : "btn-primary"}`} onClick={() => submit(p)}>
+                  {p.my_offer_vnd == null ? "Đặt ưu đãi" : "Nâng ưu đãi"}
+                </button>
+              </div>
+              <div style={{ fontSize: 11, color: "var(--ink-35)", marginTop: 8 }}>
+                Chỉ trả khi khách mở thẻ thành công · mỗi bước {vnd(BID_STEP)}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
