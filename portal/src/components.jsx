@@ -48,9 +48,9 @@ export function Ladder({ ladder, slots, myBid }) {
   return (
     <div className="ladder">
       <div className="ladder-head">
-        <span className="ladder-title">Bảng xếp hạng</span>
+        <span className="ladder-title">Mức phí hiện tại</span>
         <span className="ladder-rank">
-          {myIdx >= 0 ? `Hạng #${myIdx + 1} / ${ladder.length} RM` : `${ladder.length} RM đang bid`}
+          {myIdx >= 0 ? `Vị trí #${myIdx + 1} / ${ladder.length}` : `${ladder.length} đơn vị tham gia`}
         </span>
       </div>
       {shown.map((row, k) =>
@@ -82,10 +82,10 @@ export function GapCallout({ ladder, slots, myBid }) {
   const cutoff = ladder.length >= slots ? ladder[slots - 1] : null;
   const winning = rank > 0 && rank <= slots;
   let text;
-  if (rank === 1) text = "Bạn đang cao nhất. Giữ nguyên là được gọi khách.";
-  else if (winning && rank < slots) text = `An toàn — cao hơn suất cuối ${vnd(myBid - (cutoff ?? myBid))}.`;
-  else if (winning) text = "Bạn đang giữ suất cuối, dễ bị vượt.";
-  else text = `Cần thêm ${vnd((cutoff ?? myBid) - myBid + BID_STEP)} để vào ${slots} suất.`;
+  if (rank === 1) text = "Mức phí của bạn đang cao nhất.";
+  else if (winning && rank < slots) text = `Trong nhóm kết nối — cao hơn suất cuối ${vnd(myBid - (cutoff ?? myBid))}.`;
+  else if (winning) text = "Bạn đang giữ suất cuối.";
+  else text = `Cần thêm ${vnd((cutoff ?? myBid) - myBid + BID_STEP)} để vào nhóm kết nối.`;
   return <div className={`callout ${winning ? "win" : "lose"}`}>{text}</div>;
 }
 
@@ -131,7 +131,7 @@ export function CallOverlay({ name, phase, seconds, muted, onMute, onHangup, onR
           {(name || "K").trim().slice(-1).toUpperCase()}
         </div>
         <div style={{ fontSize: 20, fontWeight: 600 }}>{name}</div>
-        <div className="mask-line">Kết nối qua số Bonia · số hai bên đều được che</div>
+        <div className="mask-line">Kết nối qua số Bonia · số hai bên được bảo mật</div>
         <div
           className="call-timer"
           style={{ fontSize: phase === "connected" ? 32 : 20, color: phase === "connected" ? "var(--ink)" : "var(--ink-18)" }}
@@ -140,8 +140,8 @@ export function CallOverlay({ name, phase, seconds, muted, onMute, onHangup, onR
         </div>
         {phase === "failed" && (
           <div className="err-panel" style={{ textAlign: "left" }}>
-            <b>Khách không nghe máy.</b> Máy khách đang bật chuyển hướng sang trợ lý Bonia nên không đổ
-            chuông trực tiếp. Thử lại trong khung giờ khách chọn — nếu lặp lại, báo Bonia.
+            <b>Khách hàng không nghe máy.</b> Máy khách đang bật chuyển hướng sang trợ lý Bonia nên không
+            đổ chuông trực tiếp. Thử lại trong khung giờ khách hàng đã chọn.
           </div>
         )}
         <div className="warn-box">
@@ -178,8 +178,8 @@ export function PaymentModal({ lead, payment, onClose }) {
         <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16 }}>
           <div style={{ width: 38, height: 38, borderRadius: 12, background: "var(--green)", display: "grid", placeItems: "center", color: "#fff", fontSize: 19 }}>✓</div>
           <div>
-            <div style={{ fontFamily: "var(--serif)", fontSize: 20, fontWeight: 600 }}>Chốt được một thẻ</div>
-            <div style={{ fontSize: 12.5, color: "var(--ink-45)" }}>{lead?.first_name} · bạn thắng ở mức bạn tự bid</div>
+            <div style={{ fontFamily: "var(--serif)", fontSize: 20, fontWeight: 600 }}>Giao dịch thành công</div>
+            <div style={{ fontSize: 12.5, color: "var(--ink-45)" }}>{lead?.first_name} · mức phí bạn đã đặt</div>
           </div>
         </div>
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
@@ -196,7 +196,7 @@ export function PaymentModal({ lead, payment, onClose }) {
             {[
               ["Phí thành công", vnd(payment?.fee_vnd)],
               ["Nội dung CK", payment?.payment?.memo || "—"],
-              ["Khách nhận lại (50%)", vnd(Math.floor((payment?.fee_vnd || 0) / 2))],
+              ["Khách hàng nhận lại (50%)", vnd(Math.floor((payment?.fee_vnd || 0) / 2))],
             ].map(([k, v], i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: "1px solid var(--border-faint)", fontSize: 13 }}>
                 <span style={{ color: "var(--ink-45)" }}>{k}</span>

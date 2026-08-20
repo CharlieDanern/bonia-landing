@@ -54,11 +54,11 @@ function Login({ onIn }) {
       <div className="login-box">
         <div style={{ display: "flex", gap: 9, alignItems: "center", justifyContent: "center" }}>
           <img src={logo} alt="" style={{ width: 34, height: 34, objectFit: "contain" }} />
-          <span className="wordmark" style={{ fontSize: 16 }}>Bonia <span>Connect</span></span>
+          <span className="wordmark" style={{ fontSize: 16 }}>Bonia <span>Business</span></span>
         </div>
-        <h1 className="login-h1">Khách cần thẻ.<br />Bạn bid. Bạn gọi.</h1>
+        <h1 className="login-h1">Dành cho doanh nghiệp</h1>
         <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--ink-55)" }}>
-          Sàn nhu cầu mở thẻ tín dụng. Bạn tự quyết mức phí, chỉ trả khi khách được duyệt.
+          Kết nối với khách hàng tiềm năng với mức phí linh hoạt.<br />Chỉ thanh toán khi giao dịch thành công.
         </p>
         <form className="login-card" onSubmit={submit}>
           {err && <div className="err-panel">{err}</div>}
@@ -68,7 +68,7 @@ function Login({ onIn }) {
             {busy ? "Đang vào…" : "Đăng nhập"}
           </button>
           <div style={{ fontSize: 11.5, color: "var(--ink-35)", textAlign: "center", marginTop: 12 }}>
-            Tài khoản do Bonia cấp · Liên hệ Zalo Bonia
+            Tài khoản do Bonia cấp
           </div>
         </form>
       </div>
@@ -149,8 +149,8 @@ function Portal({ onSignOut }) {
   const budgetPct = me ? Math.min(100, Math.round((me.budget.committedVnd / me.budget.capVnd) * 100)) : 0;
 
   const nav = [
-    { key: "deals", label: "Nhu cầu mới", short: "Deals" },
-    { key: "pipeline", label: "Pipeline", short: "Pipeline", count: leadCounts },
+    { key: "deals", label: "Nhu cầu mới", short: "Nhu cầu" },
+    { key: "pipeline", label: "Khách hàng", short: "Khách hàng", count: leadCounts },
     { key: "account", label: "Tài khoản", short: "Tôi" },
   ];
 
@@ -166,7 +166,7 @@ function Portal({ onSignOut }) {
         <aside className="sidebar">
           <div className="logo-row">
             <img src={logo} alt="" />
-            <span className="wordmark">Bonia <span>Connect</span></span>
+            <span className="wordmark">Bonia <span>Business</span></span>
           </div>
           <nav className="nav">
             {nav.map((n) => (
@@ -252,15 +252,15 @@ function Deals({ auctions, onBid, showToast }) {
     const amount = draftFor(a);
     try {
       await api.bid(a.intent_id, amount);
-      showToast(`Đã bid ${vnd(amount)}`);
+      showToast(`Đã đặt phí ${vnd(amount)}`);
       setDrafts((d) => ({ ...d, [a.intent_id]: amount + BID_STEP }));
       onBid();
     } catch (ex) {
       showToast(
-        ex.body?.error === "must_raise" ? `Bid mới phải cao hơn bid hiện tại (${vnd(ex.body.current)})`
-        : ex.body?.error === "invalid_amount" ? `Bid tối thiểu ${vnd(BID_MIN)} · mỗi bước ${vnd(BID_STEP)}`
+        ex.body?.error === "must_raise" ? `Mức phí mới phải cao hơn mức hiện tại (${vnd(ex.body.current)})`
+        : ex.body?.error === "invalid_amount" ? `Mức phí tối thiểu ${vnd(BID_MIN)} · mỗi bước ${vnd(BID_STEP)}`
         : ex.body?.error === "auction_not_open" ? "Phiên đã đóng"
-        : "Không bid được, thử lại"
+        : "Không gửi được, thử lại"
       );
     }
   };
@@ -273,7 +273,7 @@ function Deals({ auctions, onBid, showToast }) {
       <div className="eyebrow">{dayNames[now.getDay()]} · {now.getDate()} THÁNG {now.getMonth() + 1}</div>
       <h1 className="page">Nhu cầu đang mở</h1>
       <p className="page-sub">
-        {fresh.length} nhu cầu mới · {mine.length} phiên đang bid
+        {fresh.length} nhu cầu mới · {mine.length} phiên đang tham gia
       </p>
 
       <div className="deal-grid" style={{ marginTop: 22 }}>
@@ -281,11 +281,11 @@ function Deals({ auctions, onBid, showToast }) {
           <div className="col-head">
             <span className={`step-badge ${fresh.length ? "" : "dim"}`}>1</span>
             <span className="col-title">Nhu cầu mới</span>
-            <span className="col-hint">bid nếu bạn muốn tư vấn</span>
+            <span className="col-hint">đặt phí để được kết nối</span>
           </div>
           <div className="stack">
             {fresh.length === 0 && (
-              <div className="empty">Hết nhu cầu mới. Bonia sẽ báo ngay khi có phiên mới ở khu vực của bạn.</div>
+              <div className="empty">Hiện chưa có nhu cầu mới. Bonia sẽ thông báo khi có khách hàng phù hợp.</div>
             )}
             {fresh.map((a) => (
               <div className="card" key={a.intent_id}>
@@ -298,24 +298,24 @@ function Deals({ auctions, onBid, showToast }) {
                 {a.note && <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--ink-55)", margin: "8px 0" }}>{a.note}</p>}
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "8px 0 12px" }}>
                   {a.preferred_window && <span className="chip">{a.preferred_window}</span>}
-                  <span className="chip">{a.max_winners} suất gọi</span>
-                  <span className="chip">{a.bid_count} RM đang bid</span>
-                  <span className="chip green">🔒 SĐT được Bonia bảo vệ</span>
+                  <span className="chip">{a.max_winners} suất kết nối</span>
+                  <span className="chip">{a.bid_count} đơn vị tham gia</span>
+                  <span className="chip green">Số điện thoại được bảo mật</span>
                 </div>
                 <div style={{ borderTop: "1px dashed var(--border)", paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                   <div>
-                    <div style={{ fontSize: 10.5, color: "var(--ink-45)" }}>Giá cao nhất</div>
+                    <div style={{ fontSize: 10.5, color: "var(--ink-45)" }}>Mức phí cao nhất</div>
                     <div className="mono" style={{ fontSize: 16, fontWeight: 600 }}>
-                      {a.top_bid_vnd ? vnd(a.top_bid_vnd) : "Chưa có ai bid"}
+                      {a.top_bid_vnd ? vnd(a.top_bid_vnd) : "Chưa có mức phí"}
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <Stepper value={draftFor(a)} onChange={(fn) => setDraft(a.intent_id, (v) => fn(v || draftFor(a)))} />
-                    <button className="btn btn-primary" onClick={() => submit(a)}>Bid</button>
+                    <button className="btn btn-primary" onClick={() => submit(a)}>Đặt phí</button>
                   </div>
                 </div>
                 <div style={{ fontSize: 11, color: "var(--ink-35)", marginTop: 8 }}>
-                  Mỗi bước {vnd(BID_STEP)} · {a.top_bid_vnd ? `cần trên ${vnd(a.top_bid_vnd)} để dẫn đầu` : "bạn là người mở giá"}
+                  Mỗi bước {vnd(BID_STEP)} · {a.top_bid_vnd ? `trên ${vnd(a.top_bid_vnd)} để dẫn đầu` : "bạn là đơn vị đặt phí đầu tiên"}
                 </div>
               </div>
             ))}
@@ -325,12 +325,12 @@ function Deals({ auctions, onBid, showToast }) {
         <section>
           <div className="col-head">
             <span className={`step-badge ${mine.length ? "" : "dim"}`}>2</span>
-            <span className="col-title">Đang bid</span>
+            <span className="col-title">Đang tham gia</span>
             <span className="col-hint">vị trí của bạn theo thời gian thực</span>
           </div>
           <div className="stack">
             {mine.length === 0 && (
-              <div className="empty">Chưa bid phiên nào. Bid từ cột bên trái — vị trí của bạn so với các RM khác sẽ hiện ở đây.</div>
+              <div className="empty">Chưa tham gia phiên nào. Đặt phí ở cột bên trái để theo dõi vị trí của bạn.</div>
             )}
             {mine.map((a) => (
               <div className={`card ${a.my_bid_winning ? "winning" : "outbid"}`} key={a.intent_id}>
@@ -338,10 +338,10 @@ function Deals({ auctions, onBid, showToast }) {
                   <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                     <span style={{ fontSize: 15, fontWeight: 600 }}>{a.first_name}</span>
                     <Countdown iso={a.auction_ends_at} />
-                    <span className="chip">{a.max_winners} suất gọi</span>
+                    <span className="chip">{a.max_winners} suất kết nối</span>
                   </div>
                   <span className={`chip ${a.my_bid_winning ? "green" : "amber"}`}>
-                    {a.my_rank === 1 ? "Đang #1" : a.my_bid_winning ? "Đang thắng" : "Bị vượt"}
+                    {a.my_rank === 1 ? "Cao nhất" : a.my_bid_winning ? "Trong nhóm kết nối" : "Ngoài nhóm"}
                   </span>
                 </div>
                 <Ladder ladder={a.ladder} slots={a.max_winners} myBid={a.my_bid_vnd} />
@@ -349,7 +349,7 @@ function Deals({ auctions, onBid, showToast }) {
                 <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 12, flexWrap: "wrap" }}>
                   <Stepper value={draftFor(a)} onChange={(fn) => setDraft(a.intent_id, (v) => fn(v || draftFor(a)))} />
                   <button className={`btn ${a.my_bid_winning ? "btn-ink" : "btn-primary"}`} onClick={() => submit(a)}>
-                    Nâng bid
+                    Nâng mức phí
                   </button>
                   {!a.my_bid_winning && a.cutoff_vnd != null && (
                     <button
@@ -357,7 +357,7 @@ function Deals({ auctions, onBid, showToast }) {
                       style={{ fontSize: 12.5 }}
                       onClick={() => setDrafts((d) => ({ ...d, [a.intent_id]: a.cutoff_vnd + BID_STEP }))}
                     >
-                      Vào top · {vnd(a.cutoff_vnd + BID_STEP)}
+                      Vào nhóm · {vnd(a.cutoff_vnd + BID_STEP)}
                     </button>
                   )}
                 </div>
@@ -415,8 +415,8 @@ function Pipeline({ leads, onCall, refresh, showToast }) {
 
   return (
     <div className="wrap-pipeline">
-      <h1 className="page">Pipeline</h1>
-      <p className="page-sub">{leads.length} khách bạn đã thắng · Bonia ghi lại mọi cuộc gọi</p>
+      <h1 className="page">Khách hàng</h1>
+      <p className="page-sub">{leads.length} khách hàng · Bonia ghi nhận mọi cuộc gọi</p>
 
       <div className="filters" style={{ marginTop: 18 }}>
         {STAGE_FILTERS.map((f) => (
@@ -428,7 +428,7 @@ function Pipeline({ leads, onCall, refresh, showToast }) {
 
       {leads.length === 0 ? (
         <div className="empty" style={{ marginTop: 14 }}>
-          Chưa thắng phiên nào. Bid ở tab Nhu cầu mới — khách bạn thắng sẽ hiện ở đây.
+          Chưa có khách hàng nào. Đặt phí ở mục Nhu cầu mới để được kết nối.
         </div>
       ) : (
         <div className="pipe" style={{ marginTop: 6 }}>
@@ -469,7 +469,7 @@ function Pipeline({ leads, onCall, refresh, showToast }) {
                   {sel.note && <p style={{ fontSize: 13.5, lineHeight: 1.55, color: "var(--ink-55)", marginTop: 6 }}>{sel.note}</p>}
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 10.5, color: "var(--ink-45)" }}>Phí trả nếu duyệt</div>
+                  <div style={{ fontSize: 10.5, color: "var(--ink-45)" }}>Phí khi thành công</div>
                   <div className="mono" style={{ fontSize: 20, fontWeight: 600 }}>{vnd(sel.fee_vnd)}</div>
                 </div>
               </div>
@@ -478,18 +478,18 @@ function Pipeline({ leads, onCall, refresh, showToast }) {
                 <StageChip state={sel.state} />
                 {sel.preferred_window && <span className="chip">{sel.preferred_window}</span>}
                 {sel.sla && <span className="chip amber">{sel.sla}</span>}
-                <span className="chip green">🔒 SĐT được Bonia bảo vệ</span>
+                <span className="chip green">Số điện thoại được bảo mật</span>
               </div>
 
               {sel.claim && (
                 <div style={{ borderRadius: 14, padding: "15px 16px", border: "1px solid var(--green-border)", background: sel.claim.state === "settled" || sel.claim.state === "paid" ? "var(--green-tint-faint)" : "var(--green-tint-soft)", marginBottom: 16 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 600 }}>
-                    {sel.claim.state === "pending_rm" ? "Khách báo đã được duyệt" : "Hồ sơ đã duyệt"}
+                    {sel.claim.state === "pending_rm" ? "Khách hàng báo đã được duyệt" : "Hồ sơ đã duyệt"}
                   </div>
                   <div style={{ fontSize: 12.5, lineHeight: 1.55, color: "var(--ink-55)", margin: "6px 0 12px" }}>
                     {sel.claim.state === "pending_rm"
-                      ? "Xác nhận nếu đúng — bạn sẽ thanh toán phí bạn đã bid, khách nhận lại 50%."
-                      : `Phí ${vnd(sel.claim.feeVnd)} · khách nhận ${vnd(sel.claim.userShareVnd)}`}
+                      ? "Xác nhận nếu đúng. Bạn thanh toán mức phí đã đặt, khách hàng nhận lại 50%."
+                      : `Phí ${vnd(sel.claim.feeVnd)} · khách hàng nhận ${vnd(sel.claim.userShareVnd)}`}
                   </div>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {sel.claim.state === "pending_rm" && (
@@ -527,7 +527,7 @@ function Pipeline({ leads, onCall, refresh, showToast }) {
                 <div>
                   <div className="mono-eyebrow">Cuộc gọi · Bonia ghi lại</div>
                   {(!sel.call_history || sel.call_history.length === 0) && (
-                    <div className="empty">Chưa gọi lần nào. Sau cuộc gọi đầu tiên, tóm tắt sẽ hiện ở đây.</div>
+                    <div className="empty">Chưa có cuộc gọi. Sau cuộc gọi đầu tiên, ghi nhận sẽ hiện ở đây.</div>
                   )}
                   <div className="stack">
                     {(sel.call_history || []).map((h, i) => (
@@ -603,14 +603,14 @@ function Account({ me, onSignOut, showToast }) {
           </div>
           <div>
             <div style={{ fontSize: 16, fontWeight: 600 }}>{me.profile.displayName}</div>
-            <div style={{ fontSize: 13, color: "var(--ink-55)" }}>{me.profile.bank} · RM Thẻ tín dụng</div>
+            <div style={{ fontSize: 13, color: "var(--ink-55)" }}>{me.profile.bank} · Thẻ tín dụng</div>
           </div>
         </div>
 
         <div className="card">
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Ngân sách phí mỗi tháng</div>
           <div style={{ fontSize: 12.5, lineHeight: 1.55, color: "var(--ink-55)", marginBottom: 14 }}>
-            Bonia nhắc bạn khi tổng phí đã cam kết chạm hạn mức. Bạn vẫn bid được — đây là cảnh báo, không phải khoá.
+            Bonia nhắc khi tổng phí đã cam kết chạm hạn mức. Bạn vẫn có thể đặt phí — đây là cảnh báo, không phải giới hạn cứng.
           </div>
           <div style={{ fontSize: 12, color: "var(--ink-45)" }}>Đã cam kết tháng này</div>
           <div className="mono" style={{ fontSize: 17, fontWeight: 600, margin: "4px 0 8px" }}>
@@ -625,14 +625,14 @@ function Account({ me, onSignOut, showToast }) {
         </div>
 
         <div className="card">
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Cần thêm khách?</div>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Nhận thêm khách hàng</div>
           <div style={{ fontSize: 12.5, lineHeight: 1.55, color: "var(--ink-55)", marginBottom: 12 }}>
-            Báo Bonia khi bạn muốn nhận thêm nhu cầu — chúng tôi ưu tiên mở thêm phiên ở khu vực của bạn.
+            Cho Bonia biết khi bạn muốn nhận thêm khách hàng trong khu vực của bạn.
           </div>
           <button className="btn btn-ghost" onClick={async () => {
             try { await api.requestLeads(); showToast("Đã gửi yêu cầu tới Bonia"); }
             catch { showToast("Không gửi được"); }
-          }}>Xin thêm nhu cầu</button>
+          }}>Yêu cầu thêm khách hàng</button>
         </div>
 
         <button className="btn btn-ghost btn-block" style={{ height: 46, borderRadius: 12 }} onClick={onSignOut}>
