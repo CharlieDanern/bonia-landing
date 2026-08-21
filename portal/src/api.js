@@ -53,6 +53,9 @@ export const api = {
       body: { amount_vnd: amountVnd },
     }),
   offers: () => request("/rm/offers"),
+  products: () => request("/rm/products"),
+  submitProduct: (body) =>
+    request("/rm/products/submit", { method: "POST", body }),
   setOffer: (productId, amountVnd) =>
     request(`/rm/offers/${productId}`, {
       method: "POST",

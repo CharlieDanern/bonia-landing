@@ -243,6 +243,20 @@ function Portal({ onSignOut }) {
    loudest thing on each card. */
 function Offers({ products, bank, onSet, showToast }) {
   const [drafts, setDrafts] = useState({});
+  // Rep-entered card content (name / perk / điều kiện / art). Everything
+  // submitted here goes to Bonia review first — it never reaches the
+  // consumer app directly.
+  const [content, setContent] = useState({ products: [], submissions: [] });
+  const [editing, setEditing] = useState(null); // {product_id?} | "new"
+
+  const loadContent = async () => {
+    try { setContent(await api.products()); } catch { /* non-blocking */ }
+  };
+  useEffect(() => { loadContent(); }, []);
+
+  const contentFor = (id) => content.products.find((c) => c.product_id === id);
+  const pendingFor = (id) =>
+    content.submissions.find((s) => s.status === "pending" && s.product_id === id);
 
   const draftFor = (p) =>
     drafts[p.product_id] ??
@@ -271,7 +285,10 @@ function Offers({ products, bank, onSet, showToast }) {
   return (
     <div className="wrap">
       <div className="eyebrow">{bank || "Ngân hàng"}</div>
-      <h1 className="page">Ưu đãi của tôi</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+        <h1 className="page">Ưu đãi của tôi</h1>
+        <button className="btn btn-ink" onClick={() => setEditing("new")}>+ Đề xuất thẻ mới</button>
+      </div>
       <p className="page-sub">
         Mức bạn trả cho Bonia khi khách mở thẻ thành công. Khách nhận 50% — ưu đãi cao nhất tại {bank || "ngân hàng"} được
         hiển thị cho khách và nhận cuộc kết nối.
@@ -349,9 +366,129 @@ function Offers({ products, bank, onSet, showToast }) {
               <div style={{ fontSize: 11, color: "var(--ink-35)", marginTop: 8 }}>
                 Chỉ trả khi khách mở thẻ thành công · mỗi bước {vnd(BID_STEP)}
               </div>
+
+              {(() => {
+                const c = contentFor(p.product_id);
+                const pending = pendingFor(p.product_id);
+                return (
+                  <div style={{ borderTop: "1px solid var(--border)", marginTop: 12, paddingTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: ".06em", color: "var(--ink-35)", textTransform: "uppercase" }}>
+                        Nội dung hiển thị với khách
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--ink-45)", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {c?.perk_line || "Chưa có mô tả quyền lợi"} · {c?.eligibility_bullets?.length || 0} điều kiện
+                        {c?.image_url ? " · có ảnh" : ""}
+                      </div>
+                    </div>
+                    {pending ? (
+                      <span className="chip amber" style={{ flex: "none" }}>Chờ duyệt</span>
+                    ) : (
+                      <button className="btn btn-ghost" style={{ flex: "none" }} onClick={() => setEditing(p.product_id)}>
+                        Chỉnh sửa
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           );
         })}
+      </div>
+
+      {editing && (
+        <ProductContentModal
+          bank={bank}
+          product={editing === "new" ? null : {
+            product_id: editing,
+            name: products.find((p) => p.product_id === editing)?.name,
+            ...contentFor(editing),
+          }}
+          onClose={() => setEditing(null)}
+          onSubmitted={() => {
+            setEditing(null);
+            loadContent();
+            showToast("Đã gửi cho Bonia duyệt — khách chỉ thấy nội dung sau khi được duyệt");
+          }}
+          showToast={showToast}
+        />
+      )}
+    </div>
+  );
+}
+
+/* Rep proposes card content. Reward amounts and payment terms are absent
+   by design — those come from the live offer and Bonia's fixed copy. */
+function ProductContentModal({ bank, product, onClose, onSubmitted, showToast }) {
+  const [name, setName] = useState(product?.name || "");
+  const [perk, setPerk] = useState(product?.perk_line || "");
+  const [bullets, setBullets] = useState((product?.eligibility_bullets || []).join("\n"));
+  const [imageUrl, setImageUrl] = useState(product?.image_url || "");
+  const [busy, setBusy] = useState(false);
+
+  const bulletList = bullets.split("\n").map((x) => x.trim()).filter(Boolean);
+  const valid = name.trim().length > 0 && perk.length <= 40 && bulletList.length <= 6;
+
+  const submit = async () => {
+    setBusy(true);
+    try {
+      await api.submitProduct({
+        product_id: product?.product_id || undefined,
+        name: name.trim(),
+        perk_line: perk.trim() || undefined,
+        eligibility_bullets: bulletList,
+        image_url: imageUrl.trim() || undefined,
+      });
+      onSubmitted();
+    } catch (ex) {
+      showToast(
+        ex.body?.error === "perk_too_long" ? "Quyền lợi tối đa 40 ký tự"
+          : ex.body?.error === "invalid_bullets" ? "Tối đa 6 điều kiện, mỗi dòng ≤ 120 ký tự"
+            : ex.body?.error === "invalid_image_url" ? "Ảnh phải là đường dẫn https"
+              : "Không gửi được, thử lại"
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const label = { fontSize: 11.5, fontWeight: 600, color: "var(--ink-45)", margin: "10px 0 5px" };
+  return (
+    <div className="scrim" onClick={onClose}>
+      <div className="modal pay bn-up" onClick={(e) => e.stopPropagation()}>
+        <div style={{ fontFamily: "var(--serif)", fontSize: 20, fontWeight: 600 }}>
+          {product ? "Nội dung thẻ" : "Đề xuất thẻ mới"}
+        </div>
+        <div style={{ fontSize: 12.5, color: "var(--ink-45)", marginTop: 4, lineHeight: 1.5 }}>
+          Bonia duyệt trước khi hiển thị với khách. Mức thưởng và điều khoản thanh toán
+          do hệ thống tự tính từ ưu đãi của bạn — không nhập ở đây.
+        </div>
+
+        <div style={label}>Tên thẻ (không cần lặp lại "{bank}")</div>
+        <input className="input" value={name} maxLength={80} onChange={(e) => setName(e.target.value)}
+          placeholder="Online Plus 2in1" />
+
+        <div style={label}>
+          Quyền lợi nổi bật <span style={{ color: perk.length > 40 ? "var(--amber-text)" : "var(--ink-35)", fontWeight: 400 }}>· {perk.length}/40</span>
+        </div>
+        <input className="input" value={perk} maxLength={60} onChange={(e) => setPerk(e.target.value)}
+          placeholder="Hoàn tiền 10% mỹ phẩm & spa" />
+
+        <div style={label}>Điều kiện xét duyệt — mỗi dòng một điều kiện (tối đa 6)</div>
+        <textarea className="input" style={{ height: 96, padding: "9px 13px", resize: "vertical" }}
+          value={bullets} onChange={(e) => setBullets(e.target.value)}
+          placeholder={"Từ 18 tuổi, có CCCD\nThu nhập từ 8 triệu/tháng"} />
+
+        <div style={label}>Ảnh thẻ (đường dẫn https, tuỳ chọn)</div>
+        <input className="input" value={imageUrl} maxLength={300} onChange={(e) => setImageUrl(e.target.value)}
+          placeholder="https://..." />
+
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 14 }}>
+          <button className="btn btn-ghost" onClick={onClose}>Huỷ</button>
+          <button className="btn btn-primary" disabled={!valid || busy} onClick={submit}>
+            {busy ? "Đang gửi…" : "Gửi Bonia duyệt"}
+          </button>
+        </div>
       </div>
     </div>
   );
