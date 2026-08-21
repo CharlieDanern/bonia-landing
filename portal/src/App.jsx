@@ -148,7 +148,7 @@ function Portal({ onSignOut }) {
   const budgetPct = me ? Math.min(100, Math.round((me.budget.committedVnd / me.budget.capVnd) * 100)) : 0;
 
   const nav = [
-    { key: "offers", label: "Ưu đãi của tôi", short: "Ưu đãi" },
+    { key: "offers", label: "Bid của tôi", short: "Bid" },
     { key: "pipeline", label: "Pipeline", short: "Pipeline", count: leadCounts },
     { key: "account", label: "Tài khoản", short: "Tôi" },
   ];
@@ -286,11 +286,11 @@ function Offers({ products, bank, onSet, showToast }) {
     <div className="wrap">
       <div className="eyebrow">{bank || "Ngân hàng"}</div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
-        <h1 className="page">Ưu đãi của tôi</h1>
+        <h1 className="page">Bid của tôi</h1>
         <button className="btn btn-ink" onClick={() => setEditing("new")}>+ Đề xuất thẻ mới</button>
       </div>
       <p className="page-sub">
-        Mức bạn trả cho Bonia khi khách mở thẻ thành công. Khách nhận 50% — ưu đãi cao nhất tại {bank || "ngân hàng"} được
+        Mức bạn trả cho Bonia khi khách mở thẻ thành công. Khách nhận 50% — bid cao nhất tại {bank || "ngân hàng"} được
         hiển thị cho khách và nhận cuộc kết nối.
       </p>
 
@@ -318,7 +318,7 @@ function Offers({ products, bank, onSet, showToast }) {
 
               <div className="ladder" style={{ marginTop: 12 }}>
                 <div className="ladder-head">
-                  <span className="ladder-title">Ưu đãi tại {bank}</span>
+                  <span className="ladder-title">Bid tại {bank}</span>
                   <span className="ladder-rank">{p.offer_count} người đang chào</span>
                 </div>
                 <div className="ladder-row">
@@ -360,7 +360,7 @@ function Offers({ products, bank, onSet, showToast }) {
                   onChange={(fn) => setDrafts((d) => ({ ...d, [p.product_id]: fn(d[p.product_id] ?? draftFor(p)) }))}
                 />
                 <button className={`btn ${leading ? "btn-ink" : "btn-primary"}`} onClick={() => submit(p)}>
-                  {p.my_offer_vnd == null ? "Đặt ưu đãi" : "Nâng ưu đãi"}
+                  {p.my_offer_vnd == null ? "Đặt bid" : "Nâng bid"}
                 </button>
               </div>
               <div style={{ fontSize: 11, color: "var(--ink-35)", marginTop: 8 }}>
@@ -461,7 +461,7 @@ function ProductContentModal({ bank, product, onClose, onSubmitted, showToast })
         </div>
         <div style={{ fontSize: 12.5, color: "var(--ink-45)", marginTop: 4, lineHeight: 1.5 }}>
           Bonia duyệt trước khi hiển thị với khách. Mức thưởng và điều khoản thanh toán
-          do hệ thống tự tính từ ưu đãi của bạn — không nhập ở đây.
+          do hệ thống tự tính từ bid của bạn — không nhập ở đây.
         </div>
 
         <div style={label}>Tên thẻ (không cần lặp lại "{bank}")</div>
