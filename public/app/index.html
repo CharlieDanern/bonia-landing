@@ -11,10 +11,16 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="/app/assets/index-CAjofID8.js"></script>
+    <script type="module" crossorigin src="/app/assets/index-BPj8NChn.js"></script>
     <link rel="stylesheet" crossorigin href="/app/assets/index-D5aLyEn1.css">
   </head>
   <body>
     <div id="root"></div>
+    <!-- SIP.js is a classic UMD bundle (top-level `this`) — it must load as
+         a plain script, never through the ESM graph: vite-dev serves ESM
+         imports as modules where `this` is undefined and the whole app
+         module graph dies with it. Classic scripts run before deferred
+         modules, so window.SIP is ready when softphone.js reads it. -->
+    <script src="./sip.min.js"></script>
   </body>
 </html>

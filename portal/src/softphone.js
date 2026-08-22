@@ -12,7 +12,6 @@
 // Call phases mirror the design overlay: connecting → ringing → connected
 // (or failed). Ringback is generated server-side (FS broadcasts a VN tone
 // onto the RM leg), so there is nothing to play locally.
-import "./sip.min.js";
 
 const SIP = window.SIP;
 
