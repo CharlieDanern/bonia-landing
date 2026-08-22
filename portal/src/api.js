@@ -54,6 +54,12 @@ export const api = {
     }),
   offers: () => request("/rm/offers"),
   products: () => request("/rm/products"),
+  // Bid-tab v2 — rep-owned cards
+  cards: () => request("/rm/cards"),
+  createCard: (body) => request("/rm/cards", { method: "POST", body }),
+  updateCard: (id, body) => request(`/rm/cards/${id}`, { method: "PUT", body }),
+  uploadCardMedia: (id, body) =>
+    request(`/rm/cards/${id}/media`, { method: "POST", body }),
   submitProduct: (body) =>
     request("/rm/products/submit", { method: "POST", body }),
   setOffer: (productId, amountVnd) =>

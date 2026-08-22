@@ -5,6 +5,7 @@ import {
   BID_STEP, Stepper, Toast, useToast, CallOverlay, PaymentModal,
 } from "./components.jsx";
 import logo from "./logo-mark.png";
+import { BidTab } from "./bid/BidTab.jsx";
 
 const POLL_MS = 15_000; // marketplace/pipeline refresh — the ladder must feel live
 
@@ -79,7 +80,7 @@ function Login({ onIn }) {
 function Portal({ onSignOut }) {
   const [route, setRoute] = useState("offers");
   const [me, setMe] = useState(null);
-  const [offers, setOffers] = useState([]);
+  const [cards, setCards] = useState([]);
   const [leads, setLeads] = useState([]);
   const [toast, showToast] = useToast();
 
@@ -91,9 +92,9 @@ function Portal({ onSignOut }) {
 
   const refresh = useCallback(async () => {
     try {
-      const [m, of, ld] = await Promise.all([api.me(), api.offers(), api.leads()]);
+      const [m, cs, ld] = await Promise.all([api.me(), api.cards(), api.leads()]);
       setMe(m);
-      setOffers(of.products || []);
+      setCards(cs.cards || []);
       setLeads(ld.leads || []);
     } catch {
       /* 401 handled globally */
@@ -148,10 +149,14 @@ function Portal({ onSignOut }) {
   const budgetPct = me ? Math.min(100, Math.round((me.budget.committedVnd / me.budget.capVnd) * 100)) : 0;
 
   const nav = [
-    { key: "offers", label: "Bid của tôi", short: "Bid" },
-    { key: "pipeline", label: "Pipeline", short: "Pipeline", count: leadCounts },
+    { key: "offers", label: "Bid của tôi", short: "Bid", count: cards.length || null },
+    { key: "pipeline", label: "Pipeline", short: "Pipeline", count: cards.length ? leadCounts : null },
     { key: "account", label: "Tài khoản", short: "Tôi" },
   ];
+
+  // Sidebar load card: total active pipeline across all cards; amber ≥90%.
+  const loadNow = cards.reduce((n, c) => n + c.active_leads, 0);
+  const loadMax = cards.reduce((n, c) => n + c.max_active_leads, 0);
 
   return (
     <>
@@ -177,14 +182,14 @@ function Portal({ onSignOut }) {
             ))}
           </nav>
           <div style={{ flex: 1 }} />
-          {me && (
-            <div className="budget-card">
-              <div className="budget-label">Phí đã cam kết tháng này</div>
-              <div className="budget-amount mono">{vnd(me.budget.committedVnd)}</div>
-              <div className="budget-track">
-                <div className={`budget-fill ${budgetPct > 85 ? "over" : ""}`} style={{ width: `${budgetPct}%` }} />
+          {me && cards.length > 0 && loadMax > 0 && (
+            <div className="bid-load-card">
+              <div className="bid-load-num mono">{loadNow} / {loadMax}</div>
+              <div className={`bid-load-track ${loadNow / loadMax >= 0.9 ? "hot" : ""}`}>
+                <div style={{ width: `${Math.min(100, (loadNow / loadMax) * 100)}%` }} />
               </div>
-              <div className="budget-foot">trên hạn mức {vnd(me.budget.capVnd)}</div>
+              <div className="bid-load-label">Lead đang xử lý</div>
+              <div className="bid-load-label" style={{ opacity: .7 }}>trên tất cả thẻ của bạn</div>
             </div>
           )}
           {me && (
@@ -199,7 +204,7 @@ function Portal({ onSignOut }) {
         </aside>
 
         <main className="content">
-          {route === "offers" && <Offers products={offers} bank={me?.profile?.bank} onSet={refresh} showToast={showToast} />}
+          {route === "offers" && <BidTab cards={cards} bank={me?.profile?.bank} refresh={refresh} showToast={showToast} />}
           {route === "pipeline" && (
             <Pipeline leads={leads} onCall={startCall} refresh={refresh} showToast={showToast} />
           )}
