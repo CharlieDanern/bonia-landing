@@ -94,7 +94,10 @@ export default function Registrations({ showToast }) {
 }
 
 function RegRow({ reg, showToast, onDone }) {
-  const [bank, setBank] = useState(reg.bank || "");
+  // While pending_review the backend's bank column holds the claimed
+  // email DOMAIN placeholder — never pre-fill that as the bank, or a
+  // default one-click approve would store the domain string.
+  const [bank, setBank] = useState(BANKS.includes(reg.bank) ? reg.bank : "");
   const [busy, setBusy] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
 

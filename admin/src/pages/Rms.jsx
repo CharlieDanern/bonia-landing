@@ -219,7 +219,9 @@ function ManualDeposit({ showToast, onDone }) {
       setMemo("BONIA NAP ");
       onDone();
     } catch (ex) {
-      showToast(`Lỗi: ${ex.body?.error || ex.message}`);
+      // Unmatched transfers come back 404 {matched:false, reason:"…"} —
+      // surface the reason (deposit_code_unknown, claim_not_invoiced…).
+      showToast(`Lỗi: ${ex.body?.error || ex.body?.reason || ex.message}`);
     } finally {
       setBusy(false);
     }

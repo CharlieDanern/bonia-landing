@@ -79,9 +79,11 @@ export const CARD_STATUS = {
   rejected: ["Từ chối", "red"],
 };
 
+// Keys are the actual rm_users.status values the backend emits
+// (pending_review | active | rejected).
 export const REG_STATUS = {
-  pending: ["Chờ duyệt", "amber"],
-  approved: ["Đã duyệt", "green"],
+  pending_review: ["Chờ duyệt", "amber"],
+  active: ["Đã duyệt", "green"],
   rejected: ["Từ chối", "red"],
 };
 

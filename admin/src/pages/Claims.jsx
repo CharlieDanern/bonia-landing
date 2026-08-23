@@ -98,7 +98,7 @@ export default function Claims({ showToast }) {
 function ClaimDetail({ claim, showToast, onDone }) {
   const [outcome, setOutcome] = useState(null); // "won" | "lost"
   const [finalCard, setFinalCard] = useState(
-    claim.proposed_card_name ? "proposed" : "customer"
+    claim.proposed_card_id ? "proposed" : "customer"
   );
   const [finalFee, setFinalFee] = useState(
     String(claim.final_fee_vnd ?? claim.fee_vnd ?? "")
@@ -106,11 +106,17 @@ function ClaimDetail({ claim, showToast, onDone }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  // The id of the card the admin picked — this is what the backend
+  // records; without it the server falls back to the RM's proposed card.
+  const finalCardId =
+    finalCard === "proposed" ? claim.proposed_card_id : claim.customer_card_id;
+
   const resolve = async () => {
     setBusy(true);
     try {
       await api.resolveClaim(claim.id, {
         outcome,
+        ...(outcome === "won" && finalCardId ? { final_card_id: finalCardId } : {}),
         ...(outcome === "won" && finalFee !== "" && !Number.isNaN(Number(finalFee))
           ? { final_fee_vnd: Number(finalFee) }
           : {}),
