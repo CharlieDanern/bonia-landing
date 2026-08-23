@@ -156,10 +156,7 @@ export function BidDetail({ card, wallet, onBack, refresh, showToast }) {
             imageUrl={pendingImage ? pendingImage.dataUrl : card.image_url}
             cta="Quan tâm"
           />
-          <div className="bid-micro" style={{ marginTop: 8 }}>
-            Khách sẽ thấy <b className="mono">Nhận {vnd(reward)}</b> — bằng 50% bid của bạn.
-          </div>
-          <div style={{ display: "flex", gap: 9, alignItems: "center", marginTop: 10, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 9, alignItems: "center", marginTop: 8, flexWrap: "wrap" }}>
             {pendingImage ? (
               <>
                 <button className="btn-navy" disabled={imageBusy} onClick={saveImage}>
@@ -168,17 +165,16 @@ export function BidDetail({ card, wallet, onBack, refresh, showToast }) {
                 <button className="btn btn-ghost" disabled={imageBusy} onClick={() => setPendingImage(null)}>
                   Huỷ
                 </button>
+                <span className="bid-micro">Xem trước {pendingImage.fileName} — chưa lưu.</span>
               </>
             ) : (
-              <button className="bid-link-btn" onClick={() => imageRef.current?.click()}>Đổi ảnh</button>
+              <span className="bid-micro">
+                <button className="bid-link-btn" onClick={() => imageRef.current?.click()}>Đổi ảnh</button>
+                {" "}· jpg, png, webp · tối đa 500 KB
+              </span>
             )}
             <input ref={imageRef} type="file" accept="image/jpeg,image/png,image/webp" hidden
               onChange={(e) => { pickImage(e.target.files?.[0]); e.target.value = ""; }} />
-          </div>
-          <div className="bid-micro" style={{ marginTop: 6 }}>
-            {pendingImage
-              ? `Xem trước ${pendingImage.fileName} — chưa lưu.`
-              : "Ảnh mới thay thế ảnh hiện tại · jpg, png, webp · tối đa 500 KB."}
           </div>
         </div>
         <div className="bid-terms" style={{ flex: 1, minWidth: 256 }}>
@@ -201,9 +197,6 @@ export function BidDetail({ card, wallet, onBack, refresh, showToast }) {
             Ngân hàng có quyền từ chối hồ sơ — khi đó bạn không mất phí nào.
           </div>
         </div>
-      </div>
-      <div className="bid-micro" style={{ marginTop: 8 }}>
-        Điều kiện bạn nhập chỉ hiện ở màn này, không hiện trên thẻ.
       </div>
 
       {/* Bid */}
