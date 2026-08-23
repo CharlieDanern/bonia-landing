@@ -551,6 +551,9 @@ function CallRecord({ item }) {
           Bản ghi từng câu sẽ mở ra ở đúng chỗ này khi tính năng ghi nội dung cuộc gọi ra mắt.
         </div>
       )}
+      <div className="bid-micro" style={{ marginTop: 5, paddingLeft: 16 }}>
+        Cuộc gọi được kết nối bởi Bonia, có thể được ghi âm.
+      </div>
     </div>
   );
 }
