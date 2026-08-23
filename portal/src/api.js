@@ -81,7 +81,16 @@ export const api = {
       body: { reason },
     }),
   claimPayment: (claimId) => request(`/rm/claims/${claimId}/payment`),
-  requestLeads: () => request("/rm/request-leads", { method: "POST" }),
+  // Pipeline v2 + registration + wallet
+  register: (body) => request("/rm/register", { method: "POST", body }),
+  registerVerify: (body) => request("/rm/register/verify", { method: "POST", body }),
+  messages: (leadId) => request(`/rm/leads/${leadId}/messages`),
+  sendMessage: (leadId, text) =>
+    request(`/rm/leads/${leadId}/messages`, { method: "POST", body: { text } }),
+  outcome: (leadId, body) =>
+    request(`/rm/leads/${leadId}/outcome`, { method: "POST", body }),
+  ledger: () => request("/rm/wallet/ledger"),
+  updateAccount: (body) => request("/rm/account", { method: "PUT", body }),
 };
 
 // ── Formatting (VN conventions from the design handoff) ──────────────

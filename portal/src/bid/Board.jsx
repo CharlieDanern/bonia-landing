@@ -17,13 +17,16 @@ export function useWindowWidth() {
   return w;
 }
 
-export function statusChip(card) {
+export function statusChip(card, wallet) {
   if (card.status === "pending") return { text: "Chờ Bonia duyệt", cls: "amber" };
   if (card.status === "rejected") return { text: "Cần sửa nội dung", cls: "red" };
   if (card.status === "draft") return { text: "Bản nháp", cls: "navy" };
   if (card.paused) return { text: "Đã tạm dừng", cls: "amber" };
   if (card.active_leads >= card.max_active_leads)
     return { text: `Pipeline đầy · ${card.active_leads}/${card.max_active_leads}`, cls: "amber" };
+  // §9: no funds for the next hold → routing skips this rep.
+  if (wallet && wallet.freeLeadsLeft === 0 && wallet.availableVnd < Math.floor(card.my_bid_vnd / 2))
+    return { text: "Hết số dư", cls: "amber" };
   return { text: `Đang nhận lead · ${card.active_leads}/${card.max_active_leads}`, cls: "green" };
 }
 
@@ -137,7 +140,7 @@ function ReviewBanner({ card, onSubmitDraft }) {
   return null;
 }
 
-function BidRow({ card, wide, onOpen, onApplied, showToast }) {
+function BidRow({ card, wide, wallet, onOpen, onApplied, showToast }) {
   const [draft, setDraft] = useState(card.my_bid_vnd);
   const [busy, setBusy] = useState(false);
   useEffect(() => setDraft(card.my_bid_vnd), [card.my_bid_vnd]);
@@ -148,7 +151,7 @@ function BidRow({ card, wide, onOpen, onApplied, showToast }) {
   const pos = ranked
     ? computePosition(card.others_vnd, card.my_bid_vnd, card.i_hold_tiebreak, true)
     : null;
-  const chip = statusChip(card);
+  const chip = statusChip(card, wallet);
 
   const apply = async (amount) => {
     const target = amount ?? draft;
@@ -239,7 +242,7 @@ function BidRow({ card, wide, onOpen, onApplied, showToast }) {
   );
 }
 
-export function BidBoard({ cards, bank, onAdd, onOpen, refresh, showToast }) {
+export function BidBoard({ cards, bank, wallet, onAdd, onOpen, refresh, showToast }) {
   const width = useWindowWidth();
   const wide = width >= 1150;
 
@@ -263,6 +266,7 @@ export function BidBoard({ cards, bank, onAdd, onOpen, refresh, showToast }) {
             key={c.card_id}
             card={c}
             wide={wide}
+            wallet={wallet}
             onOpen={() => onOpen(c.card_id)}
             onApplied={refresh}
             showToast={showToast}

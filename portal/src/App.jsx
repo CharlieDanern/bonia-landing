@@ -6,21 +6,31 @@ import {
 } from "./components.jsx";
 import logo from "./logo-mark.png";
 import { BidTab } from "./bid/BidTab.jsx";
+import Register from "./Register.jsx";
+import Pipeline2 from "./Pipeline2.jsx";
+import Account2 from "./Account2.jsx";
 
 const POLL_MS = 15_000; // marketplace/pipeline refresh — the ladder must feel live
 
 export default function App() {
   const [authed, setAuthed] = useState(!!getToken());
+  const [publicView, setPublicView] = useState(
+    window.location.pathname.includes("dang-ky") ? "register" : "login"
+  );
   useEffect(() => {
     const onOut = () => setAuthed(false);
     window.addEventListener("bonia:signed-out", onOut);
     return () => window.removeEventListener("bonia:signed-out", onOut);
   }, []);
-  return authed ? <Portal onSignOut={() => setAuthed(false)} /> : <Login onIn={() => setAuthed(true)} />;
+  if (authed) return <Portal onSignOut={() => setAuthed(false)} />;
+  if (publicView === "register") {
+    return <Register onDone={() => { window.history.pushState({}, "", "/app/"); setPublicView("login"); }} />;
+  }
+  return <Login onIn={() => setAuthed(true)} onRegister={() => { window.history.pushState({}, "", "/app/dang-ky"); setPublicView("register"); }} />;
 }
 
 /* ══ Login ═══════════════════════════════════════════════════ */
-function Login({ onIn }) {
+function Login({ onIn, onRegister }) {
   const [u, setU] = useState("");
   const [p, setP] = useState("");
   const [err, setErr] = useState(null);
@@ -38,7 +48,9 @@ function Login({ onIn }) {
       const n = tries + 1;
       setTries(n);
       setErr(
-        ex.body?.error === "locked_out"
+        ex.body?.error === "pending_review"
+          ? "Bonia đang duyệt tài khoản của bạn — thường trong một ngày làm việc. Bạn sẽ nhận email khi tài khoản mở."
+          : ex.body?.error === "locked_out"
           ? "Bạn đã thử quá nhiều lần. Đợi ít phút rồi thử lại, hoặc nhắn Zalo Bonia để được cấp lại mật khẩu."
           : n >= 3
             ? "Bạn đã thử 3 lần. Đợi 60 giây rồi thử lại, hoặc nhắn Zalo Bonia để được cấp lại mật khẩu."
@@ -67,8 +79,11 @@ function Login({ onIn }) {
           <button className="btn btn-primary btn-block" disabled={busy || !u || !p}>
             {busy ? "Đang vào…" : "Đăng nhập"}
           </button>
-          <div style={{ fontSize: 11.5, color: "var(--ink-35)", textAlign: "center", marginTop: 12 }}>
-            Tài khoản do Bonia cấp
+          <div style={{ fontSize: 12, color: "var(--ink-45)", textAlign: "center", marginTop: 12 }}>
+            Chưa có tài khoản?{" "}
+            <button type="button" onClick={onRegister} style={{ color: "var(--navy, #191970)", fontWeight: 600 }}>
+              Đăng ký bằng email công việc
+            </button>
           </div>
         </form>
       </div>
@@ -89,6 +104,10 @@ function Portal({ onSignOut }) {
   const [call, setCall] = useState(null); // { leadId, name, phase }
   const [callSec, setCallSec] = useState(0);
   const [muted, setMuted] = useState(false);
+  // §3.0: hanging up ALWAYS opens the disposition sheet.
+  const [dispositionFor, setDispositionFor] = useState(null); // {leadId, seconds}
+  const callRef = useRef(null);
+  useEffect(() => { callRef.current = { leadId: call?.leadId, seconds: callSec, phase: call?.phase }; }, [call, callSec]);
 
   const refresh = useCallback(async () => {
     try {
@@ -113,6 +132,10 @@ function Portal({ onSignOut }) {
     const phone = new Softphone({
       onPhase: (phase) => {
         if (phase === "ended") {
+          const snap = callRef.current;
+          if (snap?.leadId && snap.phase === "connected") {
+            setDispositionFor({ leadId: snap.leadId, seconds: snap.seconds });
+          }
           setCall((c) => (c ? { ...c, phase: "ended" } : null));
           setTimeout(() => setCall(null), 300);
           refresh();
@@ -182,15 +205,27 @@ function Portal({ onSignOut }) {
             ))}
           </nav>
           <div style={{ flex: 1 }} />
-          {me && cards.length > 0 && loadMax > 0 && (
-            <div className="bid-load-card">
-              <div className="bid-load-num mono">{loadNow} / {loadMax}</div>
-              <div className={`bid-load-track ${loadNow / loadMax >= 0.9 ? "hot" : ""}`}>
-                <div style={{ width: `${Math.min(100, (loadNow / loadMax) * 100)}%` }} />
+          {me?.wallet && (
+            <button className="pl-wallet-card" onClick={() => setRoute("account")}>
+              <div className="bid-load-label">Số dư khả dụng</div>
+              <div className="mono" style={{ fontSize: 15, fontWeight: 600 }}>{vnd(me.wallet.availableVnd)}</div>
+              <div className="pl-wallet-bar">
+                <div style={{ width: `${(me.wallet.availableVnd + me.wallet.heldVnd) > 0 ? Math.min(100, (me.wallet.availableVnd / (me.wallet.availableVnd + me.wallet.heldVnd)) * 100) : 100}%` }} />
               </div>
-              <div className="bid-load-label">Lead đang xử lý</div>
-              <div className="bid-load-label" style={{ opacity: .7 }}>trên tất cả thẻ của bạn</div>
-            </div>
+              <div className="bid-load-label">
+                đang giữ {vnd(me.wallet.heldVnd)} · tổng {vnd(me.wallet.availableVnd + me.wallet.heldVnd)}
+              </div>
+              {me.wallet.freeLeadsLeft > 0 && (
+                <div className="bid-load-label" style={{ color: "var(--navy, #191970)", fontWeight: 600, marginTop: 3 }}>
+                  Còn {me.wallet.freeLeadsLeft} lead đầu miễn phí
+                </div>
+              )}
+              {me.wallet.freeLeadsLeft === 0 && me.wallet.availableVnd < 200000 && (
+                <div className="bid-load-label" style={{ color: "#8A5B08", fontWeight: 600, marginTop: 3 }}>
+                  Sắp hết số dư — lead mới sẽ chuyển cho người khác.
+                </div>
+              )}
+            </button>
           )}
           {me && (
             <div className="user-row">
@@ -204,12 +239,20 @@ function Portal({ onSignOut }) {
         </aside>
 
         <main className="content">
-          {route === "offers" && <BidTab cards={cards} bank={me?.profile?.bank} refresh={refresh} showToast={showToast} />}
+          {route === "offers" && <BidTab cards={cards} bank={me?.profile?.bank} wallet={me?.wallet} refresh={refresh} showToast={showToast} />}
           {route === "pipeline" && (
-            <Pipeline leads={leads} onCall={startCall} refresh={refresh} showToast={showToast} />
+            <Pipeline2
+              leads={leads}
+              myCards={cards}
+              onCall={startCall}
+              refresh={refresh}
+              showToast={showToast}
+              dispositionFor={dispositionFor}
+              clearDisposition={() => setDispositionFor(null)}
+            />
           )}
           {route === "account" && (
-            <Account me={me} onSignOut={() => { clearToken(); onSignOut(); }} showToast={showToast} />
+            <Account2 me={me} onSignOut={onSignOut} showToast={showToast} refresh={refresh} />
           )}
         </main>
       </div>
