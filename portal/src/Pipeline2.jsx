@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { api, vnd } from "./api.js";
+import { PaymentModal } from "./components.jsx";
 
 // Pipeline v2 (§3) — segmented lanes over a master-detail split.
 // The thread is ONE chronology (calls + messages); the stepper is the
@@ -89,7 +90,7 @@ export default function Pipeline2({
   const [lane, setLane] = useState("contact");
   const [selectedId, setSelectedId] = useState(null);
   const [feed, setFeed] = useState([]); // merged chronology for selected
-  const [draft, setDraft] = useState("");
+  const [drafts, setDrafts] = useState({}); // per-lead composer drafts
   const [sending, setSending] = useState(false);
   const [outcomeModal, setOutcomeModal] = useState(null); // 'won'|'lost'
   const [note, setNote] = useState("");
@@ -121,11 +122,13 @@ export default function Pipeline2({
 
   // A lane always has a selection (§3).
   const selected = laneLeads.find((l) => l.lead_id === selectedId) || laneLeads[0] || null;
+  const laneMemberIds = laneLeads.map((l) => l.lead_id).join(",");
   useEffect(() => {
     if (selected && selected.lead_id !== selectedId) setSelectedId(selected.lead_id);
-  }, [lane, laneLeads.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lane, laneMemberIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Merge messages + call records into one chronology.
+  const callHistoryLen = (selected?.call_history || []).length;
   useEffect(() => {
     let dead = false;
     setFeed([]);
@@ -148,7 +151,7 @@ export default function Pipeline2({
       } catch { /* ignore */ }
     })();
     return () => { dead = true; };
-  }, [selected?.lead_id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selected?.lead_id, callHistoryLen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { setNote(selected?.rm_notes || ""); setNoteOpen(false); }, [selected?.lead_id]);
 
@@ -159,13 +162,15 @@ export default function Pipeline2({
   }, [selected?.lead_id, feed.length]);
 
   const send = async () => {
-    const text = draft.trim();
-    if (!text || !selected || sending) return;
+    const leadId = selected?.lead_id;
+    const text = (drafts[leadId] || "").trim();
+    if (!text || !leadId || sending) return;
     setSending(true);
     try {
-      const res = await api.sendMessage(selected.lead_id, text);
-      setFeed((f) => [...f, { kind: "msg", ...res.message }]);
-      setDraft("");
+      const res = await api.sendMessage(leadId, text);
+      // Guard: only append if the same lead is still open.
+      setFeed((f) => (selectedId === leadId || selected?.lead_id === leadId ? [...f, { kind: "msg", ...res.message }] : f));
+      setDrafts((d) => ({ ...d, [leadId]: "" }));
       if (res.message.contains_contact_info) {
         showToast("Tin đã gửi — lưu ý: trao đổi ngoài Bonia không được bảo vệ");
       }
@@ -230,6 +235,7 @@ export default function Pipeline2({
                     </span>
                     <span style={{ fontSize: 11.5, color: "rgba(255,255,255,.82)" }}>{lead.card?.name || "Thẻ tín dụng"}</span>
                     {rowMeta(lead) && <span style={{ fontSize: 11, color: "rgba(255,255,255,.66)" }}>{rowMeta(lead)}</span>}
+                    {chip?.meta && <span style={{ fontSize: 11, color: "rgba(255,255,255,.66)" }}>{chip.meta}</span>}
                     {urgent && !chip && <span className="bid-chip amber" style={{ alignSelf: "flex-start" }}>Sắp hết hạn liên hệ</span>}
                     {chip && <span className={`bid-chip ${chip.cls === "grey" ? "" : chip.cls}`} style={{ alignSelf: "flex-start", ...(chip.cls === "grey" ? { background: "#F7F9FC", color: "#5A6378" } : {}) }}>{chip.text}</span>}
                   </span>
@@ -245,8 +251,8 @@ export default function Pipeline2({
             myCards={myCards}
             feed={feed}
             threadRef={threadRef}
-            draft={draft}
-            setDraft={setDraft}
+            draft={drafts[selected.lead_id] || ""}
+            setDraft={(v) => setDrafts((d) => ({ ...d, [selected.lead_id]: typeof v === "function" ? v(d[selected.lead_id] || "") : v }))}
             send={send}
             sending={sending}
             note={note}
@@ -285,7 +291,17 @@ export default function Pipeline2({
         <DispositionSheet
           lead={leads.find((l) => l.lead_id === dispositionFor.leadId) || null}
           seconds={dispositionFor.seconds}
+          onMissingLead={clearDisposition}
           onSaved={(state, label) => {
+            // §3.0: the saved call appears in the thread immediately.
+            if (selected?.lead_id === dispositionFor.leadId) {
+              setFeed((f) => [...f, {
+                kind: "call",
+                at: new Date().toISOString(),
+                connected: state !== "da_goi",
+                sec: dispositionFor.seconds || 0,
+              }]);
+            }
             clearDisposition();
             refresh();
             showToast(`Đã lưu · ${label} · ${state === "da_goi" ? "lead vẫn ở Cần liên hệ" : "lead chuyển sang Đang tư vấn"}`);
@@ -304,6 +320,7 @@ function DetailPane({
   onOpenOutcome, refresh, showToast,
 }) {
   const o = lead.outcome;
+  const [invoice, setInvoice] = useState(null); // PaymentModal payload
   const called = lead.call_attempts > 0 || ["dang_tu_van", "hen_goi_lai", "da_nop_ho_so"].includes(lead.state);
   // Exclusive bound (§3.2): count of COMPLETED phases.
   const completed = o ? (called ? 2 : 1) : called ? 1 : 0;
@@ -408,7 +425,25 @@ function DetailPane({
             : o.kind === "lost" ? { background: "#F7F9FC", border: "1px solid #E4E8F0", color: "#5A6378", marginBottom: 12 }
               : { marginBottom: 12 }}>
           {o.kind === "won" && (
-            <>Khách xác nhận cùng thẻ này trong app → Bonia gửi hoá đơn {vnd(o.invoice?.due_vnd ?? 0)} (đã trừ phần giữ {vnd(o.invoice?.held_vnd ?? 0)}).</>
+            <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ flex: 1 }}>
+                {lead.claim && ["invoiced", "paid", "settled"].includes(lead.claim.state)
+                  ? <>Hoá đơn {vnd(o.invoice?.due_vnd ?? 0)} (đã trừ phần giữ {vnd(o.invoice?.held_vnd ?? 0)}).</>
+                  : <>Khách xác nhận cùng thẻ này trong app → Bonia gửi hoá đơn {vnd(o.invoice?.due_vnd ?? 0)} (đã trừ phần giữ {vnd(o.invoice?.held_vnd ?? 0)}).</>}
+              </span>
+              {lead.claim && ["invoiced", "paid", "settled"].includes(lead.claim.state) && (
+                <button className="bid-link-btn" onClick={async () => {
+                  try {
+                    const pay = await api.claimPayment(lead.claim.id);
+                    setInvoice(pay);
+                  } catch {
+                    showToast("Không tải được hoá đơn");
+                  }
+                }}>
+                  Xem hoá đơn
+                </button>
+              )}
+            </span>
           )}
           {o.kind === "reconciling" && (
             <>Hai bên chọn thẻ khác nhau — Bonia liên hệ cả hai để đối soát. Phần giữ vẫn được giữ trong lúc đối soát.</>
@@ -419,8 +454,14 @@ function DetailPane({
         </div>
       )}
 
-      {/* notes — collapsed dashed row */}
-      {!noteOpen ? (
+      {invoice && (
+        <PaymentModal lead={lead} payment={invoice} onClose={() => setInvoice(null)} />
+      )}
+
+      {/* notes — collapsed dashed row (closed leads: read-only) */}
+      {o ? (
+        note ? <div className="pl-note-row" style={{ cursor: "default" }}><span>{note.split("\n")[0]}</span></div> : null
+      ) : !noteOpen ? (
         <button className="pl-note-row" onClick={() => setNoteOpen(true)}>
           <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {note ? note.split("\n")[0] : "Ghi chú riêng của bạn về khách này"}
@@ -482,9 +523,6 @@ function DetailPane({
           Gửi
         </button>
       </div>
-      <div className="bid-micro" style={{ marginTop: 6 }}>
-        Khách hàng thấy bạn là “{"VPBank" === lead.bank ? lead.bank : ""}tư vấn viên ngân hàng”. Bonia không hiển thị tên hay số của hai bên.
-      </div>
     </div>
   );
 }
@@ -518,9 +556,10 @@ function CallRecord({ item }) {
 }
 
 // ── Disposition sheet (§3.0) — no dismiss ───────────────────────────
-function DispositionSheet({ lead, seconds, onSaved, showToast }) {
+function DispositionSheet({ lead, seconds, onSaved, onMissingLead, showToast }) {
   const [choice, setChoice] = useState(null);
   const [busy, setBusy] = useState(false);
+  useEffect(() => { if (!lead) onMissingLead?.(); }, [lead]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!lead) return null;
   const dur = seconds > 0 ? `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}` : null;
 
@@ -553,8 +592,8 @@ function DispositionSheet({ lead, seconds, onSaved, showToast }) {
         <div className="pl-summary-panel">
           <span className="pl-summary-tile">B</span>
           <div>
-            <div style={{ fontSize: 12.5, fontWeight: 600 }}>Bonia tóm tắt cuộc gọi</div>
-            <div className="bid-micro">Bản tóm tắt tự động sẽ có khi tính năng ghi nội dung cuộc gọi ra mắt.</div>
+            <div style={{ fontSize: 12.5, fontWeight: 600 }}>Cuộc gọi qua số Bonia{dur ? ` · ${dur}` : ""}</div>
+            <div className="bid-micro">Chọn kết quả theo nội dung bạn vừa trao đổi.</div>
           </div>
         </div>
         {OPTIONS.map((o) => (
@@ -576,9 +615,14 @@ function DispositionSheet({ lead, seconds, onSaved, showToast }) {
 
 // ── Final-card modal (§4) ───────────────────────────────────────────
 function WonModal({ lead, myCards, onClose, onDone, showToast }) {
-  const [cardId, setCardId] = useState(lead.card?.card_id || myCards[0]?.card_id || null);
+  const approved = myCards.filter((c) => c.status === "approved");
+  const [cardId, setCardId] = useState(
+    approved.some((c) => c.card_id === lead.card?.card_id)
+      ? lead.card.card_id
+      : approved[0]?.card_id || null
+  );
   const [busy, setBusy] = useState(false);
-  const chosen = myCards.find((c) => c.card_id === cardId) || null;
+  const chosen = approved.find((c) => c.card_id === cardId) || null;
   const fee = chosen?.my_bid_vnd ?? lead.fee_vnd;
   const held = lead.hold_vnd || 0;
   const due = Math.max(0, fee - held);
@@ -608,7 +652,10 @@ function WonModal({ lead, myCards, onClose, onDone, showToast }) {
           đã mở — phí thành công tính theo thẻ này.
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 260, overflowY: "auto" }}>
-          {myCards.filter((c) => c.status === "approved").map((c) => (
+          {approved.length === 0 && (
+            <div className="bid-micro">Bạn chưa có thẻ nào được duyệt — duyệt thẻ trong Bid của tôi trước.</div>
+          )}
+          {approved.map((c) => (
             <label key={c.card_id} className={`pl-radio ${cardId === c.card_id ? "on" : ""}`}>
               <input type="radio" name="finalcard" checked={cardId === c.card_id} onChange={() => setCardId(c.card_id)} />
               <span className="pl-card-thumb" style={{ background: c.image_url ? `url(${c.image_url}) center/cover` : "linear-gradient(135deg,#1B1B22,#08080C)" }} />

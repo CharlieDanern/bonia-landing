@@ -11,7 +11,7 @@ export default function Account2({ me, onSignOut, showToast, refresh }) {
 
   useEffect(() => {
     api.ledger().then((r) => setLedger(r.entries || [])).catch(() => {});
-  }, [me?.wallet?.availableVnd]);
+  }, [me?.wallet?.availableVnd, me?.wallet?.heldVnd]);
 
   if (!me) return null;
 
@@ -41,16 +41,20 @@ export default function Account2({ me, onSignOut, showToast, refresh }) {
             <div className="bid-micro">Tổng số dư</div>
             <div className="mono" style={{ fontSize: 17, fontWeight: 600 }}>{vnd(total)}</div>
           </div>
-          <button className="btn-navy" style={{ height: 48 }} onClick={() => setDepositOpen(true)}>Nạp tiền</button>
         </div>
 
-        {/* one pot, two slices */}
-        <div className="acc-split-bar">
-          <div style={{ width: total > 0 ? `${(w.availableVnd / total) * 100}%` : "100%" }} />
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", fontSize: 11.5, color: "var(--ink-55)" }}>
-          <span><span className="acc-swatch navy" /> Sẵn sàng cho lead mới · <b className="mono">{vnd(w?.availableVnd || 0)}</b></span>
-          <span>Đang giữ cho {w?.heldLeadCount ?? ""} lead · <b className="mono">{vnd(w?.heldVnd || 0)}</b> · hoàn lại nếu không mở thẻ <span className="acc-swatch held" /></span>
+        {/* one pot, two slices — legend under the figures it describes */}
+        <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginTop: 12 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="acc-split-bar" style={{ margin: 0 }}>
+              <div style={{ width: total > 0 ? `${(w.availableVnd / total) * 100}%` : "100%" }} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", fontSize: 11.5, color: "var(--ink-55)", marginTop: 8 }}>
+              <span><span className="acc-swatch navy" /> Sẵn sàng cho lead mới · <b className="mono">{vnd(w?.availableVnd || 0)}</b></span>
+              <span>Đang giữ cho {w?.heldLeadCount ?? ""} lead · <b className="mono">{vnd(w?.heldVnd || 0)}</b> · hoàn lại nếu không mở thẻ <span className="acc-swatch held" /></span>
+            </div>
+          </div>
+          <button className="btn-navy" style={{ height: 48, flex: "none" }} onClick={() => setDepositOpen(true)}>Nạp tiền</button>
         </div>
         {w?.heldVnd > 0 && (
           <div className="bid-micro" style={{ marginTop: 6 }}>
@@ -74,7 +78,7 @@ export default function Account2({ me, onSignOut, showToast, refresh }) {
           </div>
         )}
         {ledger.map((e, i) => {
-          const chip = KIND_CHIP[e.kind] || KIND_CHIP.nap;
+          const chip = KIND_CHIP[e.kind] || { label: e.kind, style: { background: "#F7F9FC", color: "#5A6378", border: "1px solid #E4E8F0" } };
           return (
             <div key={i} className="acc-ledger-row">
               <span className="mono" style={{ width: 48, color: "var(--ink-45)", fontSize: 11.5 }}>
@@ -104,7 +108,8 @@ export default function Account2({ me, onSignOut, showToast, refresh }) {
         <ProfileRow label="Họ tên" value={me.profile.displayName} />
         <ProfileRow label="Email công việc" mono value={me.profile.email || "—"}
           badge={me.profile.email ? "Đã xác minh" : null} />
-        <ProfileRow label="Số điện thoại" mono value={me.profile.phone || "—"} />
+        <ProfileRow label="Số điện thoại" mono value={me.profile.phone || "—"}
+          action={<button className="bid-link-btn" onClick={() => showToast("Đổi số điện thoại qua Zalo Bonia trong bản này — tự đổi kèm OTP sẽ có sau.")}>Sửa</button>} />
         <ProfileRow label="Ngân hàng" value={me.profile.bank} />
         <ProfileRow label="Tên đăng nhập" mono value={me.profile.email || me.profile.username} />
         <button className="btn btn-ghost" style={{ marginTop: 14 }}
@@ -118,12 +123,13 @@ export default function Account2({ me, onSignOut, showToast, refresh }) {
   );
 }
 
-function ProfileRow({ label, value, mono = false, badge = null }) {
+function ProfileRow({ label, value, mono = false, badge = null, action = null }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 0", borderBottom: "1px solid #F1F4F9" }}>
       <span style={{ width: 130, fontSize: 12.5, color: "var(--ink-45)", flex: "none" }}>{label}</span>
       <span className={mono ? "mono" : ""} style={{ fontSize: 13, fontWeight: 500, flex: 1 }}>{value}</span>
       {badge && <span className="bid-chip green">{badge}</span>}
+      {action}
     </div>
   );
 }
@@ -134,7 +140,7 @@ function SpendCap({ me, showToast, refresh }) {
   const [busy, setBusy] = useState(false);
   useEffect(() => { if (capNow != null) setDraft(capNow); }, [capNow]);
   const spent = me.wallet?.monthSpentVnd || 0;
-  const on = capNow != null;
+  const on = capNow != null && capNow > 0;
 
   const save = async (value) => {
     setBusy(true);
@@ -174,17 +180,17 @@ function SpendCap({ me, showToast, refresh }) {
               <button className="bid-link-btn" disabled={busy} onClick={() => save(draft)}>Lưu giới hạn</button>
             )}
             <button className="bid-draft-btn" disabled={busy} onClick={() => save(on ? null : draft)}>
-              {on ? "Tắt giới hạn" : "Bật giới hạn"}
+              {on ? "Tắt giới hạn" : "Bật lại giới hạn"}
             </button>
           </div>
         </div>
         <div style={{ flex: 1, minWidth: 220 }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: "var(--ink-55)" }}>
-            <span>Đã dùng tháng này</span>
+            <span>Đã dùng tháng {new Date().getMonth() + 1}</span>
             <span className="mono">{vnd(spent)}</span>
           </div>
           <div className="bid-progress" style={{ height: 9, marginTop: 6 }}>
-            <div className={on && spent / capNow >= 0.9 ? "" : ""} style={{
+            <div style={{
               width: on ? `${Math.min(100, (spent / Math.max(1, capNow)) * 100)}%` : "0%",
               background: on && spent / Math.max(1, capNow) >= 0.9 ? "#D97706" : "var(--navy)",
             }} />
@@ -192,7 +198,7 @@ function SpendCap({ me, showToast, refresh }) {
           <div className="bid-micro" style={{ marginTop: 6 }}>
             {!on
               ? "Không giới hạn — bạn nhận lead miễn còn số dư."
-              : spent / capNow >= 0.9
+              : on && spent / capNow >= 0.9
                 ? "Sắp chạm giới hạn tháng này — lead mới sẽ sớm chuyển cho người khác."
                 : `Còn ${vnd(Math.max(0, capNow - spent))} trong giới hạn tháng này.`}
           </div>
@@ -228,7 +234,6 @@ function DepositModal({ me, onClose }) {
         </div>
         <div className="bid-review-note" style={{ marginTop: 12 }}>
           Nhập <b>đúng nội dung chuyển khoản</b> — Bonia dùng nó để cộng đúng tài khoản của bạn.
-          Số dư cộng tự động trong ~1 phút.
         </div>
         <div style={{ borderTop: "1px solid #EEF1F6", marginTop: 14, paddingTop: 12 }}>
           <div className="eyebrow mono" style={{ marginBottom: 8 }}>SỐ DƯ NÀY MUA ĐƯỢC GÌ</div>

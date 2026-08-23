@@ -33,6 +33,7 @@ export function BidTab({ cards, bank, wallet, refresh, showToast }) {
     return (
       <BidDetail
         card={card}
+        wallet={wallet}
         onBack={() => setView({ kind: "board" })}
         refresh={refresh}
         showToast={showToast}

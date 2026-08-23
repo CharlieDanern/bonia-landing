@@ -9,7 +9,7 @@ import { computePosition, clampBid, rewardOf, BID_STEP } from "./position.js";
 // thing the rep is buying); bid + ladder, lead cap + pause, content
 // editor, own-only bid history stack below.
 
-export function BidDetail({ card, onBack, refresh, showToast }) {
+export function BidDetail({ card, wallet, onBack, refresh, showToast }) {
   const [draft, setDraft] = useState(card.my_bid_vnd);
   const [busy, setBusy] = useState(false);
   const [capBusy, setCapBusy] = useState(false);
@@ -22,7 +22,7 @@ export function BidDetail({ card, onBack, refresh, showToast }) {
   const pos = ranked
     ? computePosition(card.others_vnd, card.my_bid_vnd, card.i_hold_tiebreak, true)
     : null;
-  const chip = statusChip(card);
+  const chip = statusChip(card, wallet);
   const reward = rewardOf(card.my_bid_vnd);
   const dirty = draft !== card.my_bid_vnd;
   const atCap = card.active_leads >= card.max_active_leads;

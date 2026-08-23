@@ -73,7 +73,9 @@ export default function Register({ onDone }) {
 
   // OTP boxes: paste-splitting + auto-advance (§11.6).
   const setOtpAt = (i, raw) => {
-    const digits = raw.replace(/\D/g, "");
+    let digits = raw.replace(/\D/g, "");
+    // Overtype: a filled box getting a new digit replaces, not splits.
+    if (digits.length === 2 && digits[0] === otp[i]) digits = digits[1];
     if (digits.length > 1) {
       const next = [...otp];
       for (let j = 0; j < digits.length && i + j < 6; j++) next[i + j] = digits[j];
@@ -185,7 +187,10 @@ export default function Register({ onDone }) {
                         value={d}
                         onChange={(e) => setOtpAt(i, e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === "Backspace" && !otp[i] && i > 0) otpRefs.current[i - 1]?.focus();
+                          if (e.key === "Backspace" && !otp[i] && i > 0) {
+                            setOtp((o) => o.map((d, j) => (j === i - 1 ? "" : d)));
+                            otpRefs.current[i - 1]?.focus();
+                          }
                         }}
                       />
                     ))}
