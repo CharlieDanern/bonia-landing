@@ -21,6 +21,16 @@ const FILTERS = [
 
 const DEFAULT_FLOOR = 100000;
 
+// Type auto-match: lowercase, strip diacritics (incl. đ→d), collapse spaces.
+const normalize = (s) =>
+  (s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/\s+/g, " ")
+    .trim();
+
 export default function Cards({ showToast }) {
   const [status, setStatus] = useState("pending");
   const [selId, setSelId] = useState(null);
@@ -125,6 +135,21 @@ function CardDetail({ card, showToast, onDone }) {
     if (matched && !floorTouched) setFloor(String(matched.floor_vnd));
   }, [matched, floorTouched]);
 
+  // Type auto-match at review: once the bank's types load, prefill the type
+  // input from normalize(card.name) — the matched existing label if one
+  // exists, otherwise the card name (new type). Runs once per selected card
+  // (component is keyed by card id); the input stays fully editable.
+  const [prefilled, setPrefilled] = useState(false);
+  useEffect(() => {
+    if (prefilled || card.status !== "pending") return;
+    if (typesLoad.loading || typesLoad.error) return;
+    setPrefilled(true);
+    if (typeLabel.trim()) return; // an already-assigned type wins
+    const key = normalize(card.name);
+    const hit = key ? types.find((t) => normalize(t.label) === key) : null;
+    setTypeLabel(hit ? hit.label : card.name || "");
+  }, [prefilled, card, typesLoad.loading, typesLoad.error, types, typeLabel]);
+
   const userReward = card.bid_vnd != null ? Math.floor(card.bid_vnd / 2) : null;
   const media = card.media_urls || [];
 
@@ -221,6 +246,15 @@ function CardDetail({ card, showToast, onDone }) {
       )}
 
       <div className="f-label" style={{ marginTop: 12 }}>
+        Điều kiện nhận thưởng
+      </div>
+      {card.reward_conditions ? (
+        <div className="tnc-box">{card.reward_conditions}</div>
+      ) : (
+        <div className="f-val dim">—</div>
+      )}
+
+      <div className="f-label" style={{ marginTop: 12 }}>
         Điều kiện &amp; điều khoản (toàn văn)
       </div>
       {card.tnc ? (
@@ -296,9 +330,9 @@ function CardDetail({ card, showToast, onDone }) {
           </datalist>
           {matched ? (
             <div className="bid-helper">
-              Khớp loại hiện có: sàn {vnd(matched.floor_vnd)} ·{" "}
-              {matched.variant_count} thẻ đang hiển thị · bid cao nhất{" "}
-              {vnd(matched.top_bid_vnd)}
+              Trùng loại thẻ hiện có — thẻ này sẽ cạnh tranh trong cùng khung
+              giá. Sàn {vnd(matched.floor_vnd)} · {matched.variant_count} thẻ
+              đang hiển thị · bid cao nhất {vnd(matched.top_bid_vnd)}
             </div>
           ) : typeLabel.trim() ? (
             <div className="bid-helper">
