@@ -538,7 +538,7 @@ function CallRecord({ item }) {
           {item.connected ? `Cuộc gọi${dur ? ` ${dur}` : ""}` : "Gọi không kết nối"}
         </span>
         <span className="bid-micro" style={{ flex: 1 }}>
-          {new Date(item.at).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · qua số Bonia
+          {new Date(item.at).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · qua số Bonia · có thể được ghi âm
         </span>
         {item.connected && (
           <button className="bid-link-btn" style={{ height: "auto", padding: 0 }} onClick={() => setOpen((x) => !x)}>
@@ -551,9 +551,6 @@ function CallRecord({ item }) {
           Bản ghi từng câu sẽ mở ra ở đúng chỗ này khi tính năng ghi nội dung cuộc gọi ra mắt.
         </div>
       )}
-      <div className="bid-micro" style={{ marginTop: 5, paddingLeft: 16 }}>
-        Cuộc gọi được kết nối bởi Bonia, có thể được ghi âm.
-      </div>
     </div>
   );
 }
