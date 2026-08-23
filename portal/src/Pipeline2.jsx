@@ -35,7 +35,15 @@ function laneOf(lead) {
  * already converges with the existing claim.
  */
 function outcomeOf(lead) {
-  return lead.outcome && lead.claim?.state !== "pending_rm" ? lead.outcome : null;
+  if (!lead.outcome) return null;
+  // A LOST close is terminal on the LEAD itself (state that_bai/cancelled),
+  // independent of any claim row, so it must keep reading as closed even
+  // while an unanswered customer claim sits in pending_rm. Without this the
+  // rep who closes "Không thành công" on a lead the customer had already
+  // declared watches it snap back to open, with live call and close controls
+  // on a lead the server will now 409.
+  if (lead.outcome.kind === "lost") return lead.outcome;
+  return lead.claim?.state !== "pending_rm" ? lead.outcome : null;
 }
 
 /**

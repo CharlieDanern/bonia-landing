@@ -83,6 +83,15 @@ export class Softphone {
     });
     this.session = inviter;
 
+    // ORDERING TRAP (verified against the vendored bundle): Inviter.invite()
+    // is `getOffer().then(...).catch(e => { stateTransition(Terminated); throw e })`
+    // and stateChange listeners run SYNCHRONOUSLY. So a denied microphone
+    // reaches us as "Terminated" FIRST and only then as the invite rejection.
+    // Emitting "ended" straight away made the caller open a disposition sheet
+    // for a call that never dialled and wipe the failure panel 300ms later.
+    // Defer "ended" by one macrotask: the catch below runs in a microtask, so
+    // it always gets to claim the failure first.
+    let failure = null;
     inviter.stateChange.addListener((state) => {
       if (state === "Establishing") this.onPhase("ringing");
       if (state === "Established") {
@@ -93,7 +102,9 @@ export class Softphone {
       if (state === "Terminated") {
         this._releaseWakeLock();
         this.session = null;
-        this.onPhase("ended");
+        setTimeout(() => {
+          if (!failure) this.onPhase("ended");
+        }, 0);
       }
     });
 
@@ -103,7 +114,8 @@ export class Softphone {
       this.session = null;
       // Pass the CAUSE to the overlay, not just "failed" — a denied mic and
       // a customer who really did not pick up need opposite instructions.
-      this.onPhase("failed", classifyCallError(err));
+      failure = classifyCallError(err);
+      this.onPhase("failed", failure);
       this.onError(err);
     }
   }
