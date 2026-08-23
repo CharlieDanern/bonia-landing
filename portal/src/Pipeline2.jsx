@@ -746,6 +746,17 @@ function WonModal({ lead, myCards, onClose, onDone, showToast }) {
             theo bid lúc bạn nhận lead — nâng bid không làm tăng phí của lead đang xử lý.
           </div>
         )}
+        {/* Different final card priced BELOW the routing-time bid: the server
+            floors the fee at the snapshot, so the row above says one number
+            and the total says a higher one. Say why, or this reads as an
+            overcharge on the rep's first close. */}
+        {!sameCard && chosen && (chosen.my_bid_vnd ?? 0) < (lead.fee_vnd ?? 0) && (
+          <div style={{ fontSize: 12, color: "var(--ink-55)", marginTop: 6, lineHeight: 1.5 }}>
+            Thẻ này đang bid <b className="mono">{vnd(chosen.my_bid_vnd)}</b>, nhưng khách đã được hứa
+            thưởng theo bid <b className="mono">{vnd(lead.fee_vnd)}</b> lúc nhận lead, nên phí giữ ở
+            mức đó. Đổi thẻ không làm giảm phí của lead đang xử lý.
+          </div>
+        )}
         <div style={{ fontSize: 12.5, marginTop: 6 }}>
           Khách nhận <b className="mono">{vnd(Math.floor(fee / 2 / 1000) * 1000)}</b>.{" "}
           <span style={{ color: "var(--ink-55)" }}>
