@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api, getToken, setToken, clearToken, vnd } from "./api.js";
-import { Softphone } from "./softphone.js";
+import { api, getToken, setToken, clearToken, vnd, ZALO } from "./api.js";
+import { Softphone, classifyCallError } from "./softphone.js";
 import { Toast, useToast, CallOverlay } from "./components.jsx";
 import logo from "./logo-mark.png";
 import { BidTab } from "./bid/BidTab.jsx";
@@ -56,7 +56,6 @@ function Login({ onIn, onPending, onRegister }) {
   const [u, setU] = useState("");
   const [p, setP] = useState("");
   const [err, setErr] = useState(null);
-  const [tries, setTries] = useState(0);
   const [busy, setBusy] = useState(false);
 
   const submit = async (e) => {
@@ -67,15 +66,19 @@ function Login({ onIn, onPending, onRegister }) {
       setToken(res.token);
       onIn();
     } catch (ex) {
-      const n = tries + 1;
-      setTries(n);
       if (ex.body?.error === "pending_review") { onPending?.(); return; }
+      // Copy is driven by the SERVER response only. The old client-side
+      // counter promised "đợi 60 giây" and "còn N lần thử" while the server
+      // locks for 15 minutes after 5 failures — and it reset on remount, so
+      // the rep burned the real attempts believing they had fresh ones.
       setErr(
         ex.body?.error === "locked_out"
-          ? "Bạn đã thử quá nhiều lần. Đợi ít phút rồi thử lại, hoặc nhắn Zalo Bonia để được cấp lại mật khẩu."
-          : n >= 3
-            ? "Bạn đã thử 3 lần. Đợi 60 giây rồi thử lại, hoặc nhắn Zalo Bonia để được cấp lại mật khẩu."
-            : `Sai tên đăng nhập hoặc mật khẩu. Còn ${3 - n} lần thử.`
+          ? `Đã khoá 15 phút do nhập sai nhiều lần. Thử lại sau 15 phút, hoặc nhắn Zalo ${ZALO} để được hỗ trợ.`
+          : ex.body?.error === "invalid_credentials"
+            ? "Sai email hoặc mật khẩu."
+            : ex.body?.error === "missing_credentials"
+              ? "Nhập đầy đủ email và mật khẩu."
+              : `Không đăng nhập được. Thử lại, hoặc nhắn Zalo ${ZALO}.`
       );
     } finally {
       setBusy(false);
@@ -95,8 +98,13 @@ function Login({ onIn, onPending, onRegister }) {
         </p>
         <form className="login-card" onSubmit={submit}>
           {err && <div className="err-panel">{err}</div>}
-          <input className="input" placeholder="Tên đăng nhập" value={u} onChange={(e) => setU(e.target.value)} autoCapitalize="none" autoComplete="username" />
+          <input className="input" placeholder="Email công việc" value={u} onChange={(e) => setU(e.target.value)} autoCapitalize="none" autoComplete="username" />
           <input className="input" type="password" placeholder="Mật khẩu" value={p} onChange={(e) => setP(e.target.value)} autoComplete="current-password" />
+          {/* Shown BEFORE any failure: there is no self-serve reset yet, so
+              the rep must know the way out before they are locked out. */}
+          <div style={{ fontSize: 12, color: "var(--ink-45)", marginTop: -2, marginBottom: 10 }}>
+            Quên mật khẩu? Nhắn Zalo <b style={{ color: "var(--navy, #191970)" }}>{ZALO}</b> để được cấp lại.
+          </div>
           <button className="btn btn-primary btn-block" disabled={busy || !u || !p}>
             {busy ? "Đang vào…" : "Đăng nhập"}
           </button>
@@ -128,6 +136,11 @@ function Portal({ onSignOut }) {
   // §3.0: hanging up ALWAYS opens the disposition sheet.
   const [dispositionFor, setDispositionFor] = useState(null); // {leadId, seconds}
   const callRef = useRef(null);
+  // Set SYNCHRONOUSLY inside onPhase — SIP.js fires Terminated right after
+  // a failed invite (a denied mic terminates the session immediately), and
+  // the "ended" branch would otherwise dismiss the failure panel after
+  // 300ms, before the rep could read why the call did not happen.
+  const failedRef = useRef(false);
   useEffect(() => { callRef.current = { leadId: call?.leadId, seconds: callSec, phase: call?.phase }; }, [call, callSec]);
 
   const refresh = useCallback(async () => {
@@ -151,8 +164,16 @@ function Portal({ onSignOut }) {
   useEffect(() => {
     if (!me?.softphone || phoneRef.current) return;
     const phone = new Softphone({
-      onPhase: (phase) => {
+      onPhase: (phase, reason) => {
+        if (phase === "failed") {
+          failedRef.current = true;
+          setCall((c) => (c ? { ...c, phase, failReason: reason || "no_answer" } : c));
+          return;
+        }
         if (phase === "ended") {
+          // The call never happened — keep the failure panel up (it carries
+          // the fix: allow the mic, change browser, wait for the trunk).
+          if (failedRef.current) { refresh(); return; }
           const snap = callRef.current;
           // §3.0: hanging up ALWAYS opens the sheet — including calls that
           // rang and were never answered ("Không nghe máy" is an option).
@@ -163,10 +184,13 @@ function Portal({ onSignOut }) {
           setTimeout(() => setCall(null), 300);
           refresh();
         } else {
+          failedRef.current = false;
           setCall((c) => (c ? { ...c, phase } : c));
         }
       },
-      onError: () => showToast("Không kết nối được cuộc gọi"),
+      // The overlay now carries the real reason — the toast would just
+      // repeat (or contradict) it, so only log for support.
+      onError: (err) => console.warn("[softphone]", err?.name || "", err?.message || err),
     });
     phoneRef.current = phone;
     phone.connect(me.softphone).catch(() => showToast("Không kết nối được tổng đài"));
@@ -181,13 +205,25 @@ function Portal({ onSignOut }) {
   }, [call?.phase]);
 
   const startCall = async (lead) => {
-    if (!phoneRef.current?.ready) return showToast("Tổng đài chưa sẵn sàng, thử lại sau vài giây");
+    failedRef.current = false;
+    // Browser gate BEFORE the overlay: no WebRTC/SIP means no call is even
+    // attempted, and "khách không nghe máy" would be a lie.
+    if (!window.SIP || !navigator.mediaDevices?.getUserMedia) {
+      setMuted(false);
+      setCall({ leadId: lead.lead_id, name: lead.first_name, phase: "failed", failReason: "unsupported" });
+      return;
+    }
+    if (!phoneRef.current?.ready) {
+      setMuted(false);
+      setCall({ leadId: lead.lead_id, name: lead.first_name, phase: "failed", failReason: "not_registered" });
+      return;
+    }
     setMuted(false);
     setCall({ leadId: lead.lead_id, name: lead.first_name, phase: "connecting" });
     try {
       await phoneRef.current.call(lead.lead_id);
-    } catch {
-      setCall((c) => (c ? { ...c, phase: "failed" } : null));
+    } catch (err) {
+      setCall((c) => (c ? { ...c, phase: "failed", failReason: classifyCallError(err) } : null));
     }
   };
 
@@ -289,6 +325,7 @@ function Portal({ onSignOut }) {
         <CallOverlay
           name={call.name}
           phase={call.phase}
+          failReason={call.failReason}
           seconds={callSec}
           muted={muted}
           onMute={() => { const m = !muted; setMuted(m); phoneRef.current?.setMuted(m); }}

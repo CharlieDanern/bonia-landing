@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { api } from "./api.js";
+import { api, ZALO } from "./api.js";
 import logo from "./logo-mark.png";
 
 // Đăng ký (§2) — public, centered 404px card, 3 steps + result.
@@ -55,7 +55,10 @@ export default function Register({ onDone }) {
     return () => clearTimeout(t);
   }, [resendIn]);
 
-  const sendCode = async () => {
+  // `resend` is counted in its OWN server-side bucket, so pressing
+  // "Gửi lại mã" never eats a branch's fresh-signup allowance.
+  const sendCode = async (opts = {}) => {
+    const resend = opts.resend === true;
     setErr(null);
     setBusy(true);
     try {
@@ -63,6 +66,7 @@ export default function Register({ onDone }) {
         full_name: name.trim(),
         work_email: email.trim(),
         phone: phone.trim(),
+        resend,
       });
       setBank(res.bank || null);
       setStep(1);
@@ -78,7 +82,13 @@ export default function Register({ onDone }) {
               ? "Số điện thoại chưa đúng định dạng."
               : ex.body?.error === "invalid_name"
                 ? "Nhập họ tên đầy đủ."
-                : "Không gửi được mã, thử lại.",
+                : ex.body?.error === "invalid_email"
+                  ? "Địa chỉ email chưa đúng."
+                  : ex.body?.error === "too_many_requests"
+                    ? `Bạn đã gửi mã quá nhiều lần. Đợi 10 phút rồi thử lại, hoặc nhắn Zalo ${ZALO}.`
+                    : ex.body?.error === "email_send_failed"
+                      ? `Chưa gửi được email tới ${email.trim()}. Kiểm tra lại địa chỉ, hoặc nhắn Zalo ${ZALO} để Bonia mở tài khoản giúp bạn.`
+                      : `Không gửi được mã, thử lại. Nếu vẫn lỗi, nhắn Zalo ${ZALO}.`,
       );
     } finally {
       setBusy(false);
@@ -227,7 +237,7 @@ export default function Register({ onDone }) {
                   !phone.trim() ||
                   freeMail
                 }
-                onClick={sendCode}
+                onClick={() => sendCode()}
               >
                 {busy ? "Đang gửi…" : "Gửi mã xác minh"}
               </button>
@@ -332,7 +342,7 @@ export default function Register({ onDone }) {
                       className="bid-link-btn"
                       style={{ height: "auto", padding: 0 }}
                       disabled={resendIn > 0 || busy}
-                      onClick={sendCode}
+                      onClick={() => sendCode({ resend: true })}
                     >
                       {resendIn > 0
                         ? `Gửi lại mã (${resendIn}s)`
@@ -477,7 +487,7 @@ export default function Register({ onDone }) {
                   style={{ textAlign: "left", marginTop: 12 }}
                 >
                   <b>Tiếp theo là gì:</b> Hãy theo dõi email khi tài khoản được
-                  phê duyệt - Hoặc liên hệ team Bonia tại Zalo 0909291268.
+                  phê duyệt - Hoặc liên hệ team Bonia tại Zalo {ZALO}.
                 </div>
               )}
               <button

@@ -7,6 +7,12 @@
 const BASE = import.meta.env.VITE_API_BASE || "https://api.bonia.net";
 const TOKEN_KEY = "bonia_rm_token";
 
+// Support channel. Printed INLINE wherever the copy promises help — there
+// is no self-serve password reset yet, so "nhắn Zalo Bonia" with no number
+// is not an escape hatch. Lives in this leaf module so App.jsx and
+// Register.jsx can both import it without an import cycle.
+export const ZALO = "0909291268";
+
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
 export const setToken = (t) => localStorage.setItem(TOKEN_KEY, t);
 export const clearToken = () => localStorage.removeItem(TOKEN_KEY);

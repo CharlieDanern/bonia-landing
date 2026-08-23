@@ -15,6 +15,30 @@
 
 const SIP = window.SIP;
 
+/**
+ * Classify a call failure so the overlay can tell the rep the truth.
+ *
+ * getUserMedia runs INSIDE inviter.invite(), so a denied microphone prompt
+ * — the single most likely first-call failure for a brand-new rep on
+ * Chrome — used to surface as "Khách hàng không nghe máy". They then press
+ * "Gọi lại", fail identically, and conclude the leads are junk.
+ *
+ * → "unsupported" | "mic_denied" | "mic_missing" | "not_registered" | "no_answer"
+ */
+export function classifyCallError(err) {
+  if (!window.SIP || !navigator.mediaDevices?.getUserMedia) return "unsupported";
+  const name = err?.name || "";
+  const msg = String(err?.message || err || "");
+  if (name === "NotAllowedError" || name === "SecurityError" || /permission denied/i.test(msg)) {
+    return "mic_denied";
+  }
+  if (name === "NotFoundError" || name === "OverconstrainedError" || name === "NotReadableError") {
+    return "mic_missing";
+  }
+  if (/softphone_not_ready|not_registered|transport|websocket/i.test(msg)) return "not_registered";
+  return "no_answer";
+}
+
 export class Softphone {
   constructor({ onPhase, onError }) {
     this.ua = null;
@@ -48,6 +72,7 @@ export class Softphone {
   }
 
   async call(leadId) {
+    if (!SIP || !navigator.mediaDevices?.getUserMedia) throw new Error("unsupported_browser");
     if (!this.ua) throw new Error("softphone_not_ready");
     if (this.session) throw new Error("call_in_progress");
     this.onPhase("connecting");
@@ -76,7 +101,9 @@ export class Softphone {
       await inviter.invite();
     } catch (err) {
       this.session = null;
-      this.onPhase("failed");
+      // Pass the CAUSE to the overlay, not just "failed" — a denied mic and
+      // a customer who really did not pick up need opposite instructions.
+      this.onPhase("failed", classifyCallError(err));
       this.onError(err);
     }
   }

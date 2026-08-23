@@ -22,6 +22,36 @@ function laneOf(lead) {
   return LANES.find((l) => l.states.includes(lead.state))?.key || "contact";
 }
 
+/**
+ * The lead's outcome AS THE REP SHOULD SEE IT.
+ *
+ * GET /rm/leads returns a non-null `outcome` for ANY claim row — including
+ * one the CUSTOMER declared by tapping "Tôi đã nhận thẻ", which is inserted
+ * in state `pending_rm` and is waiting on THIS rep. Treating that as closed
+ * hid "Gọi qua Bonia" and both close controls, so the lead went permanently
+ * read-only: no call, no final card, no invoice — and the 50% hold frozen
+ * with no in-product route to release or capture it. A pending_rm claim is
+ * an OPEN lead; the rep closes it through /rm/leads/:id/outcome, which
+ * already converges with the existing claim.
+ */
+function outcomeOf(lead) {
+  return lead.outcome && lead.claim?.state !== "pending_rm" ? lead.outcome : null;
+}
+
+/**
+ * A lost lead's hold is NOT refunded at close. rm-pipeline.ts deliberately
+ * skips releaseHoldIfAny and returns hold_pending_user_confirm — the
+ * customer gets a window to object ("tôi ĐÃ mở thẻ"), and only
+ * releaseStaleLostHolds frees the money after 7 days of silence. hold_vnd
+ * stays > 0 until then, so it is the truth for what the rep is told.
+ */
+function lostHoldNote(lead) {
+  const held = lead.hold_vnd || 0;
+  return held > 0
+    ? `phần giữ ${vnd(held)} được hoàn sau khi khách xác nhận, chậm nhất 7 ngày`
+    : "phần giữ đã hoàn vào số dư khả dụng";
+}
+
 function hoursLeft(iso) {
   if (!iso) return null;
   return Math.round((new Date(iso).getTime() - Date.now()) / 3600000);
@@ -59,11 +89,15 @@ function rowMeta(lead) {
 }
 
 function outcomeChip(lead, myCards) {
-  const o = lead.outcome;
+  const o = outcomeOf(lead);
   if (!o) return null;
   if (o.kind === "reconciling") return { text: "Đang đối soát", cls: "amber", meta: `Bạn chọn ${cardName(lead, o.final_card_id, myCards)} · khách chọn thẻ khác` };
   if (o.kind === "won") return { text: "Chờ khách xác nhận", cls: "navy", meta: `Đã mở ${cardName(lead, o.final_card_id, myCards)}` };
-  return { text: "Không thành công", cls: "grey", meta: `${LOST_REASONS.find((r) => r.key === o.reason)?.label || "Đã đóng"} · đã hoàn phần giữ` };
+  return {
+    text: "Không thành công",
+    cls: "grey",
+    meta: `${LOST_REASONS.find((r) => r.key === o.reason)?.label || "Đã đóng"} · ${lostHoldNote(lead)}`,
+  };
 }
 
 const rowScrim =
@@ -181,7 +215,11 @@ export default function Pipeline2({
     }
   };
 
-  const heldTotal = leads.filter((l) => !l.outcome).reduce((n, l) => n + (l.hold_vnd || 0), 0);
+  // Every lead whose hold is still standing — the server already reports
+  // hold_vnd: 0 once a hold_release or fee_capture exists. Filtering on
+  // !l.outcome understated the header by exactly the lost-but-not-yet-
+  // released holds, i.e. it disagreed with "Đang giữ" on Tài khoản.
+  const heldTotal = leads.reduce((n, l) => n + (l.hold_vnd || 0), 0);
   const openCount = leads.filter((l) => laneOf(l) !== "done").length;
 
   const showDetail = !narrow || mobileDetail;
@@ -319,7 +357,7 @@ function DetailPane({
   note, setNote, noteOpen, setNoteOpen, narrow, onBack, onCall,
   onOpenOutcome, refresh, showToast,
 }) {
-  const o = lead.outcome;
+  const o = outcomeOf(lead);
   const [invoice, setInvoice] = useState(null); // PaymentModal payload
   const called = lead.call_attempts > 0 || ["dang_tu_van", "hen_goi_lai", "da_nop_ho_so"].includes(lead.state);
   // Exclusive bound (§3.2): count of COMPLETED phases.
@@ -449,7 +487,7 @@ function DetailPane({
             <>Hai bên chọn thẻ khác nhau — Bonia liên hệ cả hai để đối soát. Phần giữ vẫn được giữ trong lúc đối soát.</>
           )}
           {o.kind === "lost" && (
-            <>{LOST_REASONS.find((r) => r.key === o.reason)?.label || "Đã đóng"} · phần giữ đã hoàn vào số dư khả dụng.</>
+            <>{LOST_REASONS.find((r) => r.key === o.reason)?.label || "Đã đóng"} · {lostHoldNote(lead)}.</>
           )}
         </div>
       )}
@@ -623,7 +661,17 @@ function WonModal({ lead, myCards, onClose, onDone, showToast }) {
   );
   const [busy, setBusy] = useState(false);
   const chosen = approved.find((c) => c.card_id === cardId) || null;
-  const fee = chosen?.my_bid_vnd ?? lead.fee_vnd;
+  // MUST mirror rm-pipeline.ts: the fee is the bid that WON this lead
+  // (lead.fee_vnd — the routing-time snapshot the hold and the customer's
+  // promised reward were computed from), never the card's live bid. On a
+  // different final card the server takes that card's bid but never below
+  // the snapshot. Reading my_bid_vnd here made the modal quote a number the
+  // server would not charge the moment the rep had raised their bid.
+  const sameCard = !!cardId && cardId === lead.card?.card_id;
+  const fee = sameCard
+    ? lead.fee_vnd
+    : Math.max(lead.fee_vnd ?? 0, chosen?.my_bid_vnd ?? lead.fee_vnd ?? 0);
+  const raisedSinceRouting = !!chosen && (chosen.my_bid_vnd ?? 0) > (lead.fee_vnd ?? 0);
   const held = lead.hold_vnd || 0;
   const due = Math.max(0, fee - held);
   const excess = Math.max(0, held - fee);
@@ -655,28 +703,41 @@ function WonModal({ lead, myCards, onClose, onDone, showToast }) {
           {approved.length === 0 && (
             <div className="bid-micro">Bạn chưa có thẻ nào được duyệt — duyệt thẻ trong Bid của tôi trước.</div>
           )}
-          {approved.map((c) => (
+          {approved.map((c) => {
+            // The tapped card is charged at the ROUTING-TIME bid, so quote
+            // that here too — otherwise this row and the total below it
+            // disagree whenever the rep has changed their bid since.
+            const tapped = c.card_id === lead.card?.card_id;
+            const rowFee = tapped ? (lead.fee_vnd ?? c.my_bid_vnd) : c.my_bid_vnd;
+            return (
             <label key={c.card_id} className={`pl-radio ${cardId === c.card_id ? "on" : ""}`}>
               <input type="radio" name="finalcard" checked={cardId === c.card_id} onChange={() => setCardId(c.card_id)} />
               <span className="pl-card-thumb" style={{ background: c.image_url ? `url(${c.image_url}) center/cover` : "linear-gradient(135deg,#1B1B22,#08080C)" }} />
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ fontSize: 13.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 7 }}>
                   {c.name}
-                  {c.card_id === lead.card?.card_id && <span className="pl-tapped-tag">KHÁCH ĐÃ BẤM</span>}
+                  {tapped && <span className="pl-tapped-tag">KHÁCH ĐÃ BẤM</span>}
                 </span>
                 <span className="mono" style={{ fontSize: 11.5, color: "var(--ink-45)" }}>
-                  bid {vnd(c.my_bid_vnd)} · khách nhận {vnd(Math.floor(c.my_bid_vnd / 2 / 1000) * 1000)}
+                  bid {vnd(rowFee)} · khách nhận {vnd(Math.floor(rowFee / 2 / 1000) * 1000)}
                 </span>
               </span>
             </label>
-          ))}
+            );
+          })}
         </div>
 
         <div className="pl-arith mono">
-          <div><span>Phí thành công (thẻ đã chọn)</span><span>{vnd(fee)}</span></div>
+          <div><span>Phí thành công (bid khi nhận lead)</span><span>{vnd(fee)}</span></div>
           <div><span>Đã giữ khi nhận lead</span><span>− {vnd(Math.min(held, fee))}</span></div>
           <div className="pl-arith-total"><span>Còn phải trả</span><span>{vnd(due)}</span></div>
         </div>
+        {sameCard && raisedSinceRouting && (
+          <div style={{ fontSize: 12, color: "var(--ink-55)", marginTop: 6, lineHeight: 1.5 }}>
+            Bid hiện tại của thẻ này là <b className="mono">{vnd(chosen.my_bid_vnd)}</b>, nhưng phí tính
+            theo bid lúc bạn nhận lead — nâng bid không làm tăng phí của lead đang xử lý.
+          </div>
+        )}
         <div style={{ fontSize: 12.5, marginTop: 6 }}>
           Khách nhận <b className="mono">{vnd(Math.floor(fee / 2 / 1000) * 1000)}</b>.{" "}
           <span style={{ color: "var(--ink-55)" }}>
@@ -705,8 +766,14 @@ function LostModal({ lead, onClose, onDone, showToast }) {
     if (!reason) return;
     setBusy(true);
     try {
-      await api.outcome(lead.lead_id, { kind: "lost", reason });
-      showToast("Đã lưu trữ lead · phần giữ đã hoàn vào số dư");
+      const res = await api.outcome(lead.lead_id, { kind: "lost", reason });
+      // The endpoint returns hold_pending_user_confirm — the hold is NOT
+      // refunded now; the customer gets a window to object first.
+      showToast(
+        res?.hold_pending_user_confirm === false || !(lead.hold_vnd || 0)
+          ? "Đã lưu trữ lead"
+          : "Đã lưu trữ lead · phần giữ được hoàn sau khi khách xác nhận, chậm nhất 7 ngày"
+      );
       onDone();
     } catch {
       showToast("Không lưu được, thử lại");
@@ -724,8 +791,9 @@ function LostModal({ lead, onClose, onDone, showToast }) {
           </label>
         ))}
         {(lead.hold_vnd || 0) > 0 && (
-          <div style={{ fontSize: 12.5, color: "var(--ink-55)", marginTop: 8 }}>
-            Hoàn lại <b className="mono">{vnd(lead.hold_vnd)}</b> vào số dư khả dụng.
+          <div style={{ fontSize: 12.5, color: "var(--ink-55)", marginTop: 8, lineHeight: 1.5 }}>
+            Phần giữ <b className="mono">{vnd(lead.hold_vnd)}</b> được hoàn sau khi khách xác nhận,
+            chậm nhất 7 ngày. Nếu khách báo đã mở thẻ, lead chuyển sang đối soát và phần giữ vẫn được giữ.
           </div>
         )}
         <div style={{ display: "flex", gap: 9, marginTop: 12, justifyContent: "flex-end" }}>

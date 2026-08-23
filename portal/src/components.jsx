@@ -116,12 +116,47 @@ export function useToast() {
  * connected | failed. The masking promise and the wake-lock warning are
  * mandatory on every call per the design + the real WebRTC constraint.
  */
-export function CallOverlay({ name, phase, seconds, muted, onMute, onHangup, onRetry, onClose }) {
+export function CallOverlay({ name, phase, failReason, seconds, muted, onMute, onHangup, onRetry, onClose }) {
   const label =
     phase === "connecting" ? "Đang kết nối qua Bonia"
     : phase === "ringing" ? "Đang đổ chuông"
     : phase === "connected" ? "Đang trong cuộc gọi"
+    : failReason === "mic_denied" || failReason === "mic_missing" ? "Chưa dùng được micro"
+    : failReason === "unsupported" ? "Trình duyệt chưa hỗ trợ"
+    : failReason === "not_registered" ? "Tổng đài chưa sẵn sàng"
     : "Không kết nối được";
+  // Every softphone failure used to render as "Khách hàng không nghe máy",
+  // including a denied microphone prompt — the likeliest first-call failure
+  // for a new rep. Wrong diagnosis → they press "Gọi lại", fail the same
+  // way, and blame the lead. Keep the no-answer copy for genuine SIP-level
+  // no-answer only.
+  const failPanel =
+    failReason === "mic_denied" ? (
+      <>
+        <b>Bonia cần quyền dùng micro.</b> Bấm biểu tượng khoá trên thanh địa chỉ →
+        cho phép <b>Micro</b>, rồi bấm Gọi lại. Khách hàng chưa hề bị gọi.
+      </>
+    ) : failReason === "mic_missing" ? (
+      <>
+        <b>Không tìm thấy micro.</b> Cắm tai nghe hoặc kiểm tra thiết bị ghi âm trong
+        cài đặt máy, rồi bấm Gọi lại. Khách hàng chưa hề bị gọi.
+      </>
+    ) : failReason === "unsupported" ? (
+      <>
+        <b>Trình duyệt này chưa hỗ trợ gọi.</b> Dùng Chrome hoặc Safari bản mới nhất trên
+        máy tính, rồi mở lại bonia.vn/app.
+      </>
+    ) : failReason === "not_registered" ? (
+      <>
+        <b>Tổng đài đang kết nối lại.</b> Đợi vài giây rồi bấm Gọi lại. Nếu vẫn lỗi, tải
+        lại trang.
+      </>
+    ) : (
+      <>
+        <b>Khách hàng không nghe máy.</b> Máy khách đang bật chuyển hướng sang trợ lý Bonia nên không
+        đổ chuông trực tiếp. Thử lại trong khung giờ khách hàng đã chọn.
+      </>
+    );
   const mmss = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   return (
     <div className="scrim">
@@ -139,10 +174,7 @@ export function CallOverlay({ name, phase, seconds, muted, onMute, onHangup, onR
           {phase === "connected" ? mmss : phase === "failed" ? "—" : "···"}
         </div>
         {phase === "failed" && (
-          <div className="err-panel" style={{ textAlign: "left" }}>
-            <b>Khách hàng không nghe máy.</b> Máy khách đang bật chuyển hướng sang trợ lý Bonia nên không
-            đổ chuông trực tiếp. Thử lại trong khung giờ khách hàng đã chọn.
-          </div>
+          <div className="err-panel" style={{ textAlign: "left" }}>{failPanel}</div>
         )}
         <div className="warn-box">
           <b>Giữ màn hình mở trong lúc gọi.</b> Khoá máy sẽ làm rớt cuộc gọi.
