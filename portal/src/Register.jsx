@@ -222,6 +222,14 @@ export default function Register({ onDone }) {
                   <button className="btn-navy" style={{ width: "100%", marginTop: 14 }} disabled={busy || password.length < 8} onClick={verify}>
                     {busy ? "Đang tạo…" : "Tạo tài khoản"}
                   </button>
+                  <div className="bid-micro" style={{ textAlign: "center", marginTop: 10 }}>
+                    Tạo tài khoản đồng nghĩa đồng ý{" "}
+                    <a href="https://bonia.net/terms-business.html" target="_blank" rel="noreferrer"
+                      style={{ color: "var(--navy)", fontWeight: 600 }}>
+                      Điều khoản Bonia Business
+                    </a>
+                    , bao gồm quy định xác nhận hai phía và xử lý gian lận.
+                  </div>
                 </>
               )}
             </>
