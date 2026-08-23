@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import { api, vnd } from "../api.js";
-import { AppMirror } from "./Mirror.jsx";
+import { AppMirror, PhonePreview } from "./Mirror.jsx";
 import { clampBid, computePosition, rewardOf, BID_STEP, BID_FLOOR_DEFAULT } from "./position.js";
 
 // "Thêm thẻ" — 3 discrete steps (content → art → bid) ending in the
@@ -9,6 +9,7 @@ import { clampBid, computePosition, rewardOf, BID_STEP, BID_FLOOR_DEFAULT } from
 // its own screen and the provisional position panel (§5, §9.1).
 
 const MAX_IMAGE_BYTES = 500 * 1024;
+const REWARD_CONDITIONS_MAX = 600;
 
 function StepHeader({ step, onBack }) {
   const steps = ["Thông tin thẻ", "Hình ảnh", "Bid"];
@@ -52,6 +53,7 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
   const [name, setName] = useState("");
   const [perk, setPerk] = useState("");
   const [conds, setConds] = useState([""]);
+  const [rewardConds, setRewardConds] = useState("");
   const [image, setImage] = useState(null); // {b64, mime, fileName, dataUrl}
   const [bid, setBid] = useState(300_000);
   const [cap, setCap] = useState(10);
@@ -85,6 +87,7 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
     name: name.trim(),
     perk_line: perk.trim(),
     eligibility_bullets: condList,
+    reward_conditions: rewardConds.trim(),
     ...(image ? { image_base64: image.b64, image_mime: image.mime } : {}),
     bid_vnd: bid,
     max_active_leads: cap,
@@ -101,8 +104,9 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
     } catch (ex) {
       showToast(
         ex.body?.error === "perk_too_long" ? "Ưu đãi tối đa 40 ký tự"
-          : ex.body?.error === "invalid_max_leads" ? "Giới hạn lead từ 1 đến 200"
-            : "Không lưu được nháp, thử lại"
+          : ex.body?.error === "reward_conditions_too_long" ? "Điều kiện nhận thưởng tối đa 600 ký tự"
+            : ex.body?.error === "invalid_max_leads" ? "Giới hạn lead từ 1 đến 200"
+              : "Không lưu được nháp, thử lại"
       );
     } finally {
       setBusy(false);
@@ -116,7 +120,11 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
       showToast(`Đã gửi Bonia duyệt. Bid ${vnd(bid)} sẽ có hiệu lực ngay khi thẻ được duyệt.`);
       onDone();
     } catch (ex) {
-      showToast(ex.body?.error === "perk_too_long" ? "Ưu đãi tối đa 40 ký tự" : "Không gửi được, thử lại");
+      showToast(
+        ex.body?.error === "perk_too_long" ? "Ưu đãi tối đa 40 ký tự"
+          : ex.body?.error === "reward_conditions_too_long" ? "Điều kiện nhận thưởng tối đa 600 ký tự"
+            : "Không gửi được, thử lại"
+      );
     } finally {
       setBusy(false);
     }
@@ -138,6 +146,16 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
             <SummaryRow label="Tên thẻ" value={name} />
             <SummaryRow label="Ưu đãi" value={perk} />
             <SummaryRow label="Điều kiện" value={`${condList.length} điều kiện`} />
+            <SummaryRow
+              label="Điều kiện nhận thưởng"
+              value={
+                rewardConds.trim()
+                  ? rewardConds.trim().length > 60
+                    ? `${rewardConds.trim().slice(0, 60)}…`
+                    : rewardConds.trim()
+                  : "Chưa có"
+              }
+            />
             <SummaryRow label="Ảnh" value={image ? image.fileName : "Nền mặc định"} />
             <SummaryRow label="Bid" value={vnd(bid)} mono />
             <SummaryRow label="Tối đa lead đang xử lý" value={String(cap)} mono />
@@ -170,7 +188,7 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
 
             <label className="bid-label">Tên thẻ</label>
             <input className="input" style={{ height: 46 }} value={name} maxLength={80}
-              onChange={(e) => setName(e.target.value)} placeholder="vd. Hoàn tiền siêu thị 2%" />
+              onChange={(e) => setName(e.target.value)} placeholder="vd. Private Visa Infinite" />
             <div className="bid-helper">Không cần lặp lại tên ngân hàng — Bonia đã hiển thị {bank}.</div>
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -202,6 +220,21 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
             >
               {conds.length >= 6 ? "Tối đa 6 điều kiện" : "+ Thêm điều kiện"}
             </button>
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <label className="bid-label">Điều kiện nhận thưởng</label>
+              <span className="mono bid-counter">{rewardConds.length}/{REWARD_CONDITIONS_MAX}</span>
+            </div>
+            <textarea
+              className="input"
+              style={{ minHeight: 92, height: "auto", padding: "11px 13px", resize: "vertical", lineHeight: 1.5 }}
+              value={rewardConds}
+              maxLength={REWARD_CONDITIONS_MAX}
+              onChange={(e) => setRewardConds(e.target.value)}
+            />
+            <div className="bid-helper">
+              Ngân hàng tự quyết định điều kiện khách được nhận thưởng — hiển thị cho khách trong mục Điều kiện.
+            </div>
 
             <div className="bid-review-note">
               Tên thẻ, ưu đãi và điều kiện sẽ được Bonia duyệt trước khi khách hàng nhìn thấy —
@@ -398,39 +431,6 @@ export function Ladder({ rows, mineIndex, title }) {
           </div>
         );
       })}
-    </div>
-  );
-}
-
-// §6 — a plausible slice of the consumer catalog inside a phone frame.
-function PhonePreview({ bank, name, perk, reward, imageUrl }) {
-  return (
-    <div className="bid-phone">
-      <div className="bid-phone-screen">
-        <div className="bid-phone-status mono">
-          <span>19:04</span>
-          <span>5G ▮</span>
-        </div>
-        <div className="bid-phone-tabs">
-          <span className="on">Sản phẩm</span>
-          <span>Giao dịch</span>
-          <span>Phần thưởng</span>
-        </div>
-        <div className="bid-phone-chips">
-          <span className="chip-navy">Thẻ tín dụng</span>
-          <span>Ưu đãi khác sắp ra mắt</span>
-        </div>
-        <AppMirror bank={bank} name={name || "Tên thẻ"} perk={perk} rewardVnd={reward} imageUrl={imageUrl} cta="Quan tâm" scale="base" />
-        <div className="bid-micro" style={{ marginTop: 10, textAlign: "center" }}>
-          Bonia không hiển thị tên nhân viên tư vấn. Số điện thoại của bạn được bảo mật.
-        </div>
-        <div style={{ flex: 1 }} />
-        <div className="bid-phone-tabbar">
-          <span>Cuộc gọi</span>
-          <span className="on">Ưu đãi</span>
-          <span>Cài đặt</span>
-        </div>
-      </div>
     </div>
   );
 }

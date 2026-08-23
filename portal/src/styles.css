@@ -450,15 +450,8 @@ h1.page { font-size: 25px; font-weight: 600; letter-spacing: -.02em; margin: 7px
 .bid-switch.on { background: #D97706; }
 .bid-switch.on span { left: 19px; }
 .bid-history-row { display: flex; align-items: center; gap: 12px; font-size: 13px; padding: 7px 0; border-bottom: 1px solid #F1F4F9; }
-.bid-phone { width: 300px; flex: none; background: #0d0d0d; border-radius: 32px; padding: 7px; box-shadow: 0 22px 46px -30px rgba(27,34,54,.6); }
-.bid-phone-screen { background: #F5F7FB; border-radius: 26px; min-height: 506px; padding: 12px 12px 10px; display: flex; flex-direction: column; }
-.bid-phone-status { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-55); padding: 2px 4px 8px; }
-.bid-phone-tabs { display: flex; gap: 14px; font-size: 12px; font-weight: 700; color: var(--ink-35); padding: 0 4px 10px; }
-.bid-phone-tabs .on { color: #191970; box-shadow: inset 0 -2.5px 0 #191970; padding-bottom: 4px; }
-.bid-phone-chips { display: flex; gap: 10px; align-items: center; font-size: 10.5px; color: var(--ink-35); padding: 0 2px 10px; }
-.bid-phone-chips .chip-navy { background: #191970; color: #fff; font-weight: 600; padding: 5px 11px; border-radius: 99px; }
-.bid-phone-tabbar { display: flex; justify-content: space-around; font-size: 10px; color: var(--ink-35); border-top: 1px solid #E6E9F1; padding-top: 8px; }
-.bid-phone-tabbar .on { color: #191970; font-weight: 700; }
+/* Phone-frame styles now live inline in bid/Mirror.jsx (canonical, copied
+   verbatim into the admin app — both mirrors must stay pixel-identical). */
 .bid-load-card { background: #FBFCFE; border: 1px solid #EEF1F6; border-radius: 12px; padding: 11px 13px; margin: 0 0 10px; }
 .bid-load-num { font-size: 15px; font-weight: 600; }
 .bid-load-track { height: 5px; border-radius: 4px; background: #EEF1F6; margin: 7px 0 6px; overflow: hidden; }

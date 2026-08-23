@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { api, vnd } from "../api.js";
 import { AppMirror } from "./Mirror.jsx";
 import { Ladder } from "./Wizard.jsx";
@@ -9,11 +9,19 @@ import { computePosition, clampBid, rewardOf, BID_STEP } from "./position.js";
 // thing the rep is buying); bid + ladder, lead cap + pause, content
 // editor, own-only bid history stack below.
 
+// Mirrors the server's POST /rm/cards/:id/media contract: jpg/png/webp,
+// max 500 KB, the new image REPLACES the current one (no gallery).
+const MAX_IMAGE_BYTES = 500 * 1024;
+const IMAGE_MIMES = ["image/jpeg", "image/png", "image/webp"];
+
 export function BidDetail({ card, wallet, onBack, refresh, showToast }) {
   const [draft, setDraft] = useState(card.my_bid_vnd);
   const [busy, setBusy] = useState(false);
   const [capBusy, setCapBusy] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [pendingImage, setPendingImage] = useState(null); // {b64, mime, fileName, dataUrl}
+  const [imageBusy, setImageBusy] = useState(false);
+  const imageRef = useRef(null);
   useEffect(() => setDraft(card.my_bid_vnd), [card.my_bid_vnd]);
 
   const ranked = card.others_vnd != null && card.status === "approved";
@@ -60,6 +68,45 @@ export function BidDetail({ card, wallet, onBack, refresh, showToast }) {
     }
   };
 
+  const pickImage = (file) => {
+    if (!file) return;
+    if (file.size > MAX_IMAGE_BYTES) return showToast("Ảnh tối đa 500 KB");
+    if (!IMAGE_MIMES.includes(file.type)) return showToast("Chỉ nhận jpg, png hoặc webp");
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      setPendingImage({
+        b64: String(dataUrl).split(",")[1],
+        mime: file.type,
+        fileName: file.name,
+        dataUrl,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const saveImage = async () => {
+    if (!pendingImage) return;
+    setImageBusy(true);
+    try {
+      await api.uploadCardMedia(card.card_id, {
+        image_base64: pendingImage.b64,
+        image_mime: pendingImage.mime,
+      });
+      showToast("Đã cập nhật ảnh thẻ");
+      setPendingImage(null);
+      refresh();
+    } catch (ex) {
+      showToast(
+        ex.body?.error === "image_too_large" ? "Ảnh tối đa 500 KB"
+          : ex.body?.error === "unsupported_image_type" ? "Chỉ nhận jpg, png hoặc webp"
+            : "Không tải được ảnh, thử lại"
+      );
+    } finally {
+      setImageBusy(false);
+    }
+  };
+
   const togglePause = async () => {
     try {
       await api.updateCard(card.card_id, { paused: !card.paused });
@@ -101,9 +148,37 @@ export function BidDetail({ card, wallet, onBack, refresh, showToast }) {
       {/* Consumer view — mirror + the terms panel, side by side (§7) */}
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
         <div style={{ flex: 1, minWidth: 286, maxWidth: 520 }}>
-          <AppMirror bank={card.bank} name={card.name} perk={card.perk_line} rewardVnd={reward} imageUrl={card.image_url} cta="Quan tâm" />
+          <AppMirror
+            bank={card.bank}
+            name={card.name}
+            perk={card.perk_line}
+            rewardVnd={reward}
+            imageUrl={pendingImage ? pendingImage.dataUrl : card.image_url}
+            cta="Quan tâm"
+          />
           <div className="bid-micro" style={{ marginTop: 8 }}>
             Khách sẽ thấy <b className="mono">Nhận {vnd(reward)}</b> — bằng 50% bid của bạn.
+          </div>
+          <div style={{ display: "flex", gap: 9, alignItems: "center", marginTop: 10, flexWrap: "wrap" }}>
+            {pendingImage ? (
+              <>
+                <button className="btn-navy" disabled={imageBusy} onClick={saveImage}>
+                  {imageBusy ? "Đang tải lên…" : "Lưu ảnh mới"}
+                </button>
+                <button className="btn btn-ghost" disabled={imageBusy} onClick={() => setPendingImage(null)}>
+                  Huỷ
+                </button>
+              </>
+            ) : (
+              <button className="bid-link-btn" onClick={() => imageRef.current?.click()}>Đổi ảnh</button>
+            )}
+            <input ref={imageRef} type="file" accept="image/jpeg,image/png,image/webp" hidden
+              onChange={(e) => { pickImage(e.target.files?.[0]); e.target.value = ""; }} />
+          </div>
+          <div className="bid-micro" style={{ marginTop: 6 }}>
+            {pendingImage
+              ? `Xem trước ${pendingImage.fileName} — chưa lưu.`
+              : "Ảnh mới thay thế ảnh hiện tại · jpg, png, webp · tối đa 500 KB."}
           </div>
         </div>
         <div className="bid-terms" style={{ flex: 1, minWidth: 256 }}>
@@ -113,6 +188,11 @@ export function BidDetail({ card, wallet, onBack, refresh, showToast }) {
             {(card.eligibility_bullets || []).length === 0 && <li>Chưa có điều kiện.</li>}
           </ul>
           <div className="eyebrow mono" style={{ marginTop: 12 }}>ĐIỀU KIỆN NHẬN THƯỞNG</div>
+          {card.reward_conditions ? (
+            <div style={{ fontSize: 13, lineHeight: 1.55, whiteSpace: "pre-line", margin: "6px 0 4px" }}>
+              {card.reward_conditions}
+            </div>
+          ) : null}
           <ul>
             <li>Thẻ được {card.bank} phê duyệt và phát hành thành công.</li>
             <li>Thưởng thanh toán trong 7 ngày sau khi ngân hàng xác nhận.</li>
@@ -257,12 +337,15 @@ export function BidDetail({ card, wallet, onBack, refresh, showToast }) {
   );
 }
 
+const REWARD_CONDITIONS_MAX = 600;
+
 function ContentEditor({ card, onDone, onCancel, showToast }) {
   const [name, setName] = useState(card.name);
   const [perk, setPerk] = useState(card.perk_line || "");
   const [conds, setConds] = useState(
     (card.eligibility_bullets || []).length ? [...card.eligibility_bullets] : [""]
   );
+  const [rewardConds, setRewardConds] = useState(card.reward_conditions || "");
   const [busy, setBusy] = useState(false);
   const condList = conds.map((c) => c.trim()).filter(Boolean);
 
@@ -273,6 +356,7 @@ function ContentEditor({ card, onDone, onCancel, showToast }) {
         name: name.trim(),
         perk_line: perk.trim(),
         eligibility_bullets: condList,
+        reward_conditions: rewardConds.trim(),
       });
       showToast(
         res.status === "pending"
@@ -281,7 +365,11 @@ function ContentEditor({ card, onDone, onCancel, showToast }) {
       );
       onDone();
     } catch (ex) {
-      showToast(ex.body?.error === "perk_too_long" ? "Ưu đãi tối đa 40 ký tự" : "Không lưu được, thử lại");
+      showToast(
+        ex.body?.error === "perk_too_long" ? "Ưu đãi tối đa 40 ký tự"
+          : ex.body?.error === "reward_conditions_too_long" ? "Điều kiện nhận thưởng tối đa 600 ký tự"
+            : "Không lưu được, thử lại"
+      );
     } finally {
       setBusy(false);
     }
@@ -310,6 +398,20 @@ function ContentEditor({ card, onDone, onCancel, showToast }) {
         onClick={() => setConds((arr) => (arr.length < 6 ? [...arr, ""] : arr))}>
         {conds.length >= 6 ? "Tối đa 6 điều kiện" : "+ Thêm điều kiện"}
       </button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <label className="bid-label">Điều kiện nhận thưởng</label>
+        <span className="mono bid-counter">{rewardConds.length}/{REWARD_CONDITIONS_MAX}</span>
+      </div>
+      <textarea
+        className="input"
+        style={{ minHeight: 92, height: "auto", padding: "11px 13px", resize: "vertical", lineHeight: 1.5 }}
+        value={rewardConds}
+        maxLength={REWARD_CONDITIONS_MAX}
+        onChange={(e) => setRewardConds(e.target.value)}
+      />
+      <div className="bid-helper">
+        Ngân hàng tự quyết định điều kiện khách được nhận thưởng — hiển thị cho khách trong mục Điều kiện.
+      </div>
       <div style={{ display: "flex", gap: 9, marginTop: 12 }}>
         <button className="btn btn-ghost" onClick={onCancel}>Huỷ</button>
         <button className="btn-navy" style={{ flex: 1 }}

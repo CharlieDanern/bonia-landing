@@ -183,6 +183,7 @@ function BidRow({ card, wide, wallet, onOpen, onApplied, showToast }) {
       <AppMirror
         bank={card.bank}
         name={card.name}
+        perk={card.perk_line}
         rewardVnd={rewardOf(card.my_bid_vnd)}
         imageUrl={card.image_url}
         cta="Chi tiết"
