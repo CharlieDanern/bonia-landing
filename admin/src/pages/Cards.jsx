@@ -248,8 +248,12 @@ function CardDetail({ card, showToast, onDone }) {
       <div className="f-label" style={{ marginTop: 12 }}>
         Điều kiện nhận thưởng
       </div>
-      {card.reward_conditions ? (
-        <div className="tnc-box">{card.reward_conditions}</div>
+      {Array.isArray(card.reward_bullets) && card.reward_bullets.length > 0 ? (
+        <ul className="bullet-list">
+          {card.reward_bullets.map((b, i) => (
+            <li key={i}>{b}</li>
+          ))}
+        </ul>
       ) : (
         <div className="f-val dim">—</div>
       )}

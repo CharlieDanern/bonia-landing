@@ -9,7 +9,10 @@ import { clampBid, computePosition, rewardOf, BID_STEP, BID_FLOOR_DEFAULT } from
 // its own screen and the provisional position panel (§5, §9.1).
 
 const MAX_IMAGE_BYTES = 500 * 1024;
-const REWARD_CONDITIONS_MAX = 600;
+// Mirrors the server's cleanBullets contract (rm-cards.ts): max 6
+// bullets, 120 chars each — same caps as Điều kiện xét duyệt.
+const BULLET_MAX_COUNT = 6;
+const BULLET_MAX_CHARS = 120;
 
 function StepHeader({ step, onBack }) {
   const steps = ["Thông tin thẻ", "Hình ảnh", "Bid"];
@@ -53,7 +56,7 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
   const [name, setName] = useState("");
   const [perk, setPerk] = useState("");
   const [conds, setConds] = useState([""]);
-  const [rewardConds, setRewardConds] = useState("");
+  const [rewardConds, setRewardConds] = useState([""]);
   const [image, setImage] = useState(null); // {b64, mime, fileName, dataUrl}
   const [bid, setBid] = useState(300_000);
   const [cap, setCap] = useState(10);
@@ -61,6 +64,7 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
   const fileRef = useRef(null);
 
   const condList = conds.map((c) => c.trim()).filter(Boolean);
+  const rewardList = rewardConds.map((c) => c.trim()).filter(Boolean);
   const step1Valid = name.trim().length > 0 && perk.trim().length > 0 && perk.length <= 40 && condList.length >= 1;
   const reward = rewardOf(bid);
 
@@ -87,7 +91,7 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
     name: name.trim(),
     perk_line: perk.trim(),
     eligibility_bullets: condList,
-    reward_conditions: rewardConds.trim(),
+    reward_bullets: rewardList,
     ...(image ? { image_base64: image.b64, image_mime: image.mime } : {}),
     bid_vnd: bid,
     max_active_leads: cap,
@@ -104,7 +108,7 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
     } catch (ex) {
       showToast(
         ex.body?.error === "perk_too_long" ? "Ưu đãi tối đa 40 ký tự"
-          : ex.body?.error === "reward_conditions_too_long" ? "Điều kiện nhận thưởng tối đa 600 ký tự"
+          : ex.body?.error === "invalid_reward_bullets" ? "Điều kiện nhận thưởng: tối đa 6 điều kiện, mỗi điều kiện 120 ký tự"
             : ex.body?.error === "invalid_max_leads" ? "Giới hạn lead từ 1 đến 200"
               : "Không lưu được nháp, thử lại"
       );
@@ -122,7 +126,7 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
     } catch (ex) {
       showToast(
         ex.body?.error === "perk_too_long" ? "Ưu đãi tối đa 40 ký tự"
-          : ex.body?.error === "reward_conditions_too_long" ? "Điều kiện nhận thưởng tối đa 600 ký tự"
+          : ex.body?.error === "invalid_reward_bullets" ? "Điều kiện nhận thưởng: tối đa 6 điều kiện, mỗi điều kiện 120 ký tự"
             : "Không gửi được, thử lại"
       );
     } finally {
@@ -146,16 +150,18 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
             <SummaryRow label="Tên thẻ" value={name} />
             <SummaryRow label="Ưu đãi" value={perk} />
             <SummaryRow label="Điều kiện" value={`${condList.length} điều kiện`} />
-            <SummaryRow
-              label="Điều kiện nhận thưởng"
-              value={
-                rewardConds.trim()
-                  ? rewardConds.trim().length > 60
-                    ? `${rewardConds.trim().slice(0, 60)}…`
-                    : rewardConds.trim()
-                  : "Chưa có"
-              }
-            />
+            {rewardList.length > 0 ? (
+              <div className="bid-summary-row" style={{ display: "block" }}>
+                <span>Điều kiện nhận thưởng</span>
+                <ul style={{ listStyle: "disc", margin: "6px 0 0", paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>
+                  {rewardList.map((b, i) => (
+                    <li key={i} style={{ fontSize: 12.5, lineHeight: 1.5, fontWeight: 600 }}>{b}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <SummaryRow label="Điều kiện nhận thưởng" value="Chưa có" />
+            )}
             <SummaryRow label="Ảnh" value={image ? image.fileName : "Nền mặc định"} />
             <SummaryRow label="Bid" value={vnd(bid)} mono />
             <SummaryRow label="Tối đa lead đang xử lý" value={String(cap)} mono />
@@ -223,15 +229,24 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <label className="bid-label">Điều kiện nhận thưởng</label>
-              <span className="mono bid-counter">{rewardConds.length}/{REWARD_CONDITIONS_MAX}</span>
+              <span className="mono bid-counter">{rewardList.length}/{BULLET_MAX_COUNT}</span>
             </div>
-            <textarea
-              className="input"
-              style={{ minHeight: 92, height: "auto", padding: "11px 13px", resize: "vertical", lineHeight: 1.5 }}
-              value={rewardConds}
-              maxLength={REWARD_CONDITIONS_MAX}
-              onChange={(e) => setRewardConds(e.target.value)}
-            />
+            {rewardConds.map((c, i) => (
+              <div key={i} className="bid-cond-row">
+                <span className="mono bid-cond-index">{i + 1}</span>
+                <input className="input" style={{ height: 42, marginBottom: 0 }} value={c} maxLength={BULLET_MAX_CHARS}
+                  onChange={(e) => setRewardConds((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))}
+                  placeholder={i === 0 ? "vd. Thẻ được phát hành và kích hoạt thành công" : ""} />
+                <button className="bid-cond-x" onClick={() => setRewardConds((arr) => arr.length > 1 ? arr.filter((_, j) => j !== i) : [""])}>×</button>
+              </div>
+            ))}
+            <button
+              className="bid-cond-add"
+              disabled={rewardConds.length >= BULLET_MAX_COUNT || rewardConds[rewardConds.length - 1].trim() === ""}
+              onClick={() => setRewardConds((arr) => (arr.length < BULLET_MAX_COUNT ? [...arr, ""] : arr))}
+            >
+              {rewardConds.length >= BULLET_MAX_COUNT ? "Tối đa 6 điều kiện" : "+ Thêm điều kiện"}
+            </button>
             <div className="bid-helper">
               Ngân hàng tự quyết định điều kiện khách được nhận thưởng — hiển thị cho khách trong mục Điều kiện.
             </div>

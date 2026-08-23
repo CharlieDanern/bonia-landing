@@ -184,12 +184,8 @@ export function BidDetail({ card, wallet, onBack, refresh, showToast }) {
             {(card.eligibility_bullets || []).length === 0 && <li>Chưa có điều kiện.</li>}
           </ul>
           <div className="eyebrow mono" style={{ marginTop: 12 }}>ĐIỀU KIỆN NHẬN THƯỞNG</div>
-          {card.reward_conditions ? (
-            <div style={{ fontSize: 13, lineHeight: 1.55, whiteSpace: "pre-line", margin: "6px 0 4px" }}>
-              {card.reward_conditions}
-            </div>
-          ) : null}
           <ul>
+            {(card.reward_bullets || []).map((b, i) => <li key={i}>{b}</li>)}
             <li>Thẻ được {card.bank} phê duyệt và phát hành thành công.</li>
             <li>Thưởng thanh toán trong 7 ngày sau khi ngân hàng xác nhận.</li>
           </ul>
@@ -330,7 +326,10 @@ export function BidDetail({ card, wallet, onBack, refresh, showToast }) {
   );
 }
 
-const REWARD_CONDITIONS_MAX = 600;
+// Mirrors the server's cleanBullets contract (rm-cards.ts): max 6
+// bullets, 120 chars each — same caps as Điều kiện xét duyệt.
+const BULLET_MAX_COUNT = 6;
+const BULLET_MAX_CHARS = 120;
 
 function ContentEditor({ card, onDone, onCancel, showToast }) {
   const [name, setName] = useState(card.name);
@@ -338,9 +337,12 @@ function ContentEditor({ card, onDone, onCancel, showToast }) {
   const [conds, setConds] = useState(
     (card.eligibility_bullets || []).length ? [...card.eligibility_bullets] : [""]
   );
-  const [rewardConds, setRewardConds] = useState(card.reward_conditions || "");
+  const [rewardConds, setRewardConds] = useState(
+    (card.reward_bullets || []).length ? [...card.reward_bullets] : [""]
+  );
   const [busy, setBusy] = useState(false);
   const condList = conds.map((c) => c.trim()).filter(Boolean);
+  const rewardList = rewardConds.map((c) => c.trim()).filter(Boolean);
 
   const save = async () => {
     setBusy(true);
@@ -349,7 +351,7 @@ function ContentEditor({ card, onDone, onCancel, showToast }) {
         name: name.trim(),
         perk_line: perk.trim(),
         eligibility_bullets: condList,
-        reward_conditions: rewardConds.trim(),
+        reward_bullets: rewardList,
       });
       showToast(
         res.status === "pending"
@@ -360,7 +362,7 @@ function ContentEditor({ card, onDone, onCancel, showToast }) {
     } catch (ex) {
       showToast(
         ex.body?.error === "perk_too_long" ? "Ưu đãi tối đa 40 ký tự"
-          : ex.body?.error === "reward_conditions_too_long" ? "Điều kiện nhận thưởng tối đa 600 ký tự"
+          : ex.body?.error === "invalid_reward_bullets" ? "Điều kiện nhận thưởng: tối đa 6 điều kiện, mỗi điều kiện 120 ký tự"
             : "Không lưu được, thử lại"
       );
     } finally {
@@ -391,17 +393,19 @@ function ContentEditor({ card, onDone, onCancel, showToast }) {
         onClick={() => setConds((arr) => (arr.length < 6 ? [...arr, ""] : arr))}>
         {conds.length >= 6 ? "Tối đa 6 điều kiện" : "+ Thêm điều kiện"}
       </button>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <label className="bid-label">Điều kiện nhận thưởng</label>
-        <span className="mono bid-counter">{rewardConds.length}/{REWARD_CONDITIONS_MAX}</span>
-      </div>
-      <textarea
-        className="input"
-        style={{ minHeight: 92, height: "auto", padding: "11px 13px", resize: "vertical", lineHeight: 1.5 }}
-        value={rewardConds}
-        maxLength={REWARD_CONDITIONS_MAX}
-        onChange={(e) => setRewardConds(e.target.value)}
-      />
+      <label className="bid-label">Điều kiện nhận thưởng</label>
+      {rewardConds.map((c, i) => (
+        <div key={i} className="bid-cond-row">
+          <span className="mono bid-cond-index">{i + 1}</span>
+          <input className="input" style={{ height: 42, marginBottom: 0 }} value={c} maxLength={BULLET_MAX_CHARS}
+            onChange={(e) => setRewardConds((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))} />
+          <button className="bid-cond-x" onClick={() => setRewardConds((arr) => arr.length > 1 ? arr.filter((_, j) => j !== i) : [""])}>×</button>
+        </div>
+      ))}
+      <button className="bid-cond-add" disabled={rewardConds.length >= BULLET_MAX_COUNT}
+        onClick={() => setRewardConds((arr) => (arr.length < BULLET_MAX_COUNT ? [...arr, ""] : arr))}>
+        {rewardConds.length >= BULLET_MAX_COUNT ? "Tối đa 6 điều kiện" : "+ Thêm điều kiện"}
+      </button>
       <div className="bid-helper">
         Ngân hàng tự quyết định điều kiện khách được nhận thưởng — hiển thị cho khách trong mục Điều kiện.
       </div>
