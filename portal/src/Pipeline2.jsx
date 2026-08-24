@@ -124,6 +124,7 @@ function artBackground(lead) {
 export default function Pipeline2({
   leads,
   myCards,
+  repName,
   onCall,
   refresh,
   showToast,
@@ -222,6 +223,7 @@ export default function Pipeline2({
             at: e.createdAt || e.created_at,
             connected: (e.detail || {}).outcome === "answered",
             sec: (e.detail || {}).answered_sec || 0,
+            a_leg_uuid: (e.detail || {}).a_leg_uuid || null,
           }));
         setFeed([...msgs, ...calls].sort((a, b) => new Date(a.at) - new Date(b.at)));
         refresh(); // unread just cleared server-side
@@ -331,6 +333,7 @@ export default function Pipeline2({
           <DetailPane
             lead={selected}
             myCards={myCards}
+            repName={repName}
             feed={feed}
             threadRef={threadRef}
             draft={drafts[selected.lead_id] || ""}
@@ -382,6 +385,7 @@ export default function Pipeline2({
                 at: new Date().toISOString(),
                 connected: state !== "da_goi",
                 sec: dispositionFor.seconds || 0,
+                a_leg_uuid: null, // refresh() swaps in the real event, which carries it
               }]);
             }
             clearDisposition();
@@ -399,7 +403,7 @@ export default function Pipeline2({
 function DetailPane({
   lead, myCards, feed, threadRef, draft, setDraft, send, sending,
   note, setNote, noteOpen, setNoteOpen, narrow, onBack, onCall,
-  onOpenOutcome, refresh, showToast,
+  onOpenOutcome, refresh, showToast, repName,
 }) {
   const o = outcomeOf(lead);
   const [invoice, setInvoice] = useState(null); // PaymentModal payload
@@ -575,7 +579,7 @@ function DetailPane({
         )}
         {feed.map((item, i) =>
           item.kind === "call" ? (
-            <CallRecord key={`c${i}`} item={item} />
+            <CallRecord key={`c${i}`} item={item} leadId={lead.lead_id} repName={repName} />
           ) : (
             <div key={item.message_id || i} style={{ display: "flex", flexDirection: "column", alignItems: item.from === "rm" ? "flex-end" : "flex-start" }}>
               <div className={`pl-bubble ${item.from === "rm" ? "mine" : ""}`}>{item.text}</div>
@@ -609,9 +613,54 @@ function DetailPane({
   );
 }
 
-function CallRecord({ item }) {
+// Contract #3 timestamps: mm:ss from start_ms.
+const mmss = (ms) => {
+  const s = Math.max(0, Math.floor((ms || 0) / 1000));
+  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+};
+
+function CallRecord({ item, leadId, repName }) {
   const [open, setOpen] = useState(false);
+  // Transcript cache, keyed by a_leg_uuid: fetched once on first expand,
+  // served from state on every re-expand. Keys in the thread are index-
+  // based, so a feed rebuild can hand this slot a different call — the
+  // uuid check below refetches instead of showing stale turns.
+  const [rec, setRec] = useState(null); // { uuid, status, turns }
+  const busyRef = useRef(false);
+  const uuid = item.a_leg_uuid || null;
   const dur = item.sec > 0 ? `${Math.floor(item.sec / 60)}:${String(item.sec % 60).padStart(2, "0")}` : null;
+
+  const load = async () => {
+    if (!uuid || !leadId || busyRef.current) return;
+    busyRef.current = true;
+    try {
+      const res = await api.callTurns(leadId, uuid);
+      setRec({ uuid, status: res?.status || "none", turns: res?.turns || [] });
+    } catch {
+      // A poll blip must not erase a cached state (e.g. pending) — only
+      // surface the error row when we have nothing for this call yet.
+      setRec((r) => (r && r.uuid === uuid ? r : { uuid, status: "error", turns: [] }));
+    } finally {
+      busyRef.current = false;
+    }
+  };
+
+  // First expand fetches; the cache serves every expand after that.
+  useEffect(() => {
+    if (open && uuid && rec?.uuid !== uuid) load();
+  }, [open, uuid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Poll every 10s ONLY while expanded AND the transcript is still pending.
+  useEffect(() => {
+    if (!(open && uuid && rec?.uuid === uuid && rec.status === "pending")) return;
+    const t = setInterval(load, 10000);
+    return () => clearInterval(t);
+  }, [open, uuid, rec?.uuid, rec?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // "none" without asking: pre-a_leg_uuid events and the optimistic
+  // just-dispositioned row have nothing to fetch.
+  const status = !uuid ? "none" : rec?.uuid === uuid ? rec.status : "loading";
+
   return (
     <div className="pl-call-record">
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -629,8 +678,33 @@ function CallRecord({ item }) {
         )}
       </div>
       {open && (
-        <div className="bid-micro" style={{ marginTop: 6, paddingLeft: 16 }}>
-          Bản ghi từng câu sẽ mở ra ở đúng chỗ này khi tính năng ghi nội dung cuộc gọi ra mắt.
+        <div style={{ marginTop: 6, paddingLeft: 16 }}>
+          {status === "loading" && <div className="bid-micro">Đang tải…</div>}
+          {status === "pending" && <div className="bid-micro">Đang xử lý bản ghi…</div>}
+          {(status === "failed" || (status === "ready" && rec.turns.length === 0)) && (
+            <div className="bid-micro">Không tạo được bản ghi cho cuộc gọi này.</div>
+          )}
+          {status === "too_short" && <div className="bid-micro">Cuộc gọi quá ngắn để ghi nội dung.</div>}
+          {status === "none" && <div className="bid-micro">Cuộc gọi này không có bản ghi nội dung.</div>}
+          {status === "error" && (
+            <div className="bid-micro">
+              Không tải được nội dung.{" "}
+              <button className="bid-link-btn" style={{ height: "auto", padding: 0 }} onClick={load}>Thử lại</button>
+            </div>
+          )}
+          {status === "ready" && rec.turns.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {rec.turns.map((t) => (
+                <div key={t.seq} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                  <span className="mono" style={{ fontSize: 10.5, color: "var(--ink-35)", flex: "none" }}>{mmss(t.start_ms)}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, flex: "none", color: t.speaker === "rm" ? "var(--navy)" : "var(--ink-55)" }}>
+                    {t.speaker === "rm" ? (repName || "Bạn") : "Khách"}
+                  </span>
+                  <span style={{ fontSize: 12.5, lineHeight: 1.45 }}>{t.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

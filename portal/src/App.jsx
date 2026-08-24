@@ -350,6 +350,7 @@ function Portal({ onSignOut, target, onTargetApplied }) {
             <Pipeline2
               leads={leads}
               myCards={cards}
+              repName={me?.profile?.displayName || ""}
               onCall={startCall}
               refresh={refresh}
               showToast={showToast}

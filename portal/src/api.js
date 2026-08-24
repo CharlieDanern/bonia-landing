@@ -93,6 +93,9 @@ export const api = {
   messages: (leadId) => request(`/rm/leads/${leadId}/messages`),
   sendMessage: (leadId, text) =>
     request(`/rm/leads/${leadId}/messages`, { method: "POST", body: { text } }),
+  // Call transcript — lazy, fetched on expand only, never in the list payload.
+  callTurns: (leadId, aLegUuid) =>
+    request(`/rm/leads/${leadId}/calls/${aLegUuid}/turns`),
   outcome: (leadId, body) =>
     request(`/rm/leads/${leadId}/outcome`, { method: "POST", body }),
   ledger: () => request("/rm/wallet/ledger"),
