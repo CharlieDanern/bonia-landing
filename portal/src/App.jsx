@@ -255,7 +255,13 @@ function Portal({ onSignOut, target, onTargetApplied }) {
     // attempted, and "khách không nghe máy" would be a lie.
     if (!window.SIP || !navigator.mediaDevices?.getUserMedia) {
       setMuted(false);
-      setCall({ leadId: lead.lead_id, name: lead.first_name, phase: "failed", failReason: "unsupported" });
+      setCall({
+        leadId: lead.lead_id,
+        name: lead.first_name,
+        phase: "failed",
+        // A missing SIP.js is our deploy, not their browser.
+        failReason: !window.SIP ? "sip_missing" : "unsupported",
+      });
       return;
     }
     if (!phoneRef.current?.ready) {

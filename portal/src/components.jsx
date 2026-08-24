@@ -141,10 +141,15 @@ export function CallOverlay({ name, phase, failReason, seconds, muted, onMute, o
         <b>Không tìm thấy micro.</b> Cắm tai nghe hoặc kiểm tra thiết bị ghi âm trong
         cài đặt máy, rồi bấm Gọi lại. Khách hàng chưa hề bị gọi.
       </>
+    ) : failReason === "sip_missing" ? (
+      <>
+        <b>Chưa tải được thành phần gọi.</b> Tải lại trang (Ctrl/Cmd + Shift + R). Nếu vẫn
+        lỗi, đây là lỗi từ Bonia — nhắn Duy 0909 291 268. Khách hàng chưa hề bị gọi.
+      </>
     ) : failReason === "unsupported" ? (
       <>
         <b>Trình duyệt này chưa hỗ trợ gọi.</b> Dùng Chrome hoặc Safari bản mới nhất trên
-        máy tính, rồi mở lại bonia.vn/app.
+        máy tính, và mở đúng địa chỉ https://bonia.vn/app/.
       </>
     ) : failReason === "not_registered" ? (
       <>

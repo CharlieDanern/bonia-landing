@@ -18,8 +18,15 @@
          a plain script, never through the ESM graph: vite-dev serves ESM
          imports as modules where `this` is undefined and the whole app
          module graph dies with it. Classic scripts run before deferred
-         modules, so window.SIP is ready when softphone.js reads it. -->
-    <script src="./sip.min.js"></script>
+         modules, so window.SIP is ready when softphone.js reads it.
+
+         ABSOLUTE path on purpose. A relative "./sip.min.js" resolves
+         against the CURRENT URL, and bonia.vn/app (no trailing slash) is
+         served without a redirect — so it resolved to /sip.min.js, 404'd,
+         left window.SIP undefined, and every rep landing on the no-slash
+         URL was told their browser could not make calls. %BASE_URL% is
+         rewritten by Vite ("/" in dev, "/app/" in the build). -->
+    <script src="%BASE_URL%sip.min.js"></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -26,7 +26,14 @@ const SIP = window.SIP;
  * → "unsupported" | "mic_denied" | "mic_missing" | "not_registered" | "no_answer"
  */
 export function classifyCallError(err) {
-  if (!window.SIP || !navigator.mediaDevices?.getUserMedia) return "unsupported";
+  // Split the two halves of "unsupported". A missing SIP.js is OUR bug (a
+  // 404 on the bundle — it happened on the no-trailing-slash URL and told
+  // every rep their browser was at fault); a missing mediaDevices really
+  // is the browser or an insecure context. Telling them apart is the
+  // difference between a rep pointlessly switching browsers and us fixing
+  // a deploy.
+  if (!window.SIP) return "sip_missing";
+  if (!navigator.mediaDevices?.getUserMedia) return "unsupported";
   const name = err?.name || "";
   const msg = String(err?.message || err || "");
   if (name === "NotAllowedError" || name === "SecurityError" || /permission denied/i.test(msg)) {
