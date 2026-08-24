@@ -147,7 +147,10 @@ export function BidDetail({ card, wallet, onBack, refresh, showToast }) {
 
       {/* Consumer view — mirror + the terms panel, side by side (§7) */}
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
-        <div style={{ flex: 1, minWidth: 286, maxWidth: 520 }}>
+        {/* Capped near phone width (361pt) so the mirror's fixed type sizes
+            sit at the same proportion of the card as they do in the app —
+            stretched to 520 the copy reads smaller than a real phone. */}
+        <div style={{ flex: 1, minWidth: 286, maxWidth: 380 }}>
           <AppMirror
             bank={card.bank}
             name={card.name}

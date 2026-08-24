@@ -51,14 +51,23 @@ export function AppMirror({
   // ONE scale for board/detail/wizard (300–360px boxes). `base` is the
   // consumer-native scale (matches the live app's ~269px card) — used only
   // inside the phone frame, never on the board.
+  // `portal` mirrors the consumer app 1:1 — every value below is the
+  // literal iOS/Android figure (OfferCatalogView.swift / OfferCatalogScreen.kt)
+  // and only holds true because the card renders at the app's real width
+  // (~361px). `base` is the same scale × 0.745 for the 269px phone-frame
+  // screen, so the preview reads like a phone rather than a poster.
   const t = scale === "base"
-    ? { title: 13, reward: 21, perk: 10.5, caption: 9.5, bar: 34, barText: 12.5, pad: "13px 15px", pill: 10 }
-    : { title: 15, reward: 24, perk: 12, caption: 11, bar: 40, barText: 14, pad: "16px 18px", pill: 11 };
+    ? { bank: 9.5, title: 10, reward: 18, perk: 8.5, caption: 8, bar: 28, barText: 10.5, pad: "9px 10.5px", pill: 8 }
+    : { bank: 13, title: 13.5, reward: 24, perk: 11.5, caption: 10.5, bar: 38, barText: 14, pad: "12px 14px", pill: 11 };
 
   const body = (
     <div
       style={{
-        aspectRatio: "1.9/1",
+        // Matches the consumer app exactly: the iOS/Android cell is a fixed
+        // 168pt tall at ~361pt wide (screen − 16pt padding each side).
+        // Anything squatter crowds line 1 and the name starts truncating
+        // here while it fits fine on a phone.
+        aspectRatio: "361/168",
         borderRadius: 18,
         overflow: "hidden",
         position: "relative",
@@ -106,13 +115,14 @@ export function AppMirror({
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           }}
         >
-          <span style={{ fontWeight: 500, color: "rgba(255,255,255,.92)" }}>{bank}</span>
+          <span style={{ fontSize: t.bank, fontWeight: 500, color: "rgba(255,255,255,.92)" }}>{bank}</span>
           <span style={{ display: "inline-block", width: "0.55em" }} />
           <span style={{ fontWeight: 700 }}>{name}</span>
         </div>
         <span
           style={{
-            flex: "none", fontSize: t.pill, color: "#fff", padding: "5px 11px", borderRadius: 20,
+            flex: "none", fontSize: t.pill, fontWeight: 500, color: "#fff",
+            padding: scale === "base" ? "4px 8px" : "5px 10px", borderRadius: 20,
             background: "rgba(255,255,255,.16)", border: "1px solid rgba(255,255,255,.22)",
           }}
         >

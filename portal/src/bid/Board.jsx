@@ -178,8 +178,10 @@ function BidRow({ card, wide, wallet, onOpen, onApplied, showToast }) {
     }
   };
 
+  // 361px = the app's real card width (phone − 16pt padding each side), so
+  // line 1 truncates here only when it would truncate on a phone too.
   const mirror = (
-    <div style={wide ? { width: "min(300px, 34%)", flex: "none", alignSelf: "center" } : { maxWidth: 360 }}>
+    <div style={wide ? { width: "min(361px, 38%)", flex: "none", alignSelf: "center" } : { maxWidth: 361 }}>
       <AppMirror
         bank={card.bank}
         name={card.name}
