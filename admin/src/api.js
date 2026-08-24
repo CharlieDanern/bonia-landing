@@ -71,7 +71,27 @@ export const api = {
     request(`/admin-portal/rms/${id}/unsuspend`, { method: "POST", body: {} }),
   bankTxn: (body) => request("/admin-portal/bank-txn", { method: "POST", body }),
   transfers: (limit = 30) => request(`/admin-portal/transfers?limit=${limit}`),
+  // Platform settings — currently just the consumer commission.
+  settings: () => request("/admin-portal/settings"),
+  setConsumerRewardPct: (pct) =>
+    request("/admin-portal/settings", {
+      method: "PUT",
+      body: { consumer_reward_pct: pct },
+    }),
 };
+
+// ── Consumer commission ──────────────────────────────────────────────
+// The live rate lives in platform_settings.consumer_reward_pct and is
+// read from GET /admin-portal/settings. These are the server's own
+// bounds (services/platform-settings.ts) and its own arithmetic — the
+// admin must never print a reward the API would not produce.
+export const REWARD_PCT_MIN = 1;
+export const REWARD_PCT_MAX = 90;
+// Fallback for a response that predates the setting; never a business rule.
+export const DEFAULT_REWARD_PCT = 50;
+
+export const consumerRewardVnd = (bidVnd, pct = DEFAULT_REWARD_PCT) =>
+  bidVnd == null ? null : Math.floor((bidVnd * pct) / 100);
 
 // ── Formatting (VN conventions, same as the RM portal) ───────────────
 export const vnd = (n) =>

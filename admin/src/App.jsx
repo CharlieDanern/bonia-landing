@@ -71,7 +71,7 @@ function Shell({ onSignOut }) {
       </aside>
       <main className="content">
         <div className="wrap">
-          {route === "overview" && <Overview nav={setRoute} />}
+          {route === "overview" && <Overview nav={setRoute} showToast={showToast} />}
           {route === "cards" && <Cards showToast={showToast} />}
           {route === "regs" && <Registrations showToast={showToast} />}
           {route === "claims" && <Claims showToast={showToast} />}

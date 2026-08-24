@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { api, fmtDate, shortId, STAGE_LABEL, vnd } from "../api.js";
+import {
+  api,
+  consumerRewardVnd,
+  DEFAULT_REWARD_PCT,
+  fmtDate,
+  shortId,
+  STAGE_LABEL,
+  vnd,
+} from "../api.js";
 import {
   CLAIM_STATE,
   ConfirmModal,
@@ -20,6 +28,11 @@ export default function Claims({ showToast }) {
   const [state, setState] = useState("disputed");
   const [selId, setSelId] = useState(null);
   const { data, loading, error, reload } = useLoad(() => api.claims(state), [state]);
+  // Resolving a claim writes user_share_vnd at the CURRENT rate
+  // (rm-pipeline.ts / admin-portal.ts resolve), so the preview below must
+  // quote the live setting, not a literal 50%.
+  const settings = useLoad(() => api.settings(), []);
+  const rewardPct = settings.data?.consumer_reward_pct ?? DEFAULT_REWARD_PCT;
   const claims = data?.claims || [];
   const sel = claims.find((c) => c.id === selId) || claims[0] || null;
 
@@ -85,6 +98,7 @@ export default function Claims({ showToast }) {
             <ClaimDetail
               key={sel.id}
               claim={sel}
+              rewardPct={rewardPct}
               showToast={showToast}
               onDone={reload}
             />
@@ -95,7 +109,7 @@ export default function Claims({ showToast }) {
   );
 }
 
-function ClaimDetail({ claim, showToast, onDone }) {
+function ClaimDetail({ claim, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone }) {
   const [outcome, setOutcome] = useState(null); // "won" | "lost"
   const [finalCard, setFinalCard] = useState(
     claim.proposed_card_id ? "proposed" : "customer"
@@ -323,9 +337,9 @@ function ClaimDetail({ claim, showToast, onDone }) {
                 onChange={(e) => setFinalFee(e.target.value)}
               />
               <div className="bid-helper">
-                Phần người dùng = 50% phí chốt ={" "}
+                Phần người dùng = {rewardPct}% phí chốt ={" "}
                 {finalFee !== "" && !Number.isNaN(Number(finalFee))
-                  ? vnd(Math.floor(Number(finalFee) / 2))
+                  ? vnd(consumerRewardVnd(Number(finalFee), rewardPct))
                   : "—"}
               </div>
             </div>
@@ -359,6 +373,8 @@ function ClaimDetail({ claim, showToast, onDone }) {
               <>
                 Thẻ chốt: <b>{wonCardName || "—"}</b> · phí chốt{" "}
                 <b className="mono">{vnd(Number(finalFee))}</b>. Khiếu nại chuyển
+                {/* HOLD, not the consumer share: collateral fixed at 50%,
+                    does not follow platform_settings.consumer_reward_pct. */}
                 sang chờ thu phí — <b>phần giữ 50% sẽ được cấn trừ vào phí</b> khi
                 thanh toán. Lead chuyển Thành công và các bên được thông báo.
               </>

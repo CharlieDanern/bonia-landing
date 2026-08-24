@@ -6,7 +6,7 @@ import { BidDetail } from "./Detail.jsx";
 // The Bid tab — board / wizard / detail as a small in-tab state machine
 // (the portal has no router; Pipeline and Tài khoản work the same way).
 
-export function BidTab({ cards, bank, wallet, refresh, showToast }) {
+export function BidTab({ cards, bank, wallet, rewardPct, refresh, showToast }) {
   const [view, setView] = useState({ kind: "board" });
 
   if (view.kind === "wizard") {
@@ -16,6 +16,7 @@ export function BidTab({ cards, bank, wallet, refresh, showToast }) {
     return (
       <BidWizard
         bank={bank}
+        rewardPct={rewardPct}
         sampleOthers={ranked ? [...ranked.others_vnd, ranked.my_bid_vnd] : null}
         onDone={() => { setView({ kind: "board" }); refresh(); }}
         onCancel={() => setView({ kind: "board" })}
@@ -34,6 +35,7 @@ export function BidTab({ cards, bank, wallet, refresh, showToast }) {
       <BidDetail
         card={card}
         wallet={wallet}
+        rewardPct={rewardPct}
         onBack={() => setView({ kind: "board" })}
         refresh={refresh}
         showToast={showToast}
@@ -42,13 +44,14 @@ export function BidTab({ cards, bank, wallet, refresh, showToast }) {
   }
 
   if (cards.length === 0) {
-    return <EmptyBoard bank={bank} onAdd={() => setView({ kind: "wizard" })} />;
+    return <EmptyBoard bank={bank} rewardPct={rewardPct} onAdd={() => setView({ kind: "wizard" })} />;
   }
   return (
     <BidBoard
       cards={cards}
       bank={bank}
       wallet={wallet}
+      rewardPct={rewardPct}
       onAdd={() => setView({ kind: "wizard" })}
       onOpen={(id) => setView({ kind: "detail", id })}
       refresh={refresh}

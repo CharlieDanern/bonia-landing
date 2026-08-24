@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { api, fmtDate, vnd } from "../api.js";
+import { api, consumerRewardVnd, DEFAULT_REWARD_PCT, fmtDate, vnd } from "../api.js";
 import {
   CARD_STATUS,
   ConfirmModal,
@@ -35,6 +35,10 @@ export default function Cards({ showToast }) {
   const [status, setStatus] = useState("pending");
   const [selId, setSelId] = useState(null);
   const { data, loading, error, reload } = useLoad(() => api.cards(status), [status]);
+  // Live consumer commission — the preview must print the reward the
+  // consumer app would actually show, not a baked-in 50%.
+  const settings = useLoad(() => api.settings(), []);
+  const rewardPct = settings.data?.consumer_reward_pct ?? DEFAULT_REWARD_PCT;
   const cards = data?.cards || [];
   const sel = cards.find((c) => c.id === selId) || cards[0] || null;
 
@@ -97,6 +101,7 @@ export default function Cards({ showToast }) {
             <CardDetail
               key={sel.id}
               card={sel}
+              rewardPct={rewardPct}
               showToast={showToast}
               onDone={reload}
             />
@@ -107,7 +112,7 @@ export default function Cards({ showToast }) {
   );
 }
 
-function CardDetail({ card, showToast, onDone }) {
+function CardDetail({ card, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone }) {
   const typesLoad = useLoad(() => api.cardTypes(card.bank), [card.bank]);
   const types = typesLoad.data?.types || [];
 
@@ -150,7 +155,7 @@ function CardDetail({ card, showToast, onDone }) {
     setTypeLabel(hit ? hit.label : card.name || "");
   }, [prefilled, card, typesLoad.loading, typesLoad.error, types, typeLabel]);
 
-  const userReward = card.bid_vnd != null ? Math.floor(card.bid_vnd / 2) : null;
+  const userReward = consumerRewardVnd(card.bid_vnd, rewardPct);
   const media = card.media_urls || [];
 
   const doApprove = async (force = false) => {
@@ -209,9 +214,10 @@ function CardDetail({ card, showToast, onDone }) {
           />
         </div>
         <div className="preview-note">
-          Số tiền thưởng hiển thị = 50% giá bid ({vnd(card.bid_vnd)} →{" "}
+          Số tiền thưởng hiển thị = {rewardPct}% giá bid ({vnd(card.bid_vnd)} →{" "}
           <b className="mono">{vnd(userReward)}</b>). Ảnh nền là ảnh đầu tiên đối
-          tác tải lên; nếu không có ảnh, app dùng nền màu ngân hàng.
+          tác tải lên; nếu không có ảnh, app dùng nền màu ngân hàng. Nút{" "}
+          <b>Chi tiết</b> mở phần nội dung bên dưới.
         </div>
       </div>
 
@@ -231,6 +237,19 @@ function CardDetail({ card, showToast, onDone }) {
         />
         <Field label="Gửi lúc" value={fmtDate(card.created_at)} mono />
       </div>
+
+      {/* Rep-authored free text, first section of the consumer "Chi tiết"
+          sheet — so it is reviewed like perk/bullets. Newlines are the
+          rep's formatting and survive to the app, so they survive here
+          too (.tnc-box = pre-wrap + its own scroll). */}
+      <div className="f-label" style={{ marginTop: 12 }}>
+        Chi tiết thẻ (khách đọc đầu tiên)
+      </div>
+      {card.details ? (
+        <div className="tnc-box">{card.details}</div>
+      ) : (
+        <div className="f-val dim">—</div>
+      )}
 
       <div className="f-label" style={{ marginTop: 12 }}>
         Quyền lợi (bullets)

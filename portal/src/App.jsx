@@ -4,6 +4,7 @@ import { Softphone, classifyCallError } from "./softphone.js";
 import { Toast, useToast, CallOverlay } from "./components.jsx";
 import logo from "./logo-mark.png";
 import { BidTab } from "./bid/BidTab.jsx";
+import { DEFAULT_REWARD_PCT } from "./bid/position.js";
 import Register from "./Register.jsx";
 import Pipeline2 from "./Pipeline2.jsx";
 import Account2 from "./Account2.jsx";
@@ -144,6 +145,10 @@ function Portal({ onSignOut, target, onTargetApplied }) {
   const [focusLeadId, setFocusLeadId] = useState(() => target?.lead || null);
   const [me, setMe] = useState(null);
   const [cards, setCards] = useState([]);
+  // Live consumer commission (platform_settings.consumer_reward_pct),
+  // delivered on the /rm/cards root. The portal quotes it instead of
+  // printing a literal 50% — an admin can move the rate without a deploy.
+  const [rewardPct, setRewardPct] = useState(DEFAULT_REWARD_PCT);
   const [leads, setLeads] = useState([]);
   const [toast, showToast] = useToast();
 
@@ -184,6 +189,10 @@ function Portal({ onSignOut, target, onTargetApplied }) {
       const [m, cs, ld] = await Promise.all([api.me(), api.cards(), api.leads()]);
       setMe(m);
       setCards(cs.cards || []);
+      // ?? — not ||: a rate of 0 is impossible (server validates 1..90),
+      // but an older API build that omits the key must fall back, not
+      // render "0%".
+      setRewardPct(cs.consumer_reward_pct ?? DEFAULT_REWARD_PCT);
       setLeads(ld.leads || []);
     } catch {
       /* 401 handled globally */
@@ -330,7 +339,7 @@ function Portal({ onSignOut, target, onTargetApplied }) {
         </aside>
 
         <main className="content">
-          {route === "offers" && <BidTab cards={cards} bank={me?.profile?.bank} wallet={me?.wallet} refresh={refresh} showToast={showToast} />}
+          {route === "offers" && <BidTab cards={cards} bank={me?.profile?.bank} wallet={me?.wallet} rewardPct={rewardPct} refresh={refresh} showToast={showToast} />}
           {route === "pipeline" && (
             <Pipeline2
               leads={leads}

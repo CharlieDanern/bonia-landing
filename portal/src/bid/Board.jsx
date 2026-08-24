@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { api, vnd } from "../api.js";
 import { AppMirror } from "./Mirror.jsx";
-import { computePosition, clampBid, rewardOf, BID_STEP } from "./position.js";
+import { computePosition, clampBid, rewardOf, BID_STEP, DEFAULT_REWARD_PCT } from "./position.js";
 
 // Board — one row per card, five states (outbid+nudge · leading-at-capacity
 // · tie · pending · rejected). Bids edit IN PLACE: stepper/typing move a
@@ -25,6 +25,11 @@ export function statusChip(card, wallet) {
   if (card.active_leads >= card.max_active_leads)
     return { text: `Pipeline đầy · ${card.active_leads}/${card.max_active_leads}`, cls: "amber" };
   // §9: no funds for the next hold → routing skips this rep.
+  //
+  // floor(bid/2) here is the WALLET HOLD, not the consumer reward. It is
+  // collateral against the fee and stays at a fixed 50% no matter where
+  // the commission setting goes (server: connect-user.ts needHold). Do
+  // NOT swap it for rewardOf() because the two look alike.
   if (wallet && wallet.freeLeadsLeft === 0 && wallet.availableVnd < Math.floor(card.my_bid_vnd / 2))
     return { text: "Hết số dư", cls: "amber" };
   return { text: `Đang nhận lead · ${card.active_leads}/${card.max_active_leads}`, cls: "green" };
@@ -140,7 +145,7 @@ function ReviewBanner({ card, onSubmitDraft }) {
   return null;
 }
 
-function BidRow({ card, wide, wallet, onOpen, onApplied, showToast }) {
+function BidRow({ card, wide, wallet, rewardPct, onOpen, onApplied, showToast }) {
   const [draft, setDraft] = useState(card.my_bid_vnd);
   const [busy, setBusy] = useState(false);
   useEffect(() => setDraft(card.my_bid_vnd), [card.my_bid_vnd]);
@@ -186,7 +191,7 @@ function BidRow({ card, wide, wallet, onOpen, onApplied, showToast }) {
         bank={card.bank}
         name={card.name}
         perk={card.perk_line}
-        rewardVnd={rewardOf(card.my_bid_vnd)}
+        rewardVnd={rewardOf(card.my_bid_vnd, rewardPct)}
         imageUrl={card.image_url}
         cta="Chi tiết"
         dimmed={!card.listed}
@@ -245,7 +250,7 @@ function BidRow({ card, wide, wallet, onOpen, onApplied, showToast }) {
   );
 }
 
-export function BidBoard({ cards, bank, wallet, onAdd, onOpen, refresh, showToast }) {
+export function BidBoard({ cards, bank, wallet, rewardPct, onAdd, onOpen, refresh, showToast }) {
   const width = useWindowWidth();
   const wide = width >= 1150;
 
@@ -270,6 +275,7 @@ export function BidBoard({ cards, bank, wallet, onAdd, onOpen, refresh, showToas
             card={c}
             wide={wide}
             wallet={wallet}
+            rewardPct={rewardPct}
             onOpen={() => onOpen(c.card_id)}
             onApplied={refresh}
             showToast={showToast}
@@ -286,7 +292,7 @@ export function BidBoard({ cards, bank, wallet, onAdd, onOpen, refresh, showToas
   );
 }
 
-export function EmptyBoard({ bank, onAdd }) {
+export function EmptyBoard({ bank, rewardPct = DEFAULT_REWARD_PCT, onAdd }) {
   return (
     <div className="wrap" style={{ maxWidth: 1080 }}>
       <div className="eyebrow mono">{(bank || "").toUpperCase()}</div>
@@ -304,7 +310,7 @@ export function EmptyBoard({ bank, onAdd }) {
           </li>
           <li>
             <b>Đặt mức bid</b>
-            <span>Phí thành công bạn trả khi khách mở thẻ. Khách hàng nhận lại 50% — con số này hiện trên thẻ trong app.</span>
+            <span>Phí thành công bạn trả khi khách mở thẻ. Khách hàng nhận lại {rewardPct}% — con số này hiện trên thẻ trong app.</span>
           </li>
           <li>
             <b>Nhận lead và gọi</b>

@@ -1,7 +1,14 @@
 import React, { useMemo, useRef, useState } from "react";
 import { api, vnd } from "../api.js";
 import { AppMirror, PhonePreview } from "./Mirror.jsx";
-import { clampBid, computePosition, rewardOf, BID_STEP, BID_FLOOR_DEFAULT } from "./position.js";
+import {
+  clampBid,
+  computePosition,
+  rewardOf,
+  BID_STEP,
+  BID_FLOOR_DEFAULT,
+  DEFAULT_REWARD_PCT,
+} from "./position.js";
 
 // "Thêm thẻ" — 3 discrete steps (content → art → bid) ending in the
 // app-mirror preview. One decision per screen; every step resumable via
@@ -13,6 +20,10 @@ const MAX_IMAGE_BYTES = 500 * 1024;
 // bullets, 120 chars each — same caps as Điều kiện xét duyệt.
 const BULLET_MAX_COUNT = 6;
 const BULLET_MAX_CHARS = 120;
+// Mirrors the server's cleanDetails contract (rm-cards.ts): free text,
+// 2000 chars, trimmed at the ends only — interior newlines survive
+// because the consumer sheet renders this as prose with breaks.
+const DETAILS_MAX_CHARS = 2000;
 
 function StepHeader({ step, onBack }) {
   const steps = ["Thông tin thẻ", "Hình ảnh", "Bid"];
@@ -51,10 +62,11 @@ function WizardFooter({ onCancel, cancelLabel, onDraft, next, nextLabel, nextDis
   );
 }
 
-export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
+export function BidWizard({ bank, sampleOthers, rewardPct = DEFAULT_REWARD_PCT, onDone, onCancel, showToast }) {
   const [step, setStep] = useState(0); // 0..2, 3 = preview
   const [name, setName] = useState("");
   const [perk, setPerk] = useState("");
+  const [details, setDetails] = useState("");
   const [conds, setConds] = useState([""]);
   const [rewardConds, setRewardConds] = useState([""]);
   const [image, setImage] = useState(null); // {b64, mime, fileName, dataUrl}
@@ -65,8 +77,14 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
 
   const condList = conds.map((c) => c.trim()).filter(Boolean);
   const rewardList = rewardConds.map((c) => c.trim()).filter(Boolean);
-  const step1Valid = name.trim().length > 0 && perk.trim().length > 0 && perk.length <= 40 && condList.length >= 1;
-  const reward = rewardOf(bid);
+  const detailsText = details.trim();
+  const step1Valid =
+    name.trim().length > 0 &&
+    perk.trim().length > 0 &&
+    perk.length <= 40 &&
+    condList.length >= 1 &&
+    detailsText.length <= DETAILS_MAX_CHARS;
+  const reward = rewardOf(bid, rewardPct);
 
   const pickFile = (file) => {
     if (!file) return;
@@ -90,6 +108,9 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
   const payload = (submit) => ({
     name: name.trim(),
     perk_line: perk.trim(),
+    // "" is the server's own signal for "no lede" (cleanDetails → NULL),
+    // so an untouched field does not need to be omitted.
+    details: detailsText,
     eligibility_bullets: condList,
     reward_bullets: rewardList,
     ...(image ? { image_base64: image.b64, image_mime: image.mime } : {}),
@@ -108,9 +129,10 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
     } catch (ex) {
       showToast(
         ex.body?.error === "perk_too_long" ? "Ưu đãi tối đa 40 ký tự"
-          : ex.body?.error === "invalid_reward_bullets" ? "Điều kiện nhận thưởng: tối đa 6 điều kiện, mỗi điều kiện 120 ký tự"
-            : ex.body?.error === "invalid_max_leads" ? "Giới hạn lead từ 1 đến 200"
-              : "Không lưu được nháp, thử lại"
+          : ex.body?.error === "details_too_long" ? `Chi tiết thẻ tối đa ${DETAILS_MAX_CHARS} ký tự`
+            : ex.body?.error === "invalid_reward_bullets" ? "Điều kiện nhận thưởng: tối đa 6 điều kiện, mỗi điều kiện 120 ký tự"
+              : ex.body?.error === "invalid_max_leads" ? "Giới hạn lead từ 1 đến 200"
+                : "Không lưu được nháp, thử lại"
       );
     } finally {
       setBusy(false);
@@ -126,8 +148,9 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
     } catch (ex) {
       showToast(
         ex.body?.error === "perk_too_long" ? "Ưu đãi tối đa 40 ký tự"
-          : ex.body?.error === "invalid_reward_bullets" ? "Điều kiện nhận thưởng: tối đa 6 điều kiện, mỗi điều kiện 120 ký tự"
-            : "Không gửi được, thử lại"
+          : ex.body?.error === "details_too_long" ? `Chi tiết thẻ tối đa ${DETAILS_MAX_CHARS} ký tự`
+            : ex.body?.error === "invalid_reward_bullets" ? "Điều kiện nhận thưởng: tối đa 6 điều kiện, mỗi điều kiện 120 ký tự"
+              : "Không gửi được, thử lại"
       );
     } finally {
       setBusy(false);
@@ -149,7 +172,20 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
             <div className="eyebrow mono">TRƯỚC KHI GỬI</div>
             <SummaryRow label="Tên thẻ" value={name} />
             <SummaryRow label="Ưu đãi" value={perk} />
-            <SummaryRow label="Điều kiện" value={`${condList.length} điều kiện`} />
+            {/* The lede of the Chi tiết sheet — shown in full (with its
+                line breaks) rather than as a character count, because it
+                is the one field nobody re-reads before submitting. */}
+            {detailsText ? (
+              <div className="bid-summary-row" style={{ display: "block" }}>
+                <span>Chi tiết thẻ</span>
+                <div style={{ fontSize: 12.5, lineHeight: 1.55, fontWeight: 500, whiteSpace: "pre-wrap", marginTop: 6, maxHeight: 190, overflowY: "auto" }}>
+                  {detailsText}
+                </div>
+              </div>
+            ) : (
+              <SummaryRow label="Chi tiết thẻ" value="Chưa có" />
+            )}
+            <SummaryRow label="Điều kiện xét duyệt" value={`${condList.length} điều kiện`} />
             {rewardList.length > 0 ? (
               <div className="bid-summary-row" style={{ display: "block" }}>
                 <span>Điều kiện nhận thưởng</span>
@@ -166,7 +202,7 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
             <SummaryRow label="Bid" value={vnd(bid)} mono />
             <SummaryRow label="Tối đa lead đang xử lý" value={String(cap)} mono />
             <div className="bid-reward-note" style={{ marginTop: 12 }}>
-              Khách sẽ thấy: <b className="mono">Nhận {vnd(reward)}</b> · bằng 50% bid của bạn.
+              Khách sẽ thấy: <b className="mono">Nhận {vnd(reward)}</b> · bằng {rewardPct}% bid của bạn.
             </div>
             <div style={{ display: "flex", gap: 9, marginTop: 14 }}>
               <button className="btn btn-ghost" onClick={() => setStep(0)}>Sửa lại</button>
@@ -205,6 +241,23 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
               value={perk} maxLength={60} onChange={(e) => setPerk(e.target.value)}
               placeholder="vd. Hoàn 2% siêu thị, tối đa 300.000đ/tháng" />
             <div className="bid-helper">Một lợi ích cụ thể, dễ so sánh. Dòng này hiện ngay trên thẻ trong app.</div>
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <label className="bid-label">Chi tiết thẻ <span style={{ fontWeight: 400, color: "var(--ink-45)" }}>· không bắt buộc</span></label>
+              <span className={`mono bid-counter ${detailsText.length > DETAILS_MAX_CHARS ? "over" : ""}`}>
+                {detailsText.length}/{DETAILS_MAX_CHARS}
+              </span>
+            </div>
+            <textarea
+              className={`input ${detailsText.length > DETAILS_MAX_CHARS ? "input-over" : ""}`}
+              style={{ height: "auto", minHeight: 132, padding: "11px 13px", resize: "vertical", lineHeight: 1.55 }}
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
+              placeholder={"vd. Hoàn tiền 2% cho mọi chi tiêu siêu thị, tối đa 300.000đ/tháng.\n\nMiễn phí thường niên năm đầu.\nPhòng chờ sân bay 2 lượt/năm."}
+            />
+            <div className="bid-helper">
+              Mô tả đầy đủ quyền lợi của thẻ — khách hàng xem trong mục Chi tiết.
+            </div>
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <label className="bid-label">Điều kiện xét duyệt</label>
@@ -248,11 +301,11 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
               {rewardConds.length >= BULLET_MAX_COUNT ? "Tối đa 6 điều kiện" : "+ Thêm điều kiện"}
             </button>
             <div className="bid-helper">
-              Ngân hàng tự quyết định điều kiện khách được nhận thưởng — hiển thị cho khách trong mục Điều kiện.
+              Ngân hàng tự quyết định điều kiện khách được nhận thưởng — hiển thị cho khách trong mục Chi tiết.
             </div>
 
             <div className="bid-review-note">
-              Tên thẻ, ưu đãi và điều kiện sẽ được Bonia duyệt trước khi khách hàng nhìn thấy —
+              Tên thẻ, ưu đãi, chi tiết và điều kiện sẽ được Bonia duyệt trước khi khách hàng nhìn thấy —
               thường trong một ngày làm việc. Mức bid của bạn có hiệu lực ngay khi thẻ được duyệt.
             </div>
 
@@ -263,6 +316,7 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
                 const missing = [];
                 if (!name.trim()) missing.push("tên thẻ");
                 if (!perk.trim() || perk.length > 40) missing.push("ưu đãi một dòng (≤40 ký tự)");
+                if (detailsText.length > DETAILS_MAX_CHARS) missing.push(`chi tiết thẻ ≤${DETAILS_MAX_CHARS} ký tự`);
                 if (condList.length < 1) missing.push("ít nhất 1 điều kiện");
                 showToast(`Còn thiếu: ${missing.join(", ")}`);
               }}
@@ -335,7 +389,7 @@ export function BidWizard({ bank, sampleOthers, onDone, onCancel, showToast }) {
                 </div>
                 <div className="bid-micro">Bước {vnd(BID_STEP)} · sàn {vnd(BID_FLOOR_DEFAULT)}</div>
                 <div className="bid-reward-note">
-                  Khách sẽ thấy: <b className="mono">Nhận {vnd(reward)}</b> · bằng 50% bid của bạn.
+                  Khách sẽ thấy: <b className="mono">Nhận {vnd(reward)}</b> · bằng {rewardPct}% bid của bạn.
                 </div>
 
                 <label className="bid-label" style={{ marginTop: 18 }}>Tối đa lead đang xử lý</label>

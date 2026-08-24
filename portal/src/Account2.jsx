@@ -210,6 +210,10 @@ function SpendCap({ me, showToast, refresh }) {
 
 function DepositModal({ me, onClose }) {
   const d = me.wallet?.deposit;
+  // WALLET HOLD, not the consumer reward. Collateral against the fee,
+  // fixed at 50% (server: connect-user.ts needHold) and deliberately NOT
+  // tracking platform_settings.consumer_reward_pct — the copy below keeps
+  // saying 50% for the same reason.
   const holdExample = (bid) => Math.floor(bid / 2);
   return (
     <div className="scrim" onClick={onClose}>

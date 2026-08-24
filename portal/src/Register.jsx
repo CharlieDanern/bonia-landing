@@ -477,6 +477,8 @@ export default function Register({ onDone }) {
                       lineHeight: 1.5,
                     }}
                   >
+                    {/* HOLD copy — collateral, fixed 50%, not the
+                        consumer commission setting. Leave as a literal. */}
                     Sau 3 lead đầu, mỗi lead nhận được sẽ giữ tạm 50% mức bid
                     trong số dư. Không mở được thẻ thì Bonia hoàn lại phần giữ.
                   </div>

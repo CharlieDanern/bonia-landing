@@ -14,7 +14,12 @@ import React from "react";
 //   Line 3  reward figure, unchanged big style ("400.000đ")
 //   Line 4  small grey caption, exactly:
 //           "Phần thưởng tiền mặt khi mở thẻ thành công"
-//   The Điều kiện chip and the Quan tâm bar stay as they are.
+//   The Chi tiết chip and the Quan tâm bar stay as they are.
+//
+// The chip label was "Điều kiện" until the sheet behind it grew a
+// free-text lede (rm_cards.details) and stopped being only a list of
+// conditions. Renamed in lockstep with iOS + Android — the pill is the
+// affordance for the same sheet on all four surfaces.
 //
 // `cta`: "Quan tâm" (consumer truth: preview/phone) or "Chi tiết" (the
 // board/detail divergence — the mirror is the rep's click target).
@@ -126,7 +131,7 @@ export function AppMirror({
             background: "rgba(255,255,255,.16)", border: "1px solid rgba(255,255,255,.22)",
           }}
         >
-          Điều kiện
+          Chi tiết
         </span>
       </div>
 

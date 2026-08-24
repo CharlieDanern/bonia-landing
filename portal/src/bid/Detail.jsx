@@ -3,7 +3,7 @@ import { api, vnd } from "../api.js";
 import { AppMirror } from "./Mirror.jsx";
 import { Ladder } from "./Wizard.jsx";
 import { statusChip, RankChip } from "./Board.jsx";
-import { computePosition, clampBid, rewardOf, BID_STEP } from "./position.js";
+import { computePosition, clampBid, rewardOf, BID_STEP, DEFAULT_REWARD_PCT } from "./position.js";
 
 // Card detail (§7) — the consumer view leads the screen (the card is the
 // thing the rep is buying); bid + ladder, lead cap + pause, content
@@ -14,7 +14,7 @@ import { computePosition, clampBid, rewardOf, BID_STEP } from "./position.js";
 const MAX_IMAGE_BYTES = 500 * 1024;
 const IMAGE_MIMES = ["image/jpeg", "image/png", "image/webp"];
 
-export function BidDetail({ card, wallet, onBack, refresh, showToast }) {
+export function BidDetail({ card, wallet, rewardPct = DEFAULT_REWARD_PCT, onBack, refresh, showToast }) {
   const [draft, setDraft] = useState(card.my_bid_vnd);
   const [busy, setBusy] = useState(false);
   const [capBusy, setCapBusy] = useState(false);
@@ -31,7 +31,7 @@ export function BidDetail({ card, wallet, onBack, refresh, showToast }) {
     ? computePosition(card.others_vnd, card.my_bid_vnd, card.i_hold_tiebreak, true)
     : null;
   const chip = statusChip(card, wallet);
-  const reward = rewardOf(card.my_bid_vnd);
+  const reward = rewardOf(card.my_bid_vnd, rewardPct);
   const dirty = draft !== card.my_bid_vnd;
   const atCap = card.active_leads >= card.max_active_leads;
 
@@ -181,6 +181,15 @@ export function BidDetail({ card, wallet, onBack, refresh, showToast }) {
           </div>
         </div>
         <div className="bid-terms" style={{ flex: 1, minWidth: 256 }}>
+          {/* Sheet order (§ "Chi tiết"): the free-text lede first, then the
+              two bullet sections. No heading — it reads as the opening
+              paragraph of the sheet, exactly as the apps render it. An
+              empty `details` means the section is absent, not blank. */}
+          {card.details ? (
+            <div style={{ whiteSpace: "pre-wrap", fontSize: 13, lineHeight: 1.6, color: "var(--ink)", marginBottom: 14 }}>
+              {card.details}
+            </div>
+          ) : null}
           <div className="eyebrow mono">ĐIỀU KIỆN XÉT DUYỆT</div>
           <ul>
             {(card.eligibility_bullets || []).map((b, i) => <li key={i}>{b}</li>)}
@@ -333,10 +342,13 @@ export function BidDetail({ card, wallet, onBack, refresh, showToast }) {
 // bullets, 120 chars each — same caps as Điều kiện xét duyệt.
 const BULLET_MAX_COUNT = 6;
 const BULLET_MAX_CHARS = 120;
+// Mirrors the server's cleanDetails contract (rm-cards.ts).
+const DETAILS_MAX_CHARS = 2000;
 
 function ContentEditor({ card, onDone, onCancel, showToast }) {
   const [name, setName] = useState(card.name);
   const [perk, setPerk] = useState(card.perk_line || "");
+  const [details, setDetails] = useState(card.details || "");
   const [conds, setConds] = useState(
     (card.eligibility_bullets || []).length ? [...card.eligibility_bullets] : [""]
   );
@@ -346,6 +358,7 @@ function ContentEditor({ card, onDone, onCancel, showToast }) {
   const [busy, setBusy] = useState(false);
   const condList = conds.map((c) => c.trim()).filter(Boolean);
   const rewardList = rewardConds.map((c) => c.trim()).filter(Boolean);
+  const detailsText = details.trim();
 
   const save = async () => {
     setBusy(true);
@@ -353,6 +366,9 @@ function ContentEditor({ card, onDone, onCancel, showToast }) {
       const res = await api.updateCard(card.card_id, {
         name: name.trim(),
         perk_line: perk.trim(),
+        // Sent on every save — a change re-enters review like any other
+        // content edit; "" clears it back to no lede.
+        details: detailsText,
         eligibility_bullets: condList,
         reward_bullets: rewardList,
       });
@@ -365,8 +381,9 @@ function ContentEditor({ card, onDone, onCancel, showToast }) {
     } catch (ex) {
       showToast(
         ex.body?.error === "perk_too_long" ? "Ưu đãi tối đa 40 ký tự"
-          : ex.body?.error === "invalid_reward_bullets" ? "Điều kiện nhận thưởng: tối đa 6 điều kiện, mỗi điều kiện 120 ký tự"
-            : "Không lưu được, thử lại"
+          : ex.body?.error === "details_too_long" ? `Chi tiết thẻ tối đa ${DETAILS_MAX_CHARS} ký tự`
+            : ex.body?.error === "invalid_reward_bullets" ? "Điều kiện nhận thưởng: tối đa 6 điều kiện, mỗi điều kiện 120 ký tự"
+              : "Không lưu được, thử lại"
       );
     } finally {
       setBusy(false);
@@ -383,6 +400,21 @@ function ContentEditor({ card, onDone, onCancel, showToast }) {
       </div>
       <input className={`input ${perk.length > 40 ? "input-over" : ""}`} value={perk} maxLength={60}
         onChange={(e) => setPerk(e.target.value)} />
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <label className="bid-label">Chi tiết thẻ <span style={{ fontWeight: 400, color: "var(--ink-45)" }}>· không bắt buộc</span></label>
+        <span className={`mono bid-counter ${detailsText.length > DETAILS_MAX_CHARS ? "over" : ""}`}>
+          {detailsText.length}/{DETAILS_MAX_CHARS}
+        </span>
+      </div>
+      <textarea
+        className={`input ${detailsText.length > DETAILS_MAX_CHARS ? "input-over" : ""}`}
+        style={{ height: "auto", minHeight: 132, padding: "11px 13px", resize: "vertical", lineHeight: 1.55 }}
+        value={details}
+        onChange={(e) => setDetails(e.target.value)}
+      />
+      <div className="bid-helper">
+        Mô tả đầy đủ quyền lợi của thẻ — khách hàng xem trong mục Chi tiết.
+      </div>
       <label className="bid-label">Điều kiện xét duyệt</label>
       {conds.map((c, i) => (
         <div key={i} className="bid-cond-row">
@@ -410,12 +442,12 @@ function ContentEditor({ card, onDone, onCancel, showToast }) {
         {rewardConds.length >= BULLET_MAX_COUNT ? "Tối đa 6 điều kiện" : "+ Thêm điều kiện"}
       </button>
       <div className="bid-helper">
-        Ngân hàng tự quyết định điều kiện khách được nhận thưởng — hiển thị cho khách trong mục Điều kiện.
+        Ngân hàng tự quyết định điều kiện khách được nhận thưởng — hiển thị cho khách trong mục Chi tiết.
       </div>
       <div style={{ display: "flex", gap: 9, marginTop: 12 }}>
         <button className="btn btn-ghost" onClick={onCancel}>Huỷ</button>
         <button className="btn-navy" style={{ flex: 1 }}
-          disabled={busy || !name.trim() || perk.length > 40 || condList.length < 1}
+          disabled={busy || !name.trim() || perk.length > 40 || condList.length < 1 || detailsText.length > DETAILS_MAX_CHARS}
           onClick={save}>
           {busy ? "Đang gửi…" : "Lưu và gửi duyệt lại"}
         </button>

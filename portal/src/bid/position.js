@@ -65,7 +65,26 @@ export function clampBid(raw, floor) {
   return Math.min(BID_MAX, Math.max(floor, stepped));
 }
 
-/** Customer reward: floor(bid/2), rounded down to 1.000đ (§9). */
-export function rewardOf(bid) {
-  return Math.floor(bid / 2 / 1000) * 1000;
+// Fallback rate, used ONLY when a response predates the field. The live
+// value is an admin setting (platform_settings.consumer_reward_pct) and
+// rides on every GET /rm/cards as `consumer_reward_pct`.
+export const DEFAULT_REWARD_PCT = 50;
+
+/**
+ * Customer reward at a given commission rate (§9).
+ *
+ * Deliberately the SERVER's arithmetic byte for byte
+ * (services/platform-settings.ts → consumerRewardVnd): this figure is
+ * printed inside the app mirror, which claims to be exactly what the
+ * customer sees — and what the customer sees is the number the API
+ * sends. The old extra "round down to 1.000đ" step was a no-op at 50% on
+ * 10.000đ bid steps (bid/2 is always a multiple of 5.000đ) and at any
+ * other rate would print a figure the app never shows, so it is gone
+ * rather than kept as decoration.
+ *
+ * NOT the wallet hold. The hold is collateral against the fee and stays
+ * at a fixed 50% — see statusChip() in Board.jsx.
+ */
+export function rewardOf(bid, pct = DEFAULT_REWARD_PCT) {
+  return Math.floor((bid * pct) / 100);
 }
