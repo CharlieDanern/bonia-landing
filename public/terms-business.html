@@ -68,17 +68,23 @@
     <p class="clause">2.3. Khi Đối tác nghỉ việc hoặc chuyển đơn vị công tác, Đối tác có trách nhiệm thông báo cho Bonia; Bonia có quyền tạm ngưng tài khoản khi email công việc không còn hiệu lực.</p>
 
     <h2 class="sec">3. Phí, bid và ví</h2>
-    <!-- COUPLED TO platform_settings.consumer_reward_pct.
-         The "50%" in 3.1 is the CONSUMER REWARD, which is now an admin
-         setting (Bonia Admin → Tổng quan → Cấu hình hoa hồng), not a
-         constant. This page is static legal text with no API call, and a
-         contract clause should not silently change under a reader anyway
-         — so if the rate is ever moved, THIS CLAUSE MUST BE EDITED BY
-         HAND and the document re-dated. The admin confirm dialog says so
-         at the moment of the change.
+    <!-- 3.1 NO LONGER STATES A LITERAL RATE, ON PURPOSE.
+         The consumer reward is platform_settings.consumer_reward_pct, an
+         admin setting (Bonia Admin → Tổng quan → Cấu hình hoa hồng). A
+         literal "50%" here made a single admin PUT put this signed
+         contract in conflict with what the product actually pays, and no
+         process control ("remember to hand-edit the terms") can be relied
+         on for a clause with legal weight.
+         So the clause points at the SNAPSHOT instead of a number: the rate
+         published in the app at the moment the lead arose. That is exactly
+         what the system enforces — leads.reward_vnd is written at
+         lead-creation from the rate then in force, and every claim derives
+         its user_share_vnd from that snapshot (services/platform-settings
+         .ts → promisedShareVnd), so a later rate change cannot move a
+         lead already routed. The document stays true at any rate.
          The "50%" in 3.2 is the WALLET HOLD — collateral, fixed, and
          deliberately does NOT follow that setting. Leave it alone. -->
-    <p class="clause">3.1. <b>Bid</b> là mức phí thành công Đối tác tự cam kết trả Bonia khi một khách hàng do Bonia kết nối mở thẻ thành công. Khách hàng nhận 50% mức phí này qua Bonia; Đối tác không thanh toán trực tiếp bất kỳ khoản nào cho khách hàng.</p>
+    <p class="clause">3.1. <b>Bid</b> là mức phí thành công Đối tác tự cam kết trả Bonia khi một khách hàng do Bonia kết nối mở thẻ thành công. Khách hàng nhận một phần mức phí này qua Bonia theo <b>tỷ lệ thưởng được công bố trên ứng dụng Bonia tại thời điểm phát sinh lead</b>; tỷ lệ áp dụng cho từng lead được ghi nhận khi lead được chuyển cho Đối tác và không thay đổi sau đó, kể cả khi Bonia điều chỉnh tỷ lệ chung. Đối tác xem được số tiền thưởng của khách hàng trên từng lead trong cổng Đối tác. Đối tác không thanh toán trực tiếp bất kỳ khoản nào cho khách hàng.</p>
     <p class="clause">3.2. <b>3 lead đầu tiên miễn phí.</b> Từ lead thứ 4, khi một lead được chuyển cho Đối tác, hệ thống tạm giữ 50% mức bid từ số dư ví ("phần giữ"). Giao dịch không thành công → hoàn phần giữ. Giao dịch thành công → phần giữ được cấn trừ vào phí; Đối tác thanh toán phần còn lại theo hoá đơn.</p>
     <p class="clause">3.3. Tiền nạp vào ví dùng để nhận lead. Hoàn tiền ví về tài khoản ngân hàng chỉ thực hiện khi đóng tài khoản, sau khi cấn trừ mọi nghĩa vụ chưa tất toán, trong 30 ngày làm việc.</p>
     <p class="clause">3.4. Phí đã cam kết theo giao dịch thành công đã xác nhận là nghĩa vụ thanh toán. Không thanh toán hoá đơn trong 14 ngày → tạm ngưng nhận lead; trong 30 ngày → chấm dứt tài khoản theo Điều 6.</p>

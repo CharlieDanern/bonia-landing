@@ -240,9 +240,10 @@ function CommissionCard({ showToast }) {
           .
         </div>
         <div className="callout-note">
-          <b>Điều khoản và nội dung trong app đang dẫn mức hiện tại.</b> Sau khi
-          đổi, kiểm tra lại trang Điều khoản, email gửi đối tác và phần giới
-          thiệu trong app để không còn chỗ nào ghi {live}%.
+          <b>Không cần sửa Điều khoản.</b> Điều 3.1 hợp đồng đối tác dẫn “tỷ lệ
+          công bố tại thời điểm phát sinh lead”, không ghi con số — mỗi lead giữ
+          mức của chính nó, nên đổi mức ở đây không làm sai hợp đồng đã ký. Mức
+          giữ trong ví vẫn là 50% và không đổi.
         </div>
       </ConfirmModal>
     </div>

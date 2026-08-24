@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { api, vnd } from "./api.js";
 import { PaymentModal } from "./components.jsx";
+import { promisedRewardOf } from "./bid/position.js";
 
 // Pipeline v2 (§3) — segmented lanes over a master-detail split.
 // The thread is ONE chronology (calls + messages); the stepper is the
@@ -752,6 +753,17 @@ function WonModal({ lead, myCards, onClose, onDone, showToast }) {
             // disagree whenever the rep has changed their bid since.
             const tapped = c.card_id === lead.card?.card_id;
             const rowFee = tapped ? (lead.fee_vnd ?? c.my_bid_vnd) : c.my_bid_vnd;
+            // What the customer gets if THIS row is the final card. Not
+            // floor(rowFee/2): the customer's rate is the one published
+            // when the lead arrived (lead.reward_vnd), which is also the
+            // rate the POST below writes onto the claim. The server floors
+            // the fee at the routing-time bid on a different card, so the
+            // reward is scaled from that same floored fee, never from the
+            // card's live bid alone.
+            const rowFinalFee = tapped
+              ? (lead.fee_vnd ?? c.my_bid_vnd)
+              : Math.max(lead.fee_vnd ?? 0, c.my_bid_vnd ?? 0);
+            const rowReward = promisedRewardOf(lead.reward_vnd, lead.fee_vnd, rowFinalFee);
             return (
             <label key={c.card_id} className={`pl-radio ${cardId === c.card_id ? "on" : ""}`}>
               <input type="radio" name="finalcard" checked={cardId === c.card_id} onChange={() => setCardId(c.card_id)} />
@@ -762,7 +774,7 @@ function WonModal({ lead, myCards, onClose, onDone, showToast }) {
                   {tapped && <span className="pl-tapped-tag">KHÁCH ĐÃ BẤM</span>}
                 </span>
                 <span className="mono" style={{ fontSize: 11.5, color: "var(--ink-45)" }}>
-                  bid {vnd(rowFee)} · khách nhận {vnd(Math.floor(rowFee / 2 / 1000) * 1000)}
+                  bid {vnd(rowFee)} · khách nhận {vnd(rowReward)}
                 </span>
               </span>
             </label>
@@ -793,7 +805,7 @@ function WonModal({ lead, myCards, onClose, onDone, showToast }) {
           </div>
         )}
         <div style={{ fontSize: 12.5, marginTop: 6 }}>
-          Khách nhận <b className="mono">{vnd(Math.floor(fee / 2 / 1000) * 1000)}</b>.{" "}
+          Khách nhận <b className="mono">{vnd(promisedRewardOf(lead.reward_vnd, lead.fee_vnd, fee))}</b>.{" "}
           <span style={{ color: "var(--ink-55)" }}>
             {excess > 0 ? `Phần giữ dư ${vnd(excess)} được hoàn lại vào số dư.` : "Phần giữ được tính hết vào phí này."}
           </span>

@@ -88,3 +88,26 @@ export const DEFAULT_REWARD_PCT = 50;
 export function rewardOf(bid, pct = DEFAULT_REWARD_PCT) {
   return Math.floor((bid * pct) / 100);
 }
+
+/**
+ * The reward on an EXISTING lead — its promise, not today's rate.
+ *
+ * rewardOf() above quotes an offer that has not been taken yet. The
+ * moment a lead exists, the customer has been shown a number
+ * (leads.reward_vnd, on the GET /rm/leads row as `reward_vnd`) and that
+ * number is what settlement pays, however long the lead sits and wherever
+ * the rate moves meanwhile. Never re-derive it from consumer_reward_pct.
+ *
+ * Mirrors services/platform-settings.ts → promisedShareVnd: same fee ⇒
+ * the promise verbatim; a different final card ⇒ scaled by the fee, which
+ * preserves the lead's own rate.
+ *
+ * @param {number} promisedVnd lead.reward_vnd
+ * @param {number} leadFeeVnd  lead.fee_vnd (the routing-time bid)
+ * @param {number} finalFeeVnd the fee actually being invoiced
+ */
+export function promisedRewardOf(promisedVnd, leadFeeVnd, finalFeeVnd) {
+  const promised = promisedVnd || 0;
+  if (!leadFeeVnd || finalFeeVnd === leadFeeVnd) return promised;
+  return Math.floor((promised * finalFeeVnd) / leadFeeVnd);
+}

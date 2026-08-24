@@ -228,18 +228,14 @@ export function PaymentModal({ lead, payment, onClose }) {
             {[
               ["Phí thành công", vnd(payment?.fee_vnd)],
               ["Nội dung CK", payment?.payment?.memo || "—"],
-              // TODO(reward-pct): this figure is a CLIENT-SIDE recompute of
-              // floor(fee/2), and the commission is now an admin setting.
-              // The right number is claims.user_share_vnd — the share
-              // snapshotted when THIS deal closed — but GET
-              // /rm/claims/:id/payment does not return it yet. Do not
-              // substitute the live consumer_reward_pct from /rm/cards
-              // either: that is today's rate, not this claim's, and it
-              // would quietly misstate a settled deal after any change.
-              // Fix belongs on the server (add user_share_vnd to the
-              // payment payload), not here. The hardcoded "(50%)" label is
-              // dropped in the meantime so at least nothing is asserted.
-              ["Khách hàng nhận lại", vnd(Math.floor((payment?.fee_vnd || 0) / 2))],
+              // THIS claim's snapshot, straight off the server
+              // (user_share_vnd) — the share frozen when this deal closed.
+              // Never a client-side floor(fee/2): wrong at every rate but
+              // 50, and it misstated settled deals. Never the live
+              // consumer_reward_pct either — that is today's rate, not
+              // this claim's. No "(50%)" label: the percentage belongs to
+              // the lead, not to this page.
+              ["Khách hàng nhận lại", vnd(payment?.user_share_vnd)],
             ].map(([k, v], i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: "1px solid var(--border-faint)", fontSize: 13 }}>
                 <span style={{ color: "var(--ink-45)" }}>{k}</span>
