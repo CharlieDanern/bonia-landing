@@ -128,9 +128,12 @@ export default function Pipeline2({
   showToast,
   dispositionFor,
   clearDisposition,
+  focusLeadId,
+  onFocusApplied,
 }) {
   const [lane, setLane] = useState("contact");
   const [selectedId, setSelectedId] = useState(null);
+  const [scrollToId, setScrollToId] = useState(null); // deep-link scroll target
   const [feed, setFeed] = useState([]); // merged chronology for selected
   const [drafts, setDrafts] = useState({}); // per-lead composer drafts
   const [sending, setSending] = useState(false);
@@ -168,6 +171,37 @@ export default function Pipeline2({
   useEffect(() => {
     if (selected && selected.lead_id !== selectedId) setSelectedId(selected.lead_id);
   }, [lane, laneMemberIds]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Deep link (?lead=<uuid>): open the lead the email was about. The lead is
+  // usually NOT in `leads` on the first pass — the portal is still fetching —
+  // so this waits for it to arrive instead of giving up. Its own lane comes
+  // from the lead's state, because a link mailed at "Cần liên hệ" is often
+  // opened after the rep already called and moved it on.
+  useEffect(() => {
+    if (!focusLeadId) return;
+    const lead = leads.find((l) => l.lead_id === focusLeadId);
+    if (!lead) return; // still loading, or not this rep's lead — stay silent
+    setLane(laneOf(lead));
+    setSelectedId(focusLeadId);
+    setMobileDetail(true); // narrow: land ON the lead, not on the list
+    setScrollToId(focusLeadId);
+    onFocusApplied?.();
+  }, [focusLeadId, leads]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // …and bring the row into view once the target lane has painted.
+  useEffect(() => {
+    if (!scrollToId) return;
+    const row = contentRef.current?.querySelector(`[data-lead-id="${scrollToId}"]`);
+    if (row) {
+      row.scrollIntoView({ block: "center", behavior: "smooth" });
+      setScrollToId(null);
+    } else if (narrow) {
+      // The list is unmounted behind the detail pane — put the pane itself
+      // on screen instead (the page can be scrolled down from the header).
+      contentRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+      setScrollToId(null);
+    }
+  }, [scrollToId, laneMemberIds, narrow]);
 
   // Merge messages + call records into one chronology.
   const callHistoryLen = (selected?.call_history || []).length;
@@ -268,6 +302,7 @@ export default function Pipeline2({
               const chip = outcomeChip(lead, myCards);
               return (
                 <button key={lead.lead_id}
+                  data-lead-id={lead.lead_id}
                   className={`pl-row ${sel ? "sel" : urgent ? "urgent" : ""}`}
                   style={{ background: artBackground(lead) }}
                   onClick={() => { setSelectedId(lead.lead_id); setMobileDetail(true); }}>

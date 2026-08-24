@@ -7,17 +7,32 @@ import { BidTab } from "./bid/BidTab.jsx";
 import Register from "./Register.jsx";
 import Pipeline2 from "./Pipeline2.jsx";
 import Account2 from "./Account2.jsx";
+import { captureDeepLink, clearStashedTarget, peekStashedTarget } from "./deeplink.js";
 
 const POLL_MS = 15_000; // marketplace/pipeline refresh — the ladder must feel live
+// A deep-linked lead that never shows up in /rm/leads (reassigned, closed,
+// or simply not this rep's) must not sit armed and then hijack the view an
+// hour later when some unrelated poll happens to return it.
+const FOCUS_TTL_MS = 30_000;
 
 export default function App() {
   const [authed, setAuthed] = useState(!!getToken());
   const [publicView, setPublicView] = useState(
     window.location.pathname.includes("dang-ky") ? "register" : "login"
   );
+  // Where the email wanted us. deeplink.js already captured and cleaned the
+  // query string at import time; this is the surviving copy, which outlives
+  // the login screen because an emailed CTA is usually opened logged-out.
+  const [target, setTarget] = useState(peekStashedTarget);
+  const consumeTarget = useCallback(() => { clearStashedTarget(); setTarget(null); }, []);
+
   useEffect(() => {
     const onOut = () => setAuthed(false);
-    const onPop = () => setPublicView(window.location.pathname.includes("dang-ky") ? "register" : "login");
+    const onPop = () => {
+      setPublicView(window.location.pathname.includes("dang-ky") ? "register" : "login");
+      const t = captureDeepLink();
+      if (t) setTarget(t);
+    };
     window.addEventListener("bonia:signed-out", onOut);
     window.addEventListener("popstate", onPop);
     return () => {
@@ -25,7 +40,7 @@ export default function App() {
       window.removeEventListener("popstate", onPop);
     };
   }, []);
-  if (authed) return <Portal onSignOut={() => setAuthed(false)} />;
+  if (authed) return <Portal onSignOut={() => setAuthed(false)} target={target} onTargetApplied={consumeTarget} />;
   if (publicView === "register") {
     return <Register onDone={() => { window.history.pushState({}, "", "/app/"); setPublicView("login"); }} />;
   }
@@ -121,12 +136,33 @@ function Login({ onIn, onPending, onRegister }) {
 }
 
 /* ══ Portal shell ════════════════════════════════════════════ */
-function Portal({ onSignOut }) {
-  const [route, setRoute] = useState("offers");
+function Portal({ onSignOut, target, onTargetApplied }) {
+  // Seeded, not set in an effect: the tab must be right on the first paint,
+  // otherwise an emailed lead link flashes the Bid tab on the way past.
+  const [route, setRoute] = useState(() => target?.tab || "offers");
+  // Lead the email pointed at, handed to Pipeline2 to select + scroll to.
+  const [focusLeadId, setFocusLeadId] = useState(() => target?.lead || null);
   const [me, setMe] = useState(null);
   const [cards, setCards] = useState([]);
   const [leads, setLeads] = useState([]);
   const [toast, showToast] = useToast();
+
+  // Apply the emailed target — on mount (the seed above already did the
+  // first paint) and again if one arrives later via popstate. Consuming it
+  // drops the sessionStorage stash, so a refresh does not re-trigger.
+  useEffect(() => {
+    if (!target) return;
+    setRoute(target.tab);
+    setFocusLeadId(target.lead || null);
+    onTargetApplied?.();
+  }, [target]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Disarm a lead focus that /rm/leads never delivers (see FOCUS_TTL_MS).
+  useEffect(() => {
+    if (!focusLeadId) return;
+    const t = setTimeout(() => setFocusLeadId(null), FOCUS_TTL_MS);
+    return () => clearTimeout(t);
+  }, [focusLeadId]);
 
   // Softphone + call state
   const phoneRef = useRef(null);
@@ -304,6 +340,8 @@ function Portal({ onSignOut }) {
               showToast={showToast}
               dispositionFor={dispositionFor}
               clearDisposition={() => setDispositionFor(null)}
+              focusLeadId={focusLeadId}
+              onFocusApplied={() => setFocusLeadId(null)}
             />
           )}
           {route === "account" && (
