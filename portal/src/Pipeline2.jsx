@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, vnd } from "./api.js";
 import { PaymentModal } from "./components.jsx";
+import { playChime, isChimeMuted, setChimeMuted } from "./chime.js";
 import { promisedRewardOf } from "./bid/position.js";
 import { subscribeChat } from "./stream.js";
 
@@ -41,6 +42,27 @@ const UNREAD_OVERLAY_TTL_MS = 60_000;
  * Returns the SAME array when nothing is new, so a poll that finds no
  * change costs no re-render and cannot jostle the thread's scroll.
  */
+/** Mute control for the incoming-message chime. Local to this browser —
+ *  it is a preference about this rep's speakers, not account state. */
+function ChimeToggle() {
+  const [muted, setMuted] = useState(isChimeMuted);
+  return (
+    <button
+      type="button"
+      title={muted ? "Bật âm báo tin nhắn" : "Tắt âm báo tin nhắn"}
+      aria-label={muted ? "Bật âm báo tin nhắn" : "Tắt âm báo tin nhắn"}
+      onClick={() => { const next = !muted; setChimeMuted(next); setMuted(next); if (!next) playChime(); }}
+      style={{
+        border: 0, background: "none", cursor: "pointer", padding: 2, lineHeight: 1,
+        color: muted ? "var(--ink-35)" : "var(--navy, #191970)", fontSize: 13,
+        letterSpacing: 0, textTransform: "none",
+      }}
+    >
+      {muted ? "🔕" : "🔔"}
+    </button>
+  );
+}
+
 function mergeMessages(feed, incoming) {
   if (!incoming || incoming.length === 0) return feed;
   const seen = new Set(
@@ -324,6 +346,13 @@ export default function Pipeline2({
   useEffect(() => {
     return subscribeChat((ev) => {
       if (!ev?.lead_id || !ev.message_id) return;
+
+      // Audible only for the CUSTOMER's messages: the rep's own send echoes
+      // back over the stream (and from a second tab), and a chime on your own
+      // keystroke trains people to mute the thing outright. Fires for any
+      // lead, including the open one — the rep is often reading a different
+      // part of the screen with the tab still focused.
+      if (!ev.from_rm) playChime();
 
       // Message on the OPEN thread → straight into the feed. Deduped by
       // message_id against the optimistic send and the poll (mergeMessages).
@@ -790,8 +819,11 @@ function DetailPane({
       )}
 
       {/* thread */}
-      <div className="eyebrow mono" style={{ marginBottom: 6 }}>
+      <div className="eyebrow mono" style={{ marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ flex: 1 }}>
         TRAO ĐỔI VỚI KHÁCH {feed.length === 0 && <span style={{ color: "var(--ink-35)", letterSpacing: 0, textTransform: "none" }}> chưa có gì</span>}
+        </span>
+        <ChimeToggle />
       </div>
       <div className="pl-thread" ref={threadRef}>
         {feed.length === 0 && (
