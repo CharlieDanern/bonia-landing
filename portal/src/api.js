@@ -7,6 +7,11 @@
 const BASE = import.meta.env.VITE_API_BASE || "https://api.bonia.net";
 const TOKEN_KEY = "bonia_rm_token";
 
+// Same origin the fetch client uses, re-exported for stream.js: EventSource
+// builds its own URL and must not get to disagree with this one about which
+// API it is talking to.
+export const API_BASE = BASE;
+
 // Support channel. Printed INLINE wherever the copy promises help — there
 // is no self-serve password reset yet, so "nhắn Zalo Bonia" with no number
 // is not an escape hatch. Lives in this leaf module so App.jsx and

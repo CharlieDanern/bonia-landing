@@ -9,6 +9,7 @@ import Register from "./Register.jsx";
 import Pipeline2 from "./Pipeline2.jsx";
 import Account2 from "./Account2.jsx";
 import { captureDeepLink, clearStashedTarget, peekStashedTarget } from "./deeplink.js";
+import { connectChatStream, disconnectChatStream } from "./stream.js";
 
 const POLL_MS = 15_000; // marketplace/pipeline refresh — the ladder must feel live
 // A deep-linked lead that never shows up in /rm/leads (reassigned, closed,
@@ -204,6 +205,23 @@ function Portal({ onSignOut, target, onTargetApplied }) {
     const t = setInterval(refresh, POLL_MS);
     return () => clearInterval(t);
   }, [refresh]);
+
+  // Live chat stream (SSE) — tied to the SESSION, not to a tab.
+  //
+  // Portal only mounts when authed and unmounts on sign-out, so this opens
+  // and closes with the login exactly once. Deliberately NOT owned by
+  // Pipeline2: stream.js is a module singleton and the server caps a rep at
+  // 3 concurrent streams, so cycling the socket every time the rep clicks
+  // between Bid / Pipeline / Tài khoản would burn that cap on themselves.
+  // Pipeline2 subscribes to the same singleton and is free to mount and
+  // unmount at will.
+  //
+  // Nothing below this line depends on it succeeding — see the poll above
+  // and Pipeline2's in-thread poll. The stream only makes them look slow.
+  useEffect(() => {
+    connectChatStream();
+    return () => disconnectChatStream();
+  }, []);
 
   // Connect the softphone once we know the SIP credentials.
   useEffect(() => {

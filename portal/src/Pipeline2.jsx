@@ -1,11 +1,62 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, vnd } from "./api.js";
 import { PaymentModal } from "./components.jsx";
 import { promisedRewardOf } from "./bid/position.js";
+import { subscribeChat } from "./stream.js";
 
 // Pipeline v2 (§3) — segmented lanes over a master-detail split.
 // The thread is ONE chronology (calls + messages); the stepper is the
 // close control; disposition after every call is the lane machine.
+
+// Safety-net poll for the OPEN thread.
+//
+// This is the path that has to be correct. The SSE stream (src/stream.js)
+// is an accelerator layered on top of it: a message that the stream drops,
+// or never carried because the stream never connected, self-heals here
+// within 10s. Nothing in this file may assume the stream works.
+const THREAD_POLL_MS = 10_000;
+
+/**
+ * Merge messages into the feed, deduped by message_id.
+ *
+ * A single message can reach this component by THREE routes — the optimistic
+ * append when the rep hits Gửi, the SSE stream (the server echoes the rep's
+ * own sends so a second tab stays in step), and the poll above — and must
+ * render exactly once. message_id is the only identity that survives all
+ * three; timestamps do not (the optimistic row and the stream row carry the
+ * same server `at`, but two messages in the same second would collide).
+ *
+ * MERGE, NEVER REBUILD. The feed also holds `kind: "call"` rows, one of
+ * which is optimistic (DispositionSheet appends a call the server has not
+ * reported yet). Rebuilding the feed from a message payload would blink it
+ * away for the seconds until refresh() lands.
+ *
+ * Returns the SAME array when nothing is new, so a poll that finds no
+ * change costs no re-render and cannot jostle the thread's scroll.
+ */
+function mergeMessages(feed, incoming) {
+  if (!incoming || incoming.length === 0) return feed;
+  const seen = new Set(
+    feed.filter((x) => x.kind === "msg" && x.message_id).map((x) => x.message_id)
+  );
+  const add = incoming.filter((m) => m && m.message_id && !seen.has(m.message_id));
+  if (add.length === 0) return feed;
+  return [...feed, ...add].sort((a, b) => new Date(a.at) - new Date(b.at));
+}
+
+// SSE wire shape → feed item. The stream speaks `from_rm` (boolean); the
+// feed and the REST endpoints speak `from: "rm" | "customer"`. One
+// translation, here, so the renderer never learns there are two shapes.
+function streamToFeedMsg(ev) {
+  return {
+    kind: "msg",
+    message_id: ev.message_id,
+    from: ev.from_rm ? "rm" : "customer",
+    text: ev.text,
+    at: ev.at,
+    contains_contact_info: !!ev.contains_contact_info,
+  };
+}
 
 const LANES = [
   { key: "contact", label: "Cần liên hệ", states: ["moi", "da_goi"] },
@@ -142,6 +193,10 @@ export default function Pipeline2({
   const [outcomeModal, setOutcomeModal] = useState(null); // 'won'|'lost'
   const [note, setNote] = useState("");
   const [noteOpen, setNoteOpen] = useState(false);
+  // Unread badges the STREAM knows about but /rm/leads has not reported yet.
+  // Shape: { [leadId]: { base, ids } } — see unreadOf() for how the two
+  // counts are reconciled without ever double-counting.
+  const [streamUnread, setStreamUnread] = useState({});
   const threadRef = useRef(null);
   const contentRef = useRef(null);
   const [narrow, setNarrow] = useState(false);
@@ -225,12 +280,146 @@ export default function Pipeline2({
             sec: (e.detail || {}).answered_sec || 0,
             a_leg_uuid: (e.detail || {}).a_leg_uuid || null,
           }));
-        setFeed([...msgs, ...calls].sort((a, b) => new Date(a.at) - new Date(b.at)));
+        // Rebuild from the server, then fold back anything the STREAM
+        // delivered while this request was in flight: a message committed
+        // after the SELECT ran but before the response landed is in neither
+        // `msgs` nor the old feed, and a bare setFeed() would drop it until
+        // the 10s poll noticed. mergeMessages dedupes it against `msgs`.
+        setFeed((f) =>
+          mergeMessages(
+            [...msgs, ...calls].sort((a, b) => new Date(a.at) - new Date(b.at)),
+            f.filter((x) => x.kind === "msg")
+          )
+        );
         refresh(); // unread just cleared server-side
       } catch { /* ignore */ }
     })();
     return () => { dead = true; };
   }, [selected?.lead_id, callHistoryLen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ══ Live chat: stream in front, poll behind ═══════════════════════
+   *
+   * The stream (src/stream.js) is the accelerator; the poll below is the
+   * contract. Every line in this block is written so that deleting the
+   * stream entirely would leave a portal that is still CORRECT, only 10s
+   * slower — which is exactly how it behaved before the stream existed.
+   */
+
+  // Read by the stream subscriber, which is registered ONCE (an empty dep
+  // array) so that neither switching leads nor a 15s /rm/leads refresh
+  // churns the listener set. Refs, not state, precisely because the
+  // subscriber must see today's values without being re-created.
+  const selectedIdRef = useRef(null);
+  const leadsRef = useRef(leads);
+  useEffect(() => { selectedIdRef.current = selected?.lead_id || null; }, [selected?.lead_id]);
+  useEffect(() => { leadsRef.current = leads; }, [leads]);
+
+  useEffect(() => {
+    return subscribeChat((ev) => {
+      if (!ev?.lead_id || !ev.message_id) return;
+
+      // Message on the OPEN thread → straight into the feed. Deduped by
+      // message_id against the optimistic send and the poll (mergeMessages).
+      if (ev.lead_id === selectedIdRef.current) {
+        setFeed((f) => mergeMessages(f, [streamToFeedMsg(ev)]));
+        return;
+      }
+
+      // Message on some OTHER lead → bump that row's badge. No refetch: a
+      // chatty customer must not cost a full /rm/leads round trip per
+      // message, and the 15s refresh brings the real count along anyway.
+      //
+      // The rep's OWN message arriving from their other tab is not unread.
+      if (ev.from_rm) return;
+      // A lead missing from `leads` (routed since the last refresh) has
+      // nowhere to show a badge; the next poll brings both row and count.
+      const lead = leadsRef.current.find((l) => l.lead_id === ev.lead_id);
+      if (!lead) return;
+      setStreamUnread((u) => {
+        const cur = u[ev.lead_id];
+        if (cur) {
+          if (cur.ids.includes(ev.message_id)) return u; // already counted
+          return { ...u, [ev.lead_id]: { base: cur.base, ids: [...cur.ids, ev.message_id] } };
+        }
+        // `base` snapshots what the SERVER said at the moment the overlay
+        // opened. Without it the two counts would add up (server count +
+        // stream count) the instant a poll caught up, and a lead with one
+        // unread message would show 2.
+        return { ...u, [ev.lead_id]: { base: lead.unread_count || 0, ids: [ev.message_id] } };
+      });
+    });
+  }, []);
+
+  // Retire an overlay once the server's own count has caught up with it (or
+  // the lead has left the payload). Without this, `base` would go stale and
+  // pin the badge at an old number for the life of the session.
+  useEffect(() => {
+    setStreamUnread((u) => {
+      const ids = Object.keys(u);
+      if (ids.length === 0) return u;
+      const next = {};
+      let changed = false;
+      for (const id of ids) {
+        const entry = u[id];
+        const lead = leads.find((l) => l.lead_id === id);
+        if (!lead || (lead.unread_count || 0) >= entry.base + entry.ids.length) {
+          changed = true;
+          continue;
+        }
+        next[id] = entry;
+      }
+      return changed ? next : u;
+    });
+  }, [leads]);
+
+  // Opening a thread reads it server-side (GET .../messages flips
+  // read_by_rm), so drop the overlay immediately rather than showing a
+  // badge on the row the rep is currently looking at.
+  useEffect(() => {
+    const id = selected?.lead_id;
+    if (!id) return;
+    setStreamUnread((u) => {
+      if (!u[id]) return u;
+      const { [id]: _gone, ...rest } = u;
+      return rest;
+    });
+  }, [selected?.lead_id]);
+
+  // What the row badge renders: server truth, raised by the stream overlay
+  // when the stream is ahead of it. max(), not a sum — the two sources
+  // describe the same messages, and only their timing differs.
+  const unreadOf = useCallback(
+    (lead) => {
+      const server = lead.unread_count || 0;
+      const entry = streamUnread[lead.lead_id];
+      return entry ? Math.max(server, entry.base + entry.ids.length) : server;
+    },
+    [streamUnread]
+  );
+
+  // THE SAFETY NET. Re-reads the open thread every 10s, merge-only.
+  //
+  // This is what makes a dropped stream event a non-event: it self-heals on
+  // the next tick. It also covers the cases the stream cannot reach at all —
+  // a rep over the 3-tab cap (the server refuses the 4th stream with a 429),
+  // a proxy that buffers text/event-stream, a backend restart, a token that
+  // aged out. Kept deliberately even though the stream usually wins the race.
+  useEffect(() => {
+    const leadId = selected?.lead_id;
+    if (!leadId) return;
+    let dead = false;
+    const t = setInterval(async () => {
+      try {
+        const res = await api.messages(leadId);
+        // The rep may have moved on during the request.
+        if (dead || selectedIdRef.current !== leadId) return;
+        setFeed((f) => mergeMessages(f, (res.messages || []).map((m) => ({ kind: "msg", ...m }))));
+      } catch {
+        // A blip must leave the thread exactly as it is. Never clear.
+      }
+    }, THREAD_POLL_MS);
+    return () => { dead = true; clearInterval(t); };
+  }, [selected?.lead_id]);
 
   useEffect(() => { setNote(selected?.rm_notes || ""); setNoteOpen(false); }, [selected?.lead_id]);
 
@@ -248,7 +437,14 @@ export default function Pipeline2({
     try {
       const res = await api.sendMessage(leadId, text);
       // Guard: only append if the same lead is still open.
-      setFeed((f) => (selectedId === leadId || selected?.lead_id === leadId ? [...f, { kind: "msg", ...res.message }] : f));
+      // Through mergeMessages, not a bare append: the server echoes this
+      // rep's own send back over the stream (so their other tab keeps up),
+      // so the same message_id can land here twice within milliseconds.
+      setFeed((f) =>
+        selectedId === leadId || selected?.lead_id === leadId
+          ? mergeMessages(f, [{ kind: "msg", ...res.message }])
+          : f
+      );
       setDrafts((d) => ({ ...d, [leadId]: "" }));
       if (res.message.contains_contact_info) {
         showToast("Tin đã gửi — lưu ý: trao đổi ngoài Bonia không được bảo vệ");
@@ -303,6 +499,7 @@ export default function Pipeline2({
               const sel = selected?.lead_id === lead.lead_id;
               const urgent = lane === "contact" && hoursLeft(lead.contact_due_at) != null && hoursLeft(lead.contact_due_at) <= 6;
               const chip = outcomeChip(lead, myCards);
+              const unread = unreadOf(lead);
               return (
                 <button key={lead.lead_id}
                   data-lead-id={lead.lead_id}
@@ -315,7 +512,7 @@ export default function Pipeline2({
                       <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>
                         {lead.first_name}{lead.city ? ` · ${lead.city}` : ""}
                       </span>
-                      {lead.unread_count > 0 && <span className="pl-unread mono">{lead.unread_count}</span>}
+                      {unread > 0 && <span className="pl-unread mono">{unread}</span>}
                     </span>
                     <span style={{ fontSize: 11.5, color: "rgba(255,255,255,.82)" }}>{lead.card?.name || "Thẻ tín dụng"}</span>
                     {rowMeta(lead) && <span style={{ fontSize: 11, color: "rgba(255,255,255,.66)" }}>{rowMeta(lead)}</span>}
