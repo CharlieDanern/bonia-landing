@@ -191,8 +191,6 @@ function outcomeChip(lead, myCards) {
 
 const rowScrim =
   "linear-gradient(90deg, rgba(8,10,26,.97) 0%, rgba(8,10,26,.9) 34%, rgba(8,10,26,.52) 74%, rgba(8,10,26,.3) 100%)";
-const bannerScrim =
-  "linear-gradient(90deg, rgba(8,10,26,.98) 0%, rgba(8,10,26,.95) 46%, rgba(8,10,26,.55) 78%, rgba(8,10,26,.32) 100%)";
 
 function artBackground(lead) {
   const url = lead.card?.image_url;
@@ -682,25 +680,15 @@ function DetailPane({
 
   return (
     <div className="card" style={{ flex: 1, minWidth: 0, padding: "18px 20px" }}>
-      {narrow && <button className="bid-backlink" onClick={onBack}>← Danh sách</button>}
-
-      {/* banner */}
-      <div className="pl-banner" style={{ background: artBackground(lead) }}>
-        <span className="pl-row-scrim" style={{ background: bannerScrim, borderRadius: 15 }} />
-        <div style={{ position: "relative" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 19, fontWeight: 600, color: "#fff" }}>
-              {lead.first_name}{lead.city ? ` · ${lead.city}` : ""}
-            </span>
-            <span className="pl-banner-chip">
-              {chip ? chip.text : laneOf(lead) === "contact" ? "Cần liên hệ" : "Đang tư vấn"}
-            </span>
-          </div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,.8)", marginTop: 4 }}>
-            Đã bấm <b>{lead.card?.name || "Thẻ tín dụng"}</b> · bid {vnd(lead.fee_vnd)}
-          </div>
+      {narrow && (
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+          <button className="bid-backlink" style={{ marginBottom: 0 }} onClick={onBack}>← Danh sách</button>
+          <span style={{ fontSize: 15, fontWeight: 600 }}>
+            {lead.first_name}{lead.city ? ` · ${lead.city}` : ""}
+          </span>
+          <span className="bid-micro">{lead.card?.name || "Thẻ tín dụng"}</span>
         </div>
-      </div>
+      )}
 
       {/* stepper — also the close control */}
       <div className="pl-stepper">
@@ -736,11 +724,11 @@ function DetailPane({
           );
         })}
       </div>
-      <div className="bid-micro" style={{ marginBottom: 12 }}>
-        {o?.kind === "lost"
-          ? "Khách hàng thấy giao dịch này đã dừng."
-          : `Khách hàng đang thấy bước “${nodeLabel(current)}” trong app.`}
-      </div>
+      {o?.kind === "lost" && (
+        <div className="bid-micro" style={{ marginBottom: 12 }}>
+          Khách hàng thấy giao dịch này đã dừng.
+        </div>
+      )}
 
       {/* action row */}
       {!o && (
