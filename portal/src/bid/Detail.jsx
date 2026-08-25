@@ -181,15 +181,12 @@ export function BidDetail({ card, wallet, rewardPct = DEFAULT_REWARD_PCT, onBack
           </div>
         </div>
         <div className="bid-terms" style={{ flex: 1, minWidth: 256 }}>
-          {/* Sheet order (§ "Chi tiết"): the free-text lede first, then the
-              two bullet sections. No heading — it reads as the opening
-              paragraph of the sheet, exactly as the apps render it. An
-              empty `details` means the section is absent, not blank. */}
-          {card.details ? (
-            <div style={{ whiteSpace: "pre-wrap", fontSize: 13, lineHeight: 1.6, color: "var(--ink)", marginBottom: 14 }}>
-              {card.details}
-            </div>
-          ) : null}
+          {/* `details` is deliberately NOT rendered here. This panel is the
+              rep's at-a-glance check of the two condition lists; the full
+              product copy can run to hundreds of lines (see the VPBank
+              Diamond World card) and buries them. The rep edits details in
+              the content editor below, and sees it as the customer does in
+              the app preview — it does not need a third home. */}
           <div className="eyebrow mono">ĐIỀU KIỆN XÉT DUYỆT</div>
           <ul>
             {(card.eligibility_bullets || []).map((b, i) => <li key={i}>{b}</li>)}
