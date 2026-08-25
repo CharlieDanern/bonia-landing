@@ -16,6 +16,13 @@ import { subscribeChat } from "./stream.js";
 // within 10s. Nothing in this file may assume the stream works.
 const THREAD_POLL_MS = 10_000;
 
+// How long a stream-driven unread badge may stay ahead of the server before
+// it defers to it. Comfortably longer than App.jsx's 15s /rm/leads refresh,
+// so it only ever fires when the server disagrees for good — see the retire
+// effect. Evaluated on each `leads` refresh, so the badge clears within
+// roughly one refresh of this elapsing.
+const UNREAD_OVERLAY_TTL_MS = 60_000;
+
 /**
  * Merge messages into the feed, deduped by message_id.
  *
@@ -339,13 +346,21 @@ export default function Pipeline2({
         const cur = u[ev.lead_id];
         if (cur) {
           if (cur.ids.includes(ev.message_id)) return u; // already counted
-          return { ...u, [ev.lead_id]: { base: cur.base, ids: [...cur.ids, ev.message_id] } };
+          return {
+            ...u,
+            [ev.lead_id]: { base: cur.base, ids: [...cur.ids, ev.message_id], at: cur.at },
+          };
         }
         // `base` snapshots what the SERVER said at the moment the overlay
         // opened. Without it the two counts would add up (server count +
         // stream count) the instant a poll caught up, and a lead with one
         // unread message would show 2.
-        return { ...u, [ev.lead_id]: { base: lead.unread_count || 0, ids: [ev.message_id] } };
+        // `at` is the overlay's own age, used purely to retire it — see the
+        // TTL in the retire effect below.
+        return {
+          ...u,
+          [ev.lead_id]: { base: lead.unread_count || 0, ids: [ev.message_id], at: Date.now() },
+        };
       });
     });
   }, []);
@@ -353,16 +368,29 @@ export default function Pipeline2({
   // Retire an overlay once the server's own count has caught up with it (or
   // the lead has left the payload). Without this, `base` would go stale and
   // pin the badge at an old number for the life of the session.
+  //
+  // The TTL is the second half of that guarantee, and it covers the case
+  // "caught up" cannot see: if the rep reads the thread SOMEWHERE ELSE (the
+  // phone, another tab), the server count drops to 0 while base + ids stays
+  // at 1, so `>=` is never satisfied and the row would show a phantom unread
+  // badge for the rest of the session. Past the TTL the server has long
+  // since reported the truth (/rm/leads refreshes every 15s), so the overlay
+  // has no information left to add and defers.
   useEffect(() => {
     setStreamUnread((u) => {
       const ids = Object.keys(u);
       if (ids.length === 0) return u;
+      const now = Date.now();
       const next = {};
       let changed = false;
       for (const id of ids) {
         const entry = u[id];
         const lead = leads.find((l) => l.lead_id === id);
-        if (!lead || (lead.unread_count || 0) >= entry.base + entry.ids.length) {
+        if (
+          !lead ||
+          (lead.unread_count || 0) >= entry.base + entry.ids.length ||
+          now - entry.at > UNREAD_OVERLAY_TTL_MS
+        ) {
           changed = true;
           continue;
         }
