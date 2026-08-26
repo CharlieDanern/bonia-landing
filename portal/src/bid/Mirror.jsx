@@ -112,7 +112,12 @@ export function AppMirror({
         </>
       )}
 
-      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: t.pad, paddingBottom: 0 }}>
+      {/* alignItems flex-start, not center: the "Chi tiết" pill is taller than
+          the title line, and centering it split the difference into dead space
+          BELOW the title — which is what pushed the perk line away from the
+          card name. iOS aligns this row to the top for exactly this reason,
+          and the Android card had the same bug from an oversized tap target. */}
+      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, padding: t.pad, paddingBottom: 0 }}>
         {/* Line 1 — bank medium + name bold, inline, single line, tail truncation */}
         <div
           style={{

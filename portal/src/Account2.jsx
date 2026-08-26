@@ -86,7 +86,21 @@ export default function Account2({ me, onSignOut, showToast, refresh }) {
               </span>
               <span className="acc-kind-chip" style={chip.style}>{chip.label}</span>
               <span style={{ flex: 1, fontSize: 12.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note}</span>
-              <span className="mono" style={{ fontWeight: 600, fontSize: 13, color: e.amount_vnd > 0 ? "#00734F" : "var(--ink)" }}>
+              {/* Money actually leaving the wallet reads red. A `giữ` is
+                  reserved, not spent, so it stays neutral even though it is
+                  also negative — the two mean different things to a rep. */}
+              <span
+                className="mono"
+                style={{
+                  fontWeight: 600,
+                  fontSize: 13,
+                  whiteSpace: "nowrap",
+                  color:
+                    e.kind === "tru_phi" ? "#B42318"
+                    : e.amount_vnd > 0 ? "#00734F"
+                    : "var(--ink)",
+                }}
+              >
                 {e.amount_vnd > 0 ? "+" : "−"}{vnd(Math.abs(e.amount_vnd))}
               </span>
             </div>
