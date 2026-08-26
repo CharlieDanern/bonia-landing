@@ -546,6 +546,9 @@ export const CHROME_VI = {
     support: "Hỗ trợ",
     deleteAccount: "Xoá tài khoản",
     contact: "Liên hệ",
+    business: "Bonia Business",
+    businessPrivacy: "Bảo mật — Bonia Business",
+    businessTerms: "Điều khoản đối tác",
   },
 };
 
@@ -569,5 +572,8 @@ export const CHROME_EN = {
     support: "Support",
     deleteAccount: "Delete account",
     contact: "Contact",
+    business: "Bonia Business",
+    businessPrivacy: "Privacy — Bonia Business",
+    businessTerms: "Partner terms",
   },
 };

@@ -652,6 +652,24 @@ function PageFooter({ accent = ACC }) {
                   {chrome.links.contact}
                 </a>
               </li>
+              {/* Bonia Business — the partner portal has its own privacy
+                  policy and terms, because reps are a different audience
+                  with different obligations from app users. */}
+              <li className="pt-2">
+                <a href="/app" className="hover:underline font-medium">
+                  {chrome.links.business}
+                </a>
+              </li>
+              <li>
+                <a href="/privacy-business.html" className="hover:underline">
+                  {chrome.links.businessPrivacy}
+                </a>
+              </li>
+              <li>
+                <a href="/terms-business.html" className="hover:underline">
+                  {chrome.links.businessTerms}
+                </a>
+              </li>
             </ul>
           </div>
         </div>
