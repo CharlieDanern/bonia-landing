@@ -363,3 +363,26 @@ h1.page { font-size: 25px; font-weight: 600; letter-spacing: -.02em; margin: 7px
   .avatar { display: none; }
   .content { padding: 16px 14px 40px; }
 }
+
+/* ── Chi thưởng (consumer payouts) ─────────────────────────────────── */
+.po-total { font-size: 13.5px; color: var(--ink-35, #5A6378); margin-bottom: 12px; }
+.po-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.po-name { font-size: 18px; font-weight: 600; }
+.po-amount { font-size: 26px; font-weight: 700; line-height: 1.15; }
+.po-note { font-size: 12.5px; color: var(--ink-35, #5A6378); margin-top: 10px; }
+.po-eyebrow { margin: 18px 0 8px; }
+/* Label / value / copy. The value gets the flexible column so a long
+   account holder name wraps instead of shoving the Copy button off-screen. */
+.po-row { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; border-bottom: 1px solid #F1F4F9; }
+.po-row-label { width: 116px; flex: none; font-size: 12px; color: var(--ink-45, #7A8296); }
+.po-row-value { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; word-break: break-word; }
+.po-copy { flex: none; font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 7px;
+  border: 1px solid #DDE3EC; background: #fff; color: var(--navy, #191970); cursor: pointer; }
+.po-copy:hover { background: #F5F7FB; }
+.po-qr { margin-top: 14px; display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+.po-qr img { width: 190px; height: 190px; border-radius: 12px; border: 1px solid #E4E8F0; }
+.po-qr .queue-sub { flex: 1; min-width: 180px; }
+.po-warn { margin-top: 14px; padding: 11px 13px; border-radius: 10px; font-size: 13px;
+  background: #FDF3E2; color: #8A5B08; border: 1px solid #F3E1BE; }
+.po-actions { display: flex; gap: 10px; align-items: center; margin-top: 18px; flex-wrap: wrap; }
+.po-actions .input { flex: 1; min-width: 200px; }

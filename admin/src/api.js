@@ -62,6 +62,9 @@ export const api = {
   cardTypes: (bank) =>
     request(`/admin-portal/card-types${bank ? `?bank=${encodeURIComponent(bank)}` : ""}`),
   claims: (state = "disputed") => request(`/admin-portal/claims?state=${state}`),
+  payouts: (state = "due") => request(`/admin-portal/payouts?state=${state}`),
+  markPayoutPaid: (id, body) =>
+    request(`/admin-portal/payouts/${id}/mark-paid`, { method: "POST", body }),
   resolveClaim: (id, body) =>
     request(`/admin-portal/claims/${id}/resolve`, { method: "POST", body }),
   rms: () => request("/admin-portal/rms"),
