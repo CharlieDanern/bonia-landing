@@ -774,11 +774,20 @@ function DetailPane({
           {o.kind === "won" && (
             <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <span style={{ flex: 1 }}>
-                {lead.claim && ["invoiced", "paid", "settled"].includes(lead.claim.state)
-                  ? <>Hoá đơn {vnd(o.invoice?.due_vnd ?? 0)} (đã trừ phần giữ {vnd(o.invoice?.held_vnd ?? 0)}).</>
-                  : <>Khách xác nhận cùng thẻ này trong app → Bonia gửi hoá đơn {vnd(o.invoice?.due_vnd ?? 0)} (đã trừ phần giữ {vnd(o.invoice?.held_vnd ?? 0)}).</>}
+                {/* The fee is charged to the wallet the moment both sides
+                    confirm — there is no invoice to pay any more, so this
+                    reports what was deducted rather than what is owed. */}
+                {lead.claim && ["paid", "settled"].includes(lead.claim.state)
+                  ? <>Phí {vnd(o.invoice?.fee_vnd ?? 0)} đã trừ vào số dư của bạn.</>
+                  : <>Khách xác nhận cùng thẻ này trong app → phí {vnd(o.invoice?.fee_vnd ?? 0)} sẽ được trừ vào số dư của bạn.</>}
               </span>
-              {lead.claim && ["invoiced", "paid", "settled"].includes(lead.claim.state) && (
+              {/* Deliberately hidden for wallet-charged claims. The modal
+                  behind this button renders a VietQR and a BONIA C<id> memo
+                  — i.e. instructions to pay a bill that no longer exists,
+                  because the fee came straight out of the balance. Reps top
+                  up the wallet instead. A read-only receipt view can come
+                  back here later; a payment prompt must not. */}
+              {lead.claim && lead.claim.state === "invoiced" && (
                 <button className="bid-link-btn" onClick={async () => {
                   try {
                     const pay = await api.claimPayment(lead.claim.id);
