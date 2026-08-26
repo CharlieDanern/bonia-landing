@@ -181,7 +181,23 @@ function outcomeChip(lead, myCards) {
   const o = outcomeOf(lead);
   if (!o) return null;
   if (o.kind === "reconciling") return { text: "Đang đối soát", cls: "amber", meta: `Bạn chọn ${cardName(lead, o.final_card_id, myCards)} · khách chọn thẻ khác` };
-  if (o.kind === "won") return { text: "Chờ khách xác nhận", cls: "navy", meta: `Đã mở ${cardName(lead, o.final_card_id, myCards)}` };
+  if (o.kind === "won") {
+    // The badge has to read claim.state, not o.kind. The API collapses FOUR
+    // claim states into kind:"won" (rm.ts) — pending_user, invoiced, paid and
+    // settled — and only the first of those means "waiting on the customer".
+    // Hardcoding that one string told a rep with an issued invoice that the
+    // system was blocked on someone else, while the invoice line further down
+    // this same file read the real state and said otherwise. A rep scanning
+    // the lane list has every reason to defer paying a bill the badge says
+    // isn't her turn yet.
+    const st = lead.claim?.state;
+    const text =
+      st === "settled" ? "Đã tất toán"
+      : st === "paid" ? "Đã thanh toán"
+      : st === "invoiced" ? "Đã xác nhận · chờ thanh toán"
+      : "Chờ khách xác nhận";
+    return { text, cls: "navy", meta: `Đã mở ${cardName(lead, o.final_card_id, myCards)}` };
+  }
   return {
     text: "Không thành công",
     cls: "grey",
@@ -663,7 +679,10 @@ function DetailPane({
   // Exclusive bound (§3.2): count of COMPLETED phases.
   const completed = o ? (called ? 2 : 1) : called ? 1 : 0;
   const current = o ? 2 : completed; // node index that is "current"
-  const chip = outcomeChip(lead, myCards);
+  // (no `chip` here — DetailPane never rendered it. The only {chip} refs are
+  // in the lane-list row map, which binds its own. Leaving a dead one is a
+  // trap: the next person fixing badge copy edits it, sees nothing change,
+  // and concludes the fix didn't work.)
 
   const saveNote = async () => {
     try {
