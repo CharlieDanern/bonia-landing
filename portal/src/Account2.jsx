@@ -132,7 +132,132 @@ export default function Account2({ me, onSignOut, showToast, refresh }) {
         </button>
       </div>
 
+      {/* ── Chi nhánh & khu vực phục vụ ── */}
+      <ServiceArea me={me} showToast={showToast} refresh={refresh} />
+
       {depositOpen && <DepositModal me={me} onClose={() => setDepositOpen(false)} />}
+    </div>
+  );
+}
+
+/**
+ * Chi nhánh + khu vực phục vụ.
+ *
+ * Editable rather than signup-only: reps move branches and take on new
+ * provinces, and a stale coverage list costs them leads silently — their
+ * cards simply stop appearing for customers they could have served, with
+ * nothing on screen explaining why.
+ */
+function ServiceArea({ me, showToast, refresh }) {
+  const [editing, setEditing] = useState(false);
+  const [branch, setBranch] = useState(me.profile.branchName || "");
+  const [cities, setCities] = useState(me.profile.cities || []);
+  const [cityList, setCityList] = useState([]);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (editing && cityList.length === 0) {
+      api.cities().then((r) => setCityList(r.cities || [])).catch(() => {});
+    }
+  }, [editing, cityList.length]);
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      await api.updateAccount({ branch_name: branch.trim(), cities });
+      showToast("Đã cập nhật chi nhánh và khu vực");
+      setEditing(false);
+      refresh();
+    } catch (ex) {
+      showToast(
+        ex.body?.error === "invalid_branch" ? "Nhập tên chi nhánh."
+        : ex.body?.error === "cities_required" ? "Chọn ít nhất một tỉnh/thành."
+        : "Không lưu được, thử lại."
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saved = me.profile.cities || [];
+
+  return (
+    <div className="card" style={{ marginTop: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span className="bid-card-h">Chi nhánh & khu vực phục vụ</span>
+        {!editing && (
+          <button className="bid-link-btn" style={{ marginLeft: "auto" }} onClick={() => setEditing(true)}>
+            Sửa
+          </button>
+        )}
+      </div>
+
+      {!editing ? (
+        <>
+          <ProfileRow label="Chi nhánh" value={me.profile.branchName || "—"} />
+          <ProfileRow
+            label="Khu vực phục vụ"
+            value={
+              saved.length > 0
+                ? saved.join(", ")
+                : <span style={{ color: "#8A5B08" }}>Chưa chọn — thẻ của bạn không hiển thị cho ai</span>
+            }
+          />
+          <div className="bid-micro" style={{ marginTop: 10 }}>
+            Bonia chỉ hiển thị thẻ của bạn cho khách ở những khu vực này.
+          </div>
+        </>
+      ) : (
+        <>
+          <label className="bid-label" style={{ marginTop: 12 }}>Chi nhánh đang làm việc</label>
+          <input
+            className="input"
+            style={{ height: 44 }}
+            value={branch}
+            onChange={(e) => setBranch(e.target.value)}
+            placeholder="VD: Chi nhánh Quận 7"
+          />
+          <label className="bid-label" style={{ marginTop: 14 }}>
+            Bạn có thể phục vụ khách ở tỉnh/thành nào?
+          </label>
+          <div className="reg-city-grid" style={{ marginTop: 8 }}>
+            {cityList.map((c) => {
+              const on = cities.includes(c);
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  className={`reg-city-chip ${on ? "on" : ""}`}
+                  onClick={() =>
+                    setCities((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]))
+                  }
+                >
+                  {c}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
+            <button
+              className="btn-navy"
+              disabled={busy || branch.trim().length < 3 || cities.length === 0}
+              onClick={save}
+            >
+              {busy ? "Đang lưu…" : "Lưu"}
+            </button>
+            <button
+              className="btn btn-ghost"
+              onClick={() => {
+                setEditing(false);
+                setBranch(me.profile.branchName || "");
+                setCities(me.profile.cities || []);
+              }}
+            >
+              Huỷ
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
