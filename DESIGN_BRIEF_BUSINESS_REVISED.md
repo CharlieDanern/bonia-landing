@@ -18,35 +18,29 @@ người đọc quyết định đăng ký:
 Đây là trang giới thiệu và đăng ký, không phải bài quảng cáo thương hiệu. Người đọc quen với chỉ
 tiêu doanh số, phí giới thiệu và chất lượng lead. Họ sẽ kiểm tra con số trước khi tin lời hứa.
 
-### Luận điểm trang phải truyền đạt
+### Giá trị trang phải bán
 
-Đây là phần quan trọng nhất của brief. Trang này không phải bản mô tả tính năng — nó phải dựng được
-một luận điểm. Bonia nối **hai phía**, và chỉ thuyết phục được phía đối tác nếu giải thích được vì
-sao phía khách hàng chịu lên tiếng.
+Bonia không bán cho đối tác một danh sách số điện thoại. Bonia tạo ra một cuộc trao đổi mà cả hai
+phía đều có lý do để tham gia:
 
-**Bước 1 — Vấn đề của mọi kênh tìm khách hiện nay.**
-Kênh nào cũng bắt đầu bằng việc có được số điện thoại của một người chưa muốn nghe máy. Đối tác trả
-tiền trước cho danh sách, rồi trả tiếp bằng thời gian gọi. Người nhận cuộc gọi thì phòng thủ, vì để
-lại số ở đâu đó đồng nghĩa với mất quyền kiểm soát.
+> Khách không phải đổi số điện thoại lấy một cuộc tư vấn. Đối tác không phải mua một danh sách chưa
+> biết ai có nhu cầu.
 
-**Bước 2 — Vì sao Bonia có thứ khác.**
-Bonia không phải một kênh quảng cáo mới. Bonia là **lớp chặn cuộc gọi lạ mà người dùng đã cài sẵn**:
-trợ lý AI nghe máy thay họ với số lạ. Người dùng đang đứng sau lớp bảo vệ đó — và chính vì đang được
-bảo vệ, họ mới dám để lại nhu cầu thật.
+**Với khách hàng:** họ tự chọn thẻ, chủ động yêu cầu tư vấn và vẫn ở sau lớp bảo vệ sẵn có của Bonia.
+Số điện thoại không được chuyển cho đối tác; cuộc gọi và tin nhắn ở trong Bonia; khách có thể dừng
+liên lạc. Nếu mở thẻ thành công, khách nhận khoản thưởng bằng 50% mức phí.
 
-Nói cách khác: **lớp bảo vệ là thứ tạo ra nguồn khách, không phải một tính năng phụ.** Bấm quan tâm
-một ưu đãi không hạ lớp bảo vệ xuống. Số điện thoại vẫn không rời khỏi Bonia, trợ lý vẫn lọc cuộc gọi
-lạ, và khách có thể dừng liên lạc bất cứ lúc nào — đối tác không có đường nào để gọi lại, vì ngay từ
-đầu đã không có số.
+**Với đối tác:** họ nhận yêu cầu từ một người đã chọn thẻ cụ thể. Không có phí đăng ký, phí cố định
+hàng tháng hay phí mua danh sách. Đối tác tự đặt mức phí thành công cho từng loại thẻ; phí đầy đủ chỉ
+phát sinh khi thẻ được mở và hai bên cùng xác nhận.
 
-**Bước 3 — Trao đổi giữa hai phía.**
-Khách nói họ muốn mở thẻ nào. Nếu mở thẻ thành công, khách nhận một nửa mức phí đối tác trả. Đối tác
-không trả gì cho tới khi điều đó xảy ra. **Không ai trả tiền trước khi giá trị được tạo ra** — khách
-không trả bằng quyền riêng tư, đối tác không trả bằng phí danh sách.
+**Vai trò của Bonia:** che số điện thoại, kết nối hai bên, lưu cuộc tư vấn, xác nhận kết quả và chuyển
+phần thưởng cho khách. Lớp bảo vệ này không phải một tính năng phụ: nó làm cho việc bày tỏ nhu cầu
+trở nên ít rủi ro hơn với người dùng.
 
-Ba ý trên là bộ khung của cả trang. Mọi section phải phục vụ luận điểm này; nếu một khối nội dung
-không trả lời được "vì sao khách chịu lên tiếng" hoặc "vì sao đối tác không phải trả trước", khối đó
-nên bị cắt.
+Mạch của trang phải đi theo thứ tự: **vì sao khách chủ động → vì sao đối tác nên tham gia → cách giao
+dịch diễn ra → cách tính phí**. Tính năng cổng đối tác chỉ dùng để chứng minh Bonia vận hành được lời
+hứa đó.
 
 ### Nguyên tắc viết
 
@@ -110,23 +104,14 @@ nhưng không được làm thay đổi ý nghĩa về phí, số dư, dữ li�
 
 `BONIA BUSINESS`
 
-**Headline** — chọn một, hoặc viết lại tốt hơn nhưng phải giữ được hai ý: *khách chủ động* và *đối
-tác không trả trước*.
+**Headline — dùng phương án này**
 
-> Khách hàng tự nói họ muốn mở thẻ gì.
+> Khách chủ động chọn thẻ. Bạn chỉ trả khi thẻ được mở.
 
-Phương án khác:
+**Subheadline**
 
-> Người dùng Bonia lên tiếng trước. Bạn chỉ trả phí khi thẻ được mở.
-
-**Subheadline** — đây là chỗ luận điểm phải xuất hiện, không phải chỗ mô tả thao tác:
-
-> Bonia là lớp chặn cuộc gọi lạ mà hàng trăm người dùng đã cài sẵn. Vì đang được bảo vệ, họ sẵn sàng
-> cho biết mình muốn mở thẻ nào — và nhận thưởng khi mở thành công. Bạn chỉ trả phí sau khi điều đó
-> xảy ra.
-
-Không mở đầu bằng thao tác ("khách bấm nút, bạn nhận yêu cầu"). Thao tác thuộc về § 02; phần trên
-màn hình đầu tiên phải trả lời được vì sao nguồn khách này tồn tại.
+> Người dùng Bonia yêu cầu tư vấn mà vẫn giữ kín số điện thoại. Nếu mở thẻ thành công, họ nhận
+> thưởng; lúc đó bạn mới trả mức phí mình đã đặt.
 
 **CTA**
 
@@ -135,40 +120,41 @@ màn hình đầu tiên phải trả lời được vì sao nguồn khách này 
 
 **Dòng dưới CTA**
 
-> 3 khách đầu tiên miễn phí. Sau đó, bạn chỉ trả phí khi mở thẻ thành công.
+> 3 khách đầu: 0đ, không cần nạp trước · Không phí hàng tháng
+
+**Hero visual — không dùng screenshot dashboard ở đây**
+
+Thể hiện một giao dịch cụ thể trên một trục nối hai phía:
+
+- Phía khách: `Diamond World` · `Ẩn số điện thoại` · `Nhận 260.000đ khi mở thành công`
+- Ở giữa: `Tư vấn qua Bonia` · `Hai bên xác nhận`
+- Phía đối tác: `Phí thành công 520.000đ` · `Chỉ trừ sau khi thẻ được mở`
+
+Visual này phải cho người đọc thấy ngay mỗi bên đưa gì vào và nhận gì lại. Screenshot cổng đối tác
+để xuống § 05, sau khi đề nghị hợp tác đã được hiểu.
 
 Không thêm các badge như `uy tín`, `bảo mật tuyệt đối`, `đối tác tin cậy` nếu không có bằng chứng đi
 kèm.
 
-### § 01 — Vì sao khách hàng chịu lên tiếng
+### § 01 — Muốn được tư vấn, không muốn để lại số
 
-**Đây là section quan trọng nhất của trang, và là section duy nhất đối thủ không sao chép được.**
-Ai cũng dựng được một sàn nối người mua với người bán. Điều khác biệt là Bonia đã đứng sẵn giữa
-người dùng và các cuộc gọi lạ trước khi có sàn này.
-
-Section này phải làm rõ: khách không "được thuyết phục để lại thông tin", mà là **đang được bảo vệ
-nên mới dám nói ra nhu cầu**.
+Đây là lý do nguồn khách của Bonia khác với một form thu số điện thoại.
 
 **Headline**
 
-> Khách hàng đang được Bonia bảo vệ. Vì vậy họ mới nói thật.
+> Khách giữ số điện thoại. Bạn vẫn có một cuộc tư vấn.
 
 **Copy**
 
-> Người dùng cài Bonia để trợ lý AI nghe máy thay họ với những số lạ. Bấm quan tâm một ưu đãi không
-> làm lớp bảo vệ đó mất đi: số điện thoại vẫn không rời khỏi Bonia, trợ lý vẫn lọc cuộc gọi lạ, và
-> khách có thể dừng liên lạc bất cứ lúc nào.
+> Người dùng vốn đã có trợ lý Bonia nghe máy thay với những số lạ. Khi chọn một thẻ, lớp bảo vệ đó
+> vẫn còn nguyên: số điện thoại không được chuyển cho tư vấn viên, cuộc gọi và tin nhắn ở trong
+> Bonia, và khách có thể dừng liên lạc.
 
-> Bạn tư vấn cho khách nhưng không nhận số điện thoại của họ. Cuộc gọi và tin nhắn diễn ra ngay trên
-> Bonia. Bonia không chuyển cho bạn một danh sách số để gọi.
+> Yêu cầu tư vấn không trao cho tư vấn viên số điện thoại để gọi trực tiếp về sau. Vì vậy, khách có
+> thể nói rõ thẻ nào họ quan tâm mà không phải mở thông tin liên hệ cho một bên mới.
 
-> Vì không mất gì khi lên tiếng và cũng không mất gì khi dừng lại, nhu cầu khách để lại là nhu cầu
-> thật.
-
-**Và phần thưởng — đưa lên đây, không giấu trong mục phí**
-
-> Khi mở thẻ thành công, khách nhận khoản thưởng bằng một nửa mức phí bạn trả. Đây là lý do khách
-> chủ động chọn thẻ và yêu cầu được tư vấn, thay vì né một cuộc gọi lạ.
+> Nếu mở thẻ thành công, khách còn nhận khoản thưởng bằng 50% mức phí. Quyền kiểm soát khiến họ an
+> tâm bắt đầu; phần thưởng cho họ thêm lý do để hoàn tất việc mở thẻ.
 
 Gợi ý thể hiện: một hình ảnh hai chiều — phía khách được che số và nhận thưởng, phía đối tác nhận
 yêu cầu và chỉ trả phí khi thành công — thay vì hai khối văn bản rời nhau. Luận điểm là **sự trao
@@ -176,36 +162,56 @@ yêu cầu và chỉ trả phí khi thành công — thay vì hai khối văn b�
 
 Tránh biến nội dung này thành một lời hứa pháp lý. Chỉ mô tả đúng cơ chế của sản phẩm.
 
-### § 02 — Cách một khách hàng đến với bạn
+### § 02 — Không mua danh sách. Chỉ trả cho kết quả
 
-Đến đây người đọc đã hiểu vì sao có nguồn khách. Section này chỉ mô tả thao tác, gọn, bốn bước.
+Đây là phần bán đề nghị hợp tác cho đối tác. Nói về cách họ kiểm soát chi phí, không nói về dashboard.
+
+**Headline**
+
+> Data cho bạn một số điện thoại. Bonia cho bạn một yêu cầu tư vấn.
+
+**Copy**
+
+> Không có phí đăng ký, phí cố định hàng tháng hay phí mua từng khách. Bạn đặt mức phí thành công
+> riêng cho mỗi loại thẻ và chỉ trả đầy đủ khi cả bạn lẫn khách xác nhận thẻ đã được mở.
+
+> Ba khách đầu tiên hoàn toàn miễn phí. Từ khách thứ 4, Bonia tạm giữ 50% mức phí khi kết nối khách;
+> nếu khách không mở thẻ, số tiền này được hoàn lại.
+
+> Bạn không trả tiền để biết một người có nhu cầu hay không. Khách đã chọn thẻ trước khi cuộc tư vấn
+> bắt đầu.
+
+Không dùng `khách hàng chất lượng`, `lead nóng` hoặc `tỷ lệ chuyển đổi cao`. Bonia chưa cần gắn nhãn
+cho khách; cơ chế khách tự chọn thẻ đã đủ để nói lên sự khác biệt.
+
+### § 03 — Một giao dịch bắt đầu từ phía khách
+
+Đến đây mới mô tả thao tác. Dùng một flow ngang trên desktop và dọc trên mobile.
 
 #### 1. Khách chọn thẻ
 
-Người dùng xem thông tin thẻ trên Bonia và bấm yêu cầu tư vấn cho thẻ họ quan tâm.
+Khách xem thẻ trên Bonia, thấy khoản thưởng và bấm yêu cầu tư vấn.
 
-#### 2. Bonia chuyển yêu cầu
+#### 2. Bonia kết nối
 
-Với mỗi loại thẻ, Bonia kết nối khách với tư vấn viên đang đặt mức phí cao nhất.
+Với mỗi loại thẻ, Bonia chuyển yêu cầu tới tư vấn viên đang đặt mức phí cao nhất.
 
-#### 3. Bạn tư vấn trên Bonia
+#### 3. Hai bên trao đổi trên Bonia
 
-Bạn gọi hoặc nhắn tin ngay trong cổng đối tác. Số điện thoại của hai bên không hiển thị cho nhau.
+Bạn gọi hoặc nhắn tin trong hệ thống. Bonia giữ kín số điện thoại và lưu lại nội dung trao đổi.
 
-#### 4. Thành công mới tính phí
+#### 4. Hai bên xác nhận kết quả
 
-Khi cả bạn và khách cùng xác nhận thẻ đã mở thành công, phí được trừ vào số dư của bạn.
+Nếu thẻ được mở, phí được trừ từ số dư của bạn và 50% được chuyển cho khách như phần thưởng. Nếu
+không thành công, bạn không mất phí thành công.
 
-### § 03 — Phí và số dư
+**Dòng kết section**
 
-Đây là phần cần dễ đọc nhất trên trang. Không giấu điều kiện trong tooltip hoặc FAQ.
+> Khách chọn trước. Hai bên xác nhận sau. Bonia chỉ thu phí khi giao dịch thành công.
 
-Mở đầu section bằng ý mạnh nhất với người đọc, trước khi vào bảng:
+### § 04 — Mức phí do bạn đặt
 
-> Bạn không trả gì để bắt đầu, và không trả gì cho một khách không mở thẻ.
-
-Toàn bộ rủi ro chi phí nằm ở phía Bonia cho đến khi giao dịch thành công. Đó là vế thứ hai của luận
-điểm ở § 01: khách không trả bằng quyền riêng tư, đối tác không trả bằng phí danh sách.
+Phần này giải thích đầy đủ cơ chế tiền. Không giấu điều kiện trong tooltip hoặc FAQ.
 
 | Nội dung | Cách tính |
 |---|---|
@@ -230,13 +236,6 @@ Toàn bộ rủi ro chi phí nằm ở phía Bonia cho đến khi giao dịch th
 > Bạn đặt mức phí riêng cho từng loại thẻ. Khách chỉ thấy tư vấn viên đang đặt mức cao nhất cho thẻ
 > đó. Nếu một tư vấn viên khác đặt cao hơn, hồ sơ của họ sẽ được hiển thị thay cho hồ sơ của bạn.
 
-#### Khách hàng nhận gì?
-
-Ý này đã được nêu ở § 01 như một phần của luận điểm. Ở đây chỉ nhắc lại bằng con số, đúng một dòng,
-không lặp lại lập luận:
-
-> Trong mức phí đó, khách nhận 50% như phần thưởng khi mở thẻ thành công.
-
 #### Ví dụ
 
 > Bạn đặt mức phí **520.000đ** cho thẻ Diamond World.  
@@ -246,10 +245,21 @@ không lặp lại lập luận:
 Không dùng các câu như `đầu tư để nhận lead chất lượng` hoặc `đấu giá để tối đa hoá cơ hội`. Hai cụm
 này làm cơ chế nghe giống mua bán data.
 
-### § 04 — Trong cổng đối tác
+### § 05 — Bonia giữ giao dịch trong một kênh
 
-Dùng một screenshot Pipeline thật, đặt trong khung trình duyệt. Phần chữ chỉ cần liệt kê những việc
-người dùng có thể làm:
+Cổng đối tác là bằng chứng cho lời hứa về quyền riêng tư và phí theo kết quả. Dùng một screenshot
+Pipeline thật, đặt trong khung trình duyệt.
+
+**Headline**
+
+> Từ yêu cầu tư vấn đến lúc xác nhận kết quả, mọi thứ ở trên Bonia.
+
+**Copy**
+
+> Bạn không cần lấy số điện thoại để theo sát một khách. Cuộc gọi, tin nhắn, bản ghi nội dung, kết
+> quả giao dịch và phí đều nằm trong cùng một luồng để hai bên có thể đối chiếu khi cần.
+
+Các chi tiết có thể chú thích quanh screenshot:
 
 - Xem khách đang chờ tư vấn
 - Gọi trên trình duyệt qua số bảo mật của Bonia
@@ -257,13 +267,9 @@ người dùng có thể làm:
 - Nghe lại cuộc gọi và đọc bản ghi nội dung
 - Theo dõi số dư, phí đã phát sinh và hoá đơn
 
-**Heading gợi ý**
-
-> Mọi cuộc tư vấn ở cùng một chỗ.
-
 Không dùng `quản lý pipeline thông minh`, `theo dõi hiệu suất toàn diện` hoặc `vận hành liền mạch`.
 
-### § 05 — Thông tin đơn vị vận hành
+### § 06 — Thông tin đơn vị vận hành
 
 **Heading**
 
@@ -288,13 +294,13 @@ Không dùng `quản lý pipeline thông minh`, `theo dõi hiệu suất toàn d
 Không dùng logo ngân hàng để tạo cảm giác được ngân hàng bảo trợ nếu chưa có quyền sử dụng hoặc xác
 nhận hợp tác tương ứng.
 
-### § 06 — Câu hỏi thường gặp
+### § 07 — Câu hỏi thường gặp
 
-#### Tôi có phải trả tiền mỗi khi nhận một khách không?
+#### Tôi có phải trả tiền trước để bắt đầu không?
 
-Không có phí theo lượt nhận khách. Ba khách đầu tiên được miễn phí. Từ khách thứ 4, Bonia tạm giữ
-50% mức phí bạn đã đặt; số tiền này được hoàn lại nếu khách không mở thẻ. Phí đầy đủ chỉ được tính
-khi thẻ mở thành công.
+Không. Bonia không thu phí đăng ký hoặc phí cố định hàng tháng; ba khách đầu tiên được miễn phí. Từ
+khách thứ 4, Bonia tạm giữ 50% mức phí bạn đã đặt khi kết nối khách. Số tiền này được hoàn lại nếu
+khách không mở thẻ. Phí đầy đủ chỉ được tính khi thẻ mở thành công.
 
 #### Tôi có nhận được số điện thoại của khách không?
 
@@ -314,6 +320,11 @@ Có. Bạn có thể tạm dừng và bật lại trong cổng đối tác.
 Không. Bonia không bán danh sách số điện thoại. Khách tự chọn thẻ và yêu cầu được tư vấn trên ứng
 dụng Bonia.
 
+#### Vì sao khách lại chủ động yêu cầu tư vấn?
+
+Khách không phải để lộ số điện thoại và có thể dừng liên lạc trên Bonia. Nếu mở thẻ thành công, khách
+còn nhận khoản thưởng bằng 50% mức phí. Họ có cả quyền kiểm soát lẫn một lợi ích rõ ràng khi tham gia.
+
 #### Tôi làm ở ngân hàng khác thì có đăng ký được không?
 
 Có. Chọn ngân hàng của bạn khi đăng ký. Bonia xem xét hồ sơ trước khi kích hoạt tài khoản.
@@ -324,11 +335,11 @@ Giữ navy `FinalCTA` như website hiện tại.
 
 **Headline**
 
-> Bắt đầu với 3 khách miễn phí.
+> Thử Bonia với 3 khách đầu tiên miễn phí.
 
 **Supporting copy**
 
-> Đăng ký tài khoản đối tác. Bonia sẽ xem xét hồ sơ trước khi kích hoạt.
+> Không phí đăng ký. Không phí hàng tháng. Bonia xem xét hồ sơ trước khi kích hoạt tài khoản.
 
 **CTA**
 
