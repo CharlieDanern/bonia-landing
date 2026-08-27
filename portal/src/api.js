@@ -94,6 +94,11 @@ export const api = {
   claimPayment: (claimId) => request(`/rm/claims/${claimId}/payment`),
   // Pipeline v2 + registration + wallet
   register: (body) => request("/rm/register", { method: "POST", body }),
+  // Canonical province list. Served rather than hardcoded here so the picker
+  // and the server's validator cannot drift — coverage is matched by exact
+  // string equality, and a one-accent difference would fail silently as an
+  // empty shelf rather than a visible error.
+  cities: () => request("/rm/cities"),
   registerVerify: (body) => request("/rm/register/verify", { method: "POST", body }),
   messages: (leadId) => request(`/rm/leads/${leadId}/messages`),
   sendMessage: (leadId, text) =>

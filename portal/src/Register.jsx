@@ -35,6 +35,18 @@ export default function Register({ onDone }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [branch, setBranch] = useState("");
+  const [cities, setCities] = useState([]);
+  // Fetched, not hardcoded: the server validates coverage against its own
+  // canonical list by exact string match, so a local copy that drifted by
+  // one accent would fail as an empty shelf rather than a visible error.
+  const [cityList, setCityList] = useState([]);
+  useEffect(() => {
+    api
+      .cities()
+      .then((r) => setCityList(r.cities || []))
+      .catch(() => setCityList([]));
+  }, []);
   const [bank, setBank] = useState(null);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [password, setPassword] = useState("");
@@ -66,6 +78,8 @@ export default function Register({ onDone }) {
         full_name: name.trim(),
         work_email: email.trim(),
         phone: phone.trim(),
+        branch_name: branch.trim(),
+        cities,
         resend,
       });
       setBank(res.bank || null);
@@ -82,6 +96,12 @@ export default function Register({ onDone }) {
               ? "Số điện thoại chưa đúng định dạng."
               : ex.body?.error === "invalid_name"
                 ? "Nhập họ tên đầy đủ."
+                : ex.body?.error === "invalid_branch"
+                ? "Nhập tên chi nhánh bạn đang làm việc."
+                : ex.body?.error === "cities_required"
+                ? "Chọn ít nhất một tỉnh/thành bạn có thể phục vụ."
+                : ex.body?.error === "invalid_city"
+                ? "Có khu vực không hợp lệ. Tải lại trang rồi chọn lại."
                 : ex.body?.error === "invalid_email"
                   ? "Địa chỉ email chưa đúng."
                   : ex.body?.error === "too_many_requests"
@@ -227,6 +247,57 @@ export default function Register({ onDone }) {
                 placeholder="0903 000 000"
                 inputMode="tel"
               />
+
+              <label className="bid-label" style={{ marginTop: 14 }}>
+                Chi nhánh đang làm việc
+              </label>
+              <input
+                className="input"
+                style={{ height: 46 }}
+                value={branch}
+                onChange={(e) => setBranch(e.target.value)}
+                placeholder="VD: Chi nhánh Quận 7"
+              />
+              <div style={{ fontSize: 12, color: "var(--ink-45)", marginTop: 6 }}>
+                Bonia dùng thông tin này để xác minh hồ sơ của bạn.
+              </div>
+
+              {/* SERVICE AREA, not home address. "Where are you based" is a
+                  proxy, and a misleading one — a rep sitting in one district
+                  routinely covers several provinces. Ask the question routing
+                  actually needs answered. */}
+              <label className="bid-label" style={{ marginTop: 14 }}>
+                Bạn có thể phục vụ khách ở tỉnh/thành nào?
+              </label>
+              <div style={{ fontSize: 12, color: "var(--ink-45)", marginBottom: 8 }}>
+                Chọn tất cả khu vực bạn nhận khách. Bonia chỉ hiển thị thẻ của bạn
+                cho khách ở những khu vực này.
+              </div>
+              <div className="reg-city-grid">
+                {cityList.map((c) => {
+                  const on = cities.includes(c);
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      className={`reg-city-chip ${on ? "on" : ""}`}
+                      onClick={() =>
+                        setCities((prev) =>
+                          prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]
+                        )
+                      }
+                    >
+                      {c}
+                    </button>
+                  );
+                })}
+              </div>
+              {cities.length > 0 ? (
+                <div style={{ fontSize: 12, color: "var(--ink-45)", marginTop: 8 }}>
+                  Đã chọn {cities.length} khu vực.
+                </div>
+              ) : null}
+
               <button
                 className="btn-navy"
                 style={{ width: "100%", marginTop: 14 }}
@@ -235,6 +306,8 @@ export default function Register({ onDone }) {
                   !name.trim() ||
                   !email.trim() ||
                   !phone.trim() ||
+                  branch.trim().length < 3 ||
+                  cities.length === 0 ||
                   freeMail
                 }
                 onClick={() => sendCode()}

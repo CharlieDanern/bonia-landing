@@ -140,6 +140,19 @@ function RegRow({ reg, showToast, onDone }) {
           <span className="mono">{reg.claimed_domain || "—"}</span> ·{" "}
           {fmtDate(reg.created_at)}
         </div>
+        {/* Branch and service area. You are approving someone whose entire
+            value is "can serve customers in X" — approving without seeing X
+            is approving blind. No coverage means their cards reach nobody,
+            so that reads as a warning rather than a blank. */}
+        <div className="queue-sub">Chi nhánh: {reg.branch_name || "—"}</div>
+        <div className="queue-sub">
+          Phục vụ:{" "}
+          {reg.cities && reg.cities.length > 0 ? (
+            reg.cities.join(", ")
+          ) : (
+            <span style={{ color: "#8A5B08" }}>chưa chọn khu vực — thẻ sẽ không hiển thị cho ai</span>
+          )}
+        </div>
       </div>
       <div className="reg-actions">
         <input
