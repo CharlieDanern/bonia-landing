@@ -1,0 +1,165 @@
+/* Keyframes for the /business scroll narrative, lifted verbatim from the
+ * handoff prototype's <style> block. The frame components reference these by
+ * name in inline `animation:` values, and deck.js writes `animation: bnCell`
+ * onto the cloned hero cards — renaming any of them breaks the motion. */
+
+/* Italic 400 is loaded as well as italic 300: frame 01's second headline line
+ * is italic, and raising the headline to weight 400 would otherwise leave the
+ * browser to synthesise a faux-bold italic from the 300 face. */
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;1,8..60,300;1,8..60,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #f2eee6;
+}
+body {
+  font-family: Inter, system-ui, sans-serif;
+  color: #1f1b16;
+  -webkit-font-smoothing: antialiased;
+}
+* {
+  box-sizing: border-box;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* The deck scrolls; its scrollbar is intentionally hidden on every engine. */
+[data-deck] {
+  scrollbar-width: none;
+}
+[data-deck]::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes bnPass {
+  0% { left: 2%; opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { left: 98%; opacity: 0; }
+}
+@keyframes bnStop {
+  0% { left: 2%; opacity: 0; }
+  20% { opacity: 1; }
+  62% { left: 46%; opacity: 1; }
+  78% { left: 44%; opacity: 0; }
+  100% { left: 2%; opacity: 0; }
+}
+@keyframes bnNudge {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+@keyframes bnPulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+@keyframes bnCall {
+  0% { transform: translateX(-52px) translateY(0); opacity: 0; }
+  12% { transform: translateX(-16px) translateY(0); opacity: 1; }
+  40% { transform: translateX(0) translateY(0); opacity: 1; }
+  58% { transform: translateX(10px) translateY(30px); opacity: 0; }
+  100% { transform: translateX(10px) translateY(30px); opacity: 0; }
+}
+@keyframes bnWait {
+  0%, 100% { transform: translateX(0); box-shadow: 0 0 0 0 rgba(184, 85, 58, 0.3); }
+  55% { transform: translateX(-5px); box-shadow: 0 0 0 9px rgba(184, 85, 58, 0); }
+}
+@keyframes bnRift {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.85; }
+}
+@keyframes bnScrub {
+  0% { opacity: 0.25; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.25; }
+}
+/* Lane marquees. The prototype declared bnDrift twice — a translate3d/scale
+ * version that was immediately overridden by this translateX one. Only this
+ * definition ever applied, so only it is kept. */
+@keyframes bnDrift {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.3333%); }
+}
+@keyframes bnDriftBack {
+  0% { transform: translateX(-33.3333%); }
+  100% { transform: translateX(0); }
+}
+@keyframes bnField {
+  0% { transform: rotate(-14deg) scale(1.04); }
+  35% { transform: rotate(-9.5deg) scale(1); }
+  68% { transform: rotate(-17.5deg) scale(1.03); }
+  100% { transform: rotate(-14deg) scale(1.04); }
+}
+@keyframes bnCell {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50% { transform: translate3d(0, -13px, 0) rotate(1.4deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+}
+@keyframes bnSheen {
+  0% { transform: translateX(-120%) rotate(8deg); }
+  55% { transform: translateX(120%) rotate(8deg); }
+  100% { transform: translateX(120%) rotate(8deg); }
+}
+
+/* Frame 07 — the two audience columns.
+ *
+ * The prototype laid these out with flex + align-items:center, which centres
+ * each column independently. The "banker" column is taller than the "người
+ * dùng" column (it carries the Deposit note), so at 1440x900 the two eyebrows
+ * landed 22px apart — measured 245px vs 267px — and read as misaligned.
+ *
+ * Grid fixes it properly: align-items:start puts both columns at the top of a
+ * single shared row track, so their eyebrows share a baseline, while
+ * align-content:center keeps the pair centred in the available band rather
+ * than pinned to the top under the nav.
+ *
+ * The rule between them is taken out of flow and absolutely positioned so it
+ * still spans the full height of the band as designed, instead of collapsing
+ * to the height of the row track. It is hidden when the columns stack. */
+.bn-audiences {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: start;
+  align-content: center;
+  gap: clamp(20px, 3.4vw, 64px);
+  position: relative;
+}
+.bn-audiences > .bn-rule {
+  display: none;
+}
+@media (min-width: 720px) {
+  .bn-audiences {
+    grid-template-columns: 1fr 1fr;
+  }
+  .bn-audiences > .bn-rule {
+    display: block;
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    transform: translateX(-50%);
+  }
+  /* Nudge the consumer column off the rule so the two halves do not read as
+   * one continuous block of text. Only when the columns sit side by side —
+   * when they stack there is nothing to nudge away from. */
+  .bn-audiences > .bn-aud-user {
+    padding-left: clamp(12px, 2.2vw, 44px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Decorative loops only. The reveal timelines are collapsed in deck.js. */
+  [style*="bnField"],
+  [style*="bnCell"],
+  [style*="bnDrift"],
+  [style*="bnSheen"],
+  [style*="bnNudge"] {
+    animation: none !important;
+  }
+}
