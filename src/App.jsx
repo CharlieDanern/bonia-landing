@@ -401,6 +401,16 @@ function TopNav({ accent = ACC }) {
             {n}
           </a>
         ))}
+        {/* Unlike the others this leaves the page, so it is a real href rather
+            than a hash anchor. Kept in the tab row (not styled as a CTA) so it
+            does not compete with "Tải app". */}
+        <a
+          href="/business"
+          className="text-[14px] transition-colors hover:opacity-100"
+          style={{ color: "#4A4239" }}
+        >
+          {chrome.navBusiness}
+        </a>
         <a
           href="#cta"
           className="text-[14px] font-medium flex items-center gap-1.5"
@@ -412,6 +422,15 @@ function TopNav({ accent = ACC }) {
       </div>
       <div className="md:hidden flex items-center gap-3">
         <LangToggle accent={accent} />
+        {/* Short label here: the full "Bonia Business" pushes this row past the
+            viewport on a 360px phone once the toggle and CTA are counted. */}
+        <a
+          href="/business"
+          className="text-[14px] whitespace-nowrap"
+          style={{ color: "#4A4239" }}
+        >
+          {chrome.navBusinessShort}
+        </a>
         <a
           href="#cta"
           className="text-[14px] font-medium flex items-center gap-1.5"

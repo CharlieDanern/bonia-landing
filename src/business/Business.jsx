@@ -88,11 +88,29 @@ export default function Business() {
             alt="Bonia"
             style={{ height: "clamp(34px, 4.4vw, 46px)", width: "auto", display: "block" }}
           />
+          {/* Hidden on narrow screens by .bn-wordmark — the mark plus the two
+              auth links already fill a phone's nav row. */}
+          <span
+            className="bn-wordmark"
+            style={{
+              marginLeft: "10px",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: "11px",
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              color: "#4A4239",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Bonia Business
+          </span>
         </a>
         <span style={{ flex: 1 }} />
         <div style={{ display: "flex", alignItems: "center", gap: "clamp(6px, 1.2vw, 16px)" }}>
+          {/* The portal reads the path: anything containing "dang-ky" opens the
+              register view, everything else falls through to login. */}
           <a
-            href="/app"
+            href="/app/dang-ky"
             style={{
               pointerEvents: "auto",
               fontSize: "13px",

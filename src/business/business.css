@@ -106,6 +106,17 @@ a {
   100% { transform: translateX(120%) rotate(8deg); }
 }
 
+/* Wordmark beside the logo. Suppressed on narrow screens, where the mark plus
+ * "Đăng ký" and "Đăng nhập" already use the whole nav row. */
+.bn-wordmark {
+  display: none;
+}
+@media (min-width: 560px) {
+  .bn-wordmark {
+    display: inline;
+  }
+}
+
 /* Frame 07 — the two audience columns.
  *
  * The prototype laid these out with flex + align-items:center, which centres

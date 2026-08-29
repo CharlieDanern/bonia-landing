@@ -538,6 +538,8 @@ export const CHROME_VI = {
   privacyWord: "Riêng tư",
   trustWord: "Tin cậy",
   navCta: "Tải app",
+  navBusiness: "Bonia Business",
+  navBusinessShort: "Business",
   footerLinksLabel: "Liên kết",
   links: {
     privacy: "Chính sách bảo mật",
@@ -564,6 +566,8 @@ export const CHROME_EN = {
   privacyWord: "Privacy",
   trustWord: "Trust",
   navCta: "Get the app",
+  navBusiness: "Bonia Business",
+  navBusinessShort: "Business",
   footerLinksLabel: "Links",
   links: {
     privacy: "Privacy policy",
