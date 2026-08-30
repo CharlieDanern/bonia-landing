@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hướng dẫn sử dụng Bonia Business — Bonia</title>
+  <meta name="description" content="Hướng dẫn dành cho tư vấn viên ngân hàng sử dụng Bonia Business: đăng sản phẩm thẻ, đặt mức phí thành công, nhận khách hàng, tư vấn và xác nhận kết quả." />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #F2EEE6;
+      --ink: #1F1B16;
+      --ink-soft: #4A4239;
+      --ink-mute: #7A6F62;
+      --hair: #D9D0BF;
+      --cream-2: #EFE9DD;
+      --acc: #7B4A2D;
+      --ok: #1E7A52;
+    }
+    html, body { background: var(--bg); }
+    body { font-family: 'Inter', system-ui, sans-serif; color: var(--ink); }
+    .ff-serif { font-family: "Source Serif 4", Georgia, "Times New Roman", serif !important; }
+    .ff-mono  { font-family: "JetBrains Mono", ui-monospace, monospace !important; }
+    .clause { margin-top: 0.9rem; font-size: 15px; line-height: 1.7; color: var(--ink-soft); }
+    .clause b { color: var(--ink); font-weight: 600; }
+    h2.sec { font-family: "Source Serif 4", Georgia, serif; font-size: 26px; color: var(--ink); margin-top: 3rem; font-weight: 500; scroll-margin-top: 1.5rem; }
+    h3.sub { font-size: 15px; font-weight: 600; color: var(--ink); margin-top: 1.6rem; }
+    /* Step list — numbered, hairline-separated, for the sequential flows. */
+    ol.steps { counter-reset: s; margin-top: 1rem; }
+    ol.steps > li {
+      counter-increment: s; position: relative; padding: 0.85rem 0 0.85rem 2.4rem;
+      border-top: 1px solid var(--hair); font-size: 15px; line-height: 1.7; color: var(--ink-soft);
+    }
+    ol.steps > li:last-child { border-bottom: 1px solid var(--hair); }
+    ol.steps > li::before {
+      content: counter(s, decimal-leading-zero); position: absolute; left: 0; top: 0.95rem;
+      font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--acc);
+    }
+    ol.steps b { color: var(--ink); font-weight: 600; }
+    /* A literal label as it appears in the portal. */
+    .ui {
+      font-family: "JetBrains Mono", monospace; font-size: 0.86em;
+      background: var(--cream-2); border: 1px solid var(--hair);
+      border-radius: 3px; padding: 0.1em 0.4em; color: var(--ink); white-space: nowrap;
+    }
+    table.states { width: 100%; margin-top: 1rem; border-collapse: collapse; }
+    table.states td { border-top: 1px solid var(--hair); padding: 0.7rem 0; font-size: 14.5px; line-height: 1.6; color: var(--ink-soft); vertical-align: top; }
+    table.states td:first-child { width: 42%; padding-right: 1.5rem; color: var(--ink); font-weight: 500; }
+    @media (max-width: 600px) {
+      table.states td { display: block; border-top: none; padding: 0.15rem 0; }
+      table.states td:first-child { width: auto; border-top: 1px solid var(--hair); padding-top: 0.8rem; }
+      table.states tr:last-child td:last-child { padding-bottom: 0.8rem; }
+    }
+    .note { margin-top: 1.1rem; padding: 0.95rem 1.1rem; background: var(--cream-2); border-left: 2px solid var(--acc); font-size: 14.5px; line-height: 1.65; color: var(--ink-soft); }
+    .note b { color: var(--ink); font-weight: 600; }
+    .toc a { display: block; padding: 0.42rem 0; font-size: 14.5px; color: var(--ink-soft); border-top: 1px solid var(--hair); }
+    .toc a:hover { color: var(--acc); }
+    .toc a span { font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: var(--acc); margin-right: 0.7rem; }
+  </style>
+</head>
+<body>
+
+<nav class="flex items-center justify-between py-6 px-6 sm:px-12 border-b" style="border-color: var(--hair);">
+  <a href="/" class="flex items-center gap-2.5">
+    <img src="/logo-mark.png" alt="Bonia" class="h-9 w-auto" />
+    <span class="text-[22px] font-medium tracking-tight ff-serif" style="color: var(--ink);">Bonia</span>
+    <span class="text-[11px] uppercase tracking-[0.22em] ml-1 hidden sm:inline" style="color: var(--ink-soft);">business</span>
+  </a>
+  <a href="https://bonia.vn/app" class="text-[14px] font-medium flex items-center gap-1.5" style="color: var(--acc);">Cổng đối tác →</a>
+</nav>
+
+<main class="px-6 sm:px-12 py-12 sm:py-16">
+  <header class="max-w-4xl">
+    <div class="flex items-baseline gap-3 mb-6">
+      <span class="text-[12px] ff-mono" style="color: var(--acc);">№ 05</span>
+      <span class="text-[11px] uppercase tracking-[0.22em]" style="color: var(--ink-mute);">Hướng dẫn · Đối tác</span>
+    </div>
+    <h1 class="text-[40px] sm:text-[52px] md:text-[64px] leading-[1.05] tracking-tight ff-serif" style="color: var(--ink); font-weight: 400;">
+      Hướng dẫn sử dụng<br/>Bonia Business.
+    </h1>
+    <p class="mt-6 text-[18px] leading-[1.65] max-w-2xl ff-serif italic" style="color: var(--ink-soft); font-weight: 380;">
+      Dành cho tư vấn viên ngân hàng sử dụng bonia.vn/app — từ khi tạo tài khoản
+      đến khi hoàn tất một giao dịch.
+    </p>
+  </header>
+
+  <article class="max-w-3xl mt-12">
+
+    <nav class="toc mb-4">
+      <a href="#s1"><span>01</span>Bonia Business hoạt động như thế nào</a>
+      <a href="#s2"><span>02</span>Tạo tài khoản</a>
+      <a href="#s3"><span>03</span>Ba tab chính</a>
+      <a href="#s4"><span>04</span>Đăng thẻ và đặt bid</a>
+      <a href="#s5"><span>05</span>Nhận lead và tư vấn</a>
+      <a href="#s6"><span>06</span>Gọi và nhắn tin với khách</a>
+      <a href="#s7"><span>07</span>Xác nhận kết quả</a>
+      <a href="#s8"><span>08</span>Số dư, khoản tạm giữ và phí</a>
+      <a href="#s9"><span>09</span>Hồ sơ và khu vực phục vụ</a>
+      <a href="#s10"><span>10</span>Nguyên tắc bắt buộc</a>
+      <a href="#s11"><span>11</span>Hỗ trợ</a>
+      <a href="#s12" style="border-bottom: 1px solid var(--hair);"><span>12</span>Câu hỏi thường gặp</a>
+    </nav>
+
+    <h2 class="sec" id="s1">1. Bonia Business hoạt động như thế nào</h2>
+    <p class="clause">
+      Bonia hoạt động theo hướng ngược lại với telesales truyền thống. Thay vì
+      gọi vào một danh sách có sẵn, bạn nhận yêu cầu từ khách hàng đã chủ động
+      chọn loại thẻ họ quan tâm và muốn được tư vấn. Bonia sẽ chuyển yêu cầu đó
+      cho một tư vấn viên phù hợp.
+    </p>
+    <p class="clause">
+      Bạn tự đặt <b>mức phí thành công</b> (bid) cho từng loại thẻ. Trong mỗi
+      loại, sản phẩm có mức bid cao hơn sẽ được ưu tiên hiển thị cho khách. Bạn
+      chỉ trả phí khi thẻ được mở thành công và <b>cả hai bên cùng xác nhận</b>.
+      Bonia không thu phí đăng ký, phí hàng tháng hay phí theo lead.
+    </p>
+    <p class="clause">
+      Trong tài liệu này, <b>lead</b> là một khách hàng đã yêu cầu được tư vấn;
+      <b>bid</b> là mức phí thành công bạn sẵn sàng trả cho sản phẩm thẻ đó.
+    </p>
+
+    <h2 class="sec" id="s2">2. Tạo tài khoản</h2>
+    <ol class="steps">
+      <li>Truy cập <span class="ui">bonia.vn/app/dang-ky</span>.</li>
+      <li>Nhập <b>email công việc</b> do ngân hàng cấp. Bonia không chấp nhận
+        Gmail, Yahoo hoặc email cá nhân; email công việc được dùng để xác minh
+        đơn vị bạn đang công tác.</li>
+      <li>Nhập <b>mã gồm 6 chữ số</b> được gửi đến email. Nếu mã hết hạn hoặc bạn
+        nhập sai nhiều lần, hãy bấm <span class="ui">Gửi lại mã</span>.</li>
+      <li>Điền <b>họ tên</b>, <b>số điện thoại</b>, <b>chi nhánh</b>
+        (ví dụ: <i>Chi nhánh Quận 7</i>) và <b>khu vực phục vụ</b>. Hãy chọn tất
+        cả tỉnh, thành phố nơi bạn có thể nhận khách; cần chọn ít nhất một khu
+        vực.</li>
+      <li>Đặt <b>mật khẩu</b> có ít nhất 8 ký tự. Từ những lần sau, bạn đăng nhập
+        bằng email công việc và mật khẩu này.</li>
+      <li>Chờ Bonia duyệt tài khoản. Nếu Bonia đã xác thực tên miền email của
+        ngân hàng, tài khoản thường được duyệt ngay. Trường hợp cần kiểm tra
+        thủ công, Bonia sẽ xử lý trong <b>một ngày làm việc</b>.</li>
+    </ol>
+    <div class="note">
+      <b>Khu vực phục vụ ảnh hưởng trực tiếp đến lead bạn nhận được.</b> Khách
+      chỉ được ghép với tư vấn viên có phục vụ tại tỉnh, thành phố của họ. Nếu
+      tài khoản đã được duyệt nhưng chưa nhận được lead, hãy kiểm tra lại phần
+      khu vực phục vụ trước tiên.
+    </div>
+
+    <h2 class="sec" id="s3">3. Ba tab chính</h2>
+    <table class="states">
+      <tr><td>Bid của tôi</td><td>Danh sách thẻ bạn đã đăng, trạng thái xét duyệt và mức bid của từng thẻ. Tại đây, bạn chọn những sản phẩm mình muốn nhận lead.</td></tr>
+      <tr><td>Pipeline</td><td>Danh sách khách hàng đã được chuyển cho bạn. Bạn có thể gọi, nhắn tin, cập nhật kết quả và xác nhận mở thẻ tại đây.</td></tr>
+      <tr><td>Tài khoản</td><td>Thông tin cá nhân, chi nhánh, khu vực phục vụ, số dư và giới hạn chi tiêu hàng tháng.</td></tr>
+    </table>
+
+    <h2 class="sec" id="s4">4. Đăng thẻ và đặt bid</h2>
+    <p class="clause">
+      Ở tab <span class="ui">Bid của tôi</span>, bấm <span class="ui">Thêm thẻ</span> và điền:
+    </p>
+    <ol class="steps">
+      <li><b>Tên thẻ</b> — đúng tên sản phẩm ngân hàng đang phát hành.</li>
+      <li><b>Hình ảnh thẻ</b> — jpg, png hoặc webp. Nếu chưa có, chọn
+        <span class="ui">Bỏ qua, dùng nền mặc định</span> và cập nhật sau.</li>
+      <li><b>Chi tiết thẻ</b> — ưu đãi, phí thường niên và điều kiện thu nhập.
+        Đây là nội dung khách sẽ đọc trước khi bày tỏ quan tâm.</li>
+      <li><b>Điều kiện nhận thưởng</b> — tối đa 6 điều kiện, mỗi điều kiện 120
+        ký tự. Hãy nêu rõ từng điều kiện để khách dễ hiểu và hạn chế tranh chấp
+        về sau.</li>
+      <li>Bấm <span class="ui">Gửi Bonia duyệt</span>. Bonia sẽ phân loại thẻ
+        trong quá trình xét duyệt; bạn không cần tự chọn loại.</li>
+    </ol>
+
+    <h3 class="sub">Trạng thái của một thẻ</h3>
+    <table class="states">
+      <tr><td>Bản nháp</td><td>Thẻ đã được lưu nhưng chưa gửi duyệt, nên chưa hiển thị với khách.</td></tr>
+      <tr><td>Chờ Bonia duyệt</td><td>Thẻ đã được gửi và đang chờ xét duyệt. Mức bid bạn đặt sẽ có hiệu lực ngay khi thẻ được duyệt.</td></tr>
+      <tr><td>Cần sửa nội dung</td><td>Bonia yêu cầu bổ sung hoặc chỉnh sửa thông tin. Sau khi sửa, bấm <span class="ui">Lưu và gửi duyệt lại</span>; mức bid vẫn được giữ nguyên.</td></tr>
+      <tr><td>Đang hiển thị</td><td>Thẻ đang được hiển thị với khách trong khu vực bạn phục vụ.</td></tr>
+      <tr><td>Đã tạm dừng</td><td>Thẻ đang tạm ngừng nhận lead. Bạn có thể bật lại bất cứ lúc nào.</td></tr>
+    </table>
+
+    <h3 class="sub">Đặt bid</h3>
+    <p class="clause">
+      Bấm <span class="ui">Đặt bid</span> và nhập mức phí thành công bạn sẵn
+      sàng trả, tối đa <b>20.000.000đ</b>. Hệ thống sẽ cho biết bid của bạn có
+      đang dẫn đầu hay không. <b>Trong mỗi loại thẻ, sản phẩm có bid cao nhất sẽ
+      được ưu tiên nhận lead</b>. Vì vậy, bid là công cụ chính để điều chỉnh
+      lượng khách bạn nhận được.
+    </p>
+    <p class="clause">
+      Bạn cũng có hai công cụ để kiểm soát khối lượng công việc:
+      <span class="ui">Tối đa lead đang xử lý</span> (từ 1 đến 200) giới hạn số
+      lead bạn có thể xử lý cùng lúc; còn
+      <span class="ui">Tạm dừng nhận lead</span> giúp bạn tạm ngừng nhận khách
+      mới khi đang quá tải.
+    </p>
+    <p class="clause">
+      Khi tạm dừng, <b>thẻ sẽ không còn hiển thị với khách và không nhận thêm
+      lead mới</b>. Khi bật lại, hệ thống xếp hạng thẻ theo <b>mức bid hiện
+      tại</b>, giống như các thẻ khác. Bạn không cần đặt lại bid.
+    </p>
+    <p class="clause">
+      Thứ tự nhận lead được xếp theo mức bid từ cao xuống thấp. Nếu hai thẻ có
+      cùng mức bid, người đặt mức đó trước sẽ được ưu tiên.
+    </p>
+
+    <h2 class="sec" id="s5">5. Nhận lead và tư vấn</h2>
+    <p class="clause">
+      Tab <span class="ui">Pipeline</span> được chia thành các cột theo trạng
+      thái xử lý của khách:
+    </p>
+    <table class="states">
+      <tr><td>Cần liên hệ</td><td>Khách mới hoặc khách bạn đã gọi nhưng chưa liên lạc được.</td></tr>
+      <tr><td>Đang tư vấn</td><td>Khách đã được tư vấn, đang chờ gọi lại hoặc đã nộp hồ sơ.</td></tr>
+      <tr><td>Chờ khách xác nhận</td><td>Bạn đã xác nhận mở thẻ thành công và đang chờ khách xác nhận trên ứng dụng.</td></tr>
+      <tr><td>Deal thất bại</td><td>Khách từ chối, không đủ điều kiện hoặc không thể liên lạc.</td></tr>
+    </table>
+    <p class="clause">
+      Sau mỗi cuộc gọi, bấm <span class="ui">Lưu kết quả</span> và chọn đúng
+      trạng thái. Kết quả bạn chọn sẽ quyết định lead được chuyển sang bước nào:
+      <span class="ui">Đã tư vấn</span> và <span class="ui">Hẹn gọi lại</span>
+      chuyển lead sang <i>Đang tư vấn</i>;
+      <span class="ui">Không nghe máy</span> giữ lead ở <i>Cần liên hệ</i> để
+      bạn thử lại sau; <span class="ui">Khách từ chối</span> và
+      <span class="ui">Không đủ điều kiện</span> sẽ đóng lead.
+    </p>
+    <div class="note">
+      Lead không tự hết hạn, nhưng <b>nhu cầu của khách có thể giảm nhanh</b>.
+      Hãy liên hệ sớm khi khách vẫn đang quan tâm và sẵn sàng trao đổi.
+    </div>
+
+    <h2 class="sec" id="s6">6. Gọi và nhắn tin với khách</h2>
+    <p class="clause">
+      Bấm <span class="ui">Gọi qua Bonia</span> ngay trong trình duyệt. Cuộc gọi
+      được kết nối qua tổng đài Bonia nên <b>bạn không thấy số điện thoại của
+      khách và khách cũng không thấy số của bạn</b>. Số điện thoại của hai bên
+      luôn được ẩn; tính năng này không thể tắt.
+    </p>
+    <p class="clause">
+      Cuộc gọi được ghi âm và bản chép lời được hiển thị cho <b>cả hai bên</b>.
+      Hai bên cùng xem một nội dung, giúp Bonia có căn cứ đối soát khi phát sinh
+      khiếu nại và bảo vệ quyền lợi của cả khách hàng lẫn tư vấn viên.
+    </p>
+    <p class="clause">
+      Ngoài cuộc gọi, bạn có thể nhắn tin trực tiếp trong cuộc trò chuyện với
+      khách. Nội dung trong ô <span class="ui">Ghi chú riêng</span> chỉ hiển thị
+      với bạn; khách không đọc được.
+    </p>
+    <div class="note">
+      <b>Hãy giữ mọi trao đổi trên Bonia.</b> Các cuộc gọi hoặc tin nhắn qua Zalo,
+      số điện thoại riêng hay kênh khác không được Bonia ghi nhận để đối soát.
+      Việc đưa khách ra ngoài hệ thống cũng có thể dẫn đến khoá tài khoản theo
+      Điều khoản đối tác. Nếu phát sinh tranh chấp, Bonia chỉ có thể xem xét
+      những nội dung đã được ghi nhận trên hệ thống.
+    </div>
+
+    <h2 class="sec" id="s7">7. Xác nhận kết quả</h2>
+    <p class="clause">
+      Giao dịch chỉ được hoàn tất khi <b>cả bạn và khách hàng cùng xác nhận thẻ
+      đã được mở thành công, đồng thời thông tin sản phẩm trùng khớp</b>. Bạn xác
+      nhận trên cổng đối tác, còn khách xác nhận trên ứng dụng. Bên nào cũng có
+      thể xác nhận trước.
+    </p>
+
+    <h3 class="sub">Trường hợp thường gặp — bạn xác nhận trước</h3>
+    <ol class="steps">
+      <li>Khi khách đã được ngân hàng phát hành thẻ, mở lead và bấm
+        <span class="ui">Xác nhận đã mở thẻ</span>.</li>
+      <li>Chọn <b>đúng thẻ khách đã mở</b> trong danh sách. Chọn sai thẻ là
+        nguyên nhân tranh chấp thường gặp, vì khách sẽ xác nhận theo đúng tên
+        sản phẩm họ đã nhận.</li>
+      <li>Lead chuyển sang <i>Chờ khách xác nhận</i>. Khách bấm
+        <span class="ui">Tôi đã nhận thẻ</span> trong app Bonia.</li>
+      <li>Khi xác nhận của hai bên trùng khớp, phí thành công được trừ vào số dư
+        của bạn và Bonia chuyển tiền thưởng cho khách.</li>
+    </ol>
+
+    <h3 class="sub">Trường hợp ngược lại — khách xác nhận trước</h3>
+    <p class="clause">
+      Khách có thể bấm <span class="ui">Tôi đã nhận thẻ</span> trên ứng dụng
+      trước khi bạn xác nhận trên cổng. Khi đó, lead <b>vẫn nằm trong pipeline
+      và đang chờ bạn xử lý</b>. Bạn vẫn có thể gọi, cập nhật trạng thái hoặc
+      đóng lead. Hãy mở lead và xác nhận đúng sản phẩm để hoàn tất giao dịch.
+    </p>
+    <div class="note">
+      <b>Hãy xử lý sớm các lead mà khách đã xác nhận.</b> Khi bạn chưa xác nhận,
+      giao dịch chưa hoàn tất và 50% mức bid vẫn ở trạng thái tạm giữ: khoản này
+      chưa được hoàn lại nhưng cũng chưa được ghi nhận là phí. Khoản tạm giữ chỉ
+      được xử lý khi bạn xác nhận mở thẻ thành công hoặc đóng lead do thất bại.
+    </div>
+    <p class="clause">
+      Nếu hai bên xác nhận khác nhau, giao dịch sẽ được chuyển sang đối soát.
+      Bonia sẽ xem xét bản ghi cuộc gọi và tin nhắn đã lưu trên hệ thống.
+    </p>
+
+    <h2 class="sec" id="s8">8. Số dư, khoản tạm giữ và phí</h2>
+    <p class="clause">
+      Bonia không thu phí đăng ký hoặc phí theo lead. Các khoản tiền được xử lý
+      như sau:
+    </p>
+    <table class="states">
+      <tr><td>3 lead đầu tiên</td><td><b>Hoàn toàn miễn phí.</b> Bonia không tạm giữ hoặc trừ tiền, kể cả khi mở thẻ thành công.</td></tr>
+      <tr><td>Từ lead thứ 4 — khi nhận lead</td><td>Hệ thống <b>tạm giữ 50% mức bid</b> của thẻ. Khoản tiền này chưa được tính là phí.</td></tr>
+      <tr><td>Khi giao dịch thất bại</td><td>Khoản tạm giữ được <b>hoàn lại toàn bộ</b> vào số dư.</td></tr>
+      <tr><td>Khi giao dịch thành công</td><td>Bonia thu <b>phí thành công bằng đúng mức bid</b>. Khoản đã tạm giữ được tính vào phí; hệ thống chỉ trừ thêm phần còn lại.</td></tr>
+    </table>
+    <p class="clause">
+      Lịch sử giao dịch trong tab <span class="ui">Tài khoản</span> ghi rõ bốn
+      loại biến động: <span class="ui">nạp</span>, <span class="ui">giữ</span>,
+      <span class="ui">hoàn giữ</span> và <span class="ui">trừ phí</span>.
+    </p>
+    <div class="note">
+      <b>Khi hết số dư, bạn sẽ tạm ngừng nhận lead mới.</b> Hệ thống hiển thị
+      <span class="ui">Hết số dư</span> trên thẻ và chuyển lead mới cho tư vấn
+      viên khác. Sản phẩm của bạn vẫn được lưu nhưng sẽ không được ghép với
+      khách cho đến khi có số dư trở lại. Các lead đang xử lý không bị ảnh hưởng.
+    </div>
+    <p class="clause">
+      Mức bid là khoản bạn trả cho Bonia khi mở thẻ thành công. Khách hàng nhận
+      một phần khoản này dưới dạng tiền thưởng do Bonia chi trả; phần còn lại là
+      phí nền tảng. Tỷ lệ thưởng áp dụng cho từng lead được <b>cố định tại thời
+      điểm lead được chuyển cho bạn</b>. Những thay đổi về tỷ lệ thưởng sau đó
+      sẽ không ảnh hưởng đến lead đã nhận.
+    </p>
+
+    <h2 class="sec" id="s9">9. Hồ sơ và khu vực phục vụ</h2>
+    <p class="clause">
+      Trong tab <span class="ui">Tài khoản</span>, bạn có thể cập nhật
+      <b>chi nhánh</b> và <b>khu vực phục vụ</b> bất cứ lúc nào, chẳng hạn khi
+      chuyển chi nhánh hoặc muốn nhận khách ở tỉnh, thành phố khác. Bạn không
+      thể tự chỉnh sửa họ tên, email công việc hoặc ngân hàng đã xác minh. Nếu
+      cần đổi số điện thoại, hãy liên hệ Bonia qua Zalo.
+    </p>
+    <p class="clause">
+      <b>Giới hạn chi tiêu tháng</b> cho phép bạn đặt mức phí tối đa trong một
+      tháng. Khi sắp chạm giới hạn, hệ thống sẽ thông báo và chuyển lead mới cho
+      tư vấn viên khác. Bạn có thể <span class="ui">Tắt giới hạn</span> để tiếp
+      tục nhận lead khi tài khoản còn số dư, rồi bật lại khi cần.
+    </p>
+
+    <h2 class="sec" id="s10">10. Nguyên tắc bắt buộc</h2>
+    <p class="clause">
+      Tài khoản có thể bị khoá theo Điều khoản đối tác nếu vi phạm những nguyên
+      tắc sau:
+    </p>
+    <table class="states">
+      <tr><td>Không đưa khách ra ngoài Bonia</td><td>Không đề nghị khách liên hệ qua số riêng, Zalo hoặc kênh khác để tránh phí thành công.</td></tr>
+      <tr><td>Không khai sai kết quả</td><td>Không xác nhận thành công khi thẻ chưa được phát hành và không chọn sai sản phẩm thẻ.</td></tr>
+      <tr><td>Không cam kết ngoài thẩm quyền</td><td>Chỉ cung cấp những cam kết nằm trong chính sách chính thức của ngân hàng. Khách có thể đối chiếu với điều kiện đã công bố trên sản phẩm thẻ.</td></tr>
+      <tr><td>Tôn trọng quyết định của khách</td><td>Nếu khách từ chối, hãy đóng lead. Không gọi lại nhiều lần ngoài lịch hai bên đã hẹn.</td></tr>
+    </table>
+
+    <h2 class="sec" id="s11">11. Hỗ trợ</h2>
+    <p class="clause">
+      Nếu gặp vướng mắc hoặc cần đối soát giao dịch, hãy liên hệ trực tiếp với
+      Bonia. Đội ngũ hỗ trợ sẽ phản hồi trong giờ làm việc.
+    </p>
+    <p class="clause">
+      <a href="mailto:duynguyen@bonia.net" style="color: var(--acc);">duynguyen@bonia.net</a>
+      · 0909 291 268 (gọi / Zalo)
+    </p>
+
+    <h2 class="sec" id="s12">12. Câu hỏi thường gặp</h2>
+
+    <h3 class="sub">Tôi đã được duyệt nhưng không có lead nào?</h3>
+    <p class="clause">
+      Hãy kiểm tra lần lượt ba mục: thẻ đã ở trạng thái <i>Đang hiển thị</i> hay
+      chưa; mức bid có đang dẫn đầu trong loại thẻ đó hay không; và <b>khu vực
+      phục vụ</b> đã bao gồm nơi bạn muốn nhận khách chưa. Bạn chỉ nhận được lead
+      khi bid của sản phẩm đang đứng đầu và có khách phù hợp trong khu vực.
+    </p>
+
+    <h3 class="sub">Tôi có thấy số điện thoại của khách không?</h3>
+    <p class="clause">
+      Không. Số điện thoại của khách luôn được ẩn và mọi cuộc gọi đều được kết
+      nối qua tổng đài Bonia. Bạn chỉ thấy tên và khu vực của khách để phục vụ
+      việc tư vấn.
+    </p>
+
+    <h3 class="sub">Khách không xác nhận thì sao?</h3>
+    <p class="clause">
+      Lead sẽ ở trạng thái <i>Chờ khách xác nhận</i> cho đến khi khách phản hồi.
+      Bạn có thể gửi lời nhắc trong cuộc trò chuyện. Nếu thông tin khách xác nhận
+      khác với thông tin bạn đã gửi, giao dịch sẽ được chuyển sang đối soát dựa
+      trên nội dung đã ghi nhận trong hệ thống.
+    </p>
+
+    <h3 class="sub">Hạ bid có làm mất lead đang xử lý không?</h3>
+    <p class="clause">
+      Không. Lead đã được chuyển vẫn thuộc về bạn với mức bid được ghi nhận tại
+      thời điểm đó. Việc thay đổi bid chỉ ảnh hưởng đến lead mới.
+    </p>
+
+    <h3 class="sub">Tôi quá tải, nên hạ bid hay tạm dừng?</h3>
+    <p class="clause">
+      Nếu chỉ muốn giảm lượng khách mới mà không ảnh hưởng đến thứ hạng, hãy dùng
+      <span class="ui">Tạm dừng nhận lead</span> hoặc giảm
+      <span class="ui">Tối đa lead đang xử lý</span>. Chỉ nên hạ bid khi bạn
+      thực sự muốn thay đổi mức phí thành công.
+    </p>
+
+    <p class="clause mt-10" style="color: var(--ink-mute);">
+      Tài liệu này mô tả cách vận hành của cổng. Quyền và nghĩa vụ pháp lý theo
+      <a href="/terms-business.html" style="color: var(--acc);">Điều khoản đối tác</a>
+      và
+      <a href="/privacy-business.html" style="color: var(--acc);">Chính sách bảo mật Bonia Business</a>;
+      khi có khác biệt, các văn bản đó là căn cứ.<br />
+      Công ty TNHH Duy Nhiên Investment · 120 N2 Mega Village, Đường Võ Chí Công, phường Long Trường, TP.HCM · MST 0319376631
+    </p>
+  </article>
+</main>
+
+<footer class="px-6 sm:px-12 py-8 border-t text-[13px]" style="border-color: var(--hair); color: var(--ink-mute);">
+  © 2026 Bonia ·
+  <a href="/business" style="color: var(--acc);">Bonia Business</a> ·
+  <a href="/terms-business.html" style="color: var(--acc);">Điều khoản đối tác</a> ·
+  <a href="/privacy-business.html" style="color: var(--acc);">Bảo mật</a>
+</footer>
+
+</body>
+</html>

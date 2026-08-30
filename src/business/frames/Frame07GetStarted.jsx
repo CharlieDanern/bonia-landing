@@ -121,6 +121,9 @@ export default function Frame07GetStarted() {
                 <a href="/terms-business.html" style={{ display: 'block', color: '#4A4239' }}>
                   Điều khoản đối tác
                 </a>
+                <a href="/huong-dan-business.html" style={{ display: 'block', color: '#4A4239' }}>
+                  Hướng dẫn sử dụng
+                </a>
               </div>
             </div>
           </div>

@@ -117,6 +117,18 @@ a {
   }
 }
 
+/* Nav guide link. Hidden on narrow screens for the same reason as the
+ * wordmark — the mark plus "Đăng ký" and "Đăng nhập" already fill the row.
+ * The manual is still reachable from the frame 07 footer on every size. */
+.bn-navguide {
+  display: none;
+}
+@media (min-width: 560px) {
+  .bn-navguide {
+    display: inline;
+  }
+}
+
 /* Frame 07 — the two audience columns.
  *
  * The prototype laid these out with flex + align-items:center, which centres

@@ -138,6 +138,25 @@ export default function Business() {
           >
             Đăng nhập
           </a>
+          {/* Utility link, so it reads lighter than the two auth actions.
+              .bn-navguide hides it on narrow screens, where the row is already
+              full with the mark and both auth links. */}
+          <a
+            href="/huong-dan-business.html"
+            className="bn-navguide"
+            style={{
+              pointerEvents: "auto",
+              fontSize: "13px",
+              // Same ink as "Đăng nhập": a lighter grey washed out against the
+              // drifting card field behind the nav on frame 01.
+              color: "#4A4239",
+              padding: "10px 6px",
+              whiteSpace: "nowrap",
+              transition: "color .4s ease",
+            }}
+          >
+            Hướng dẫn
+          </a>
         </div>
       </nav>
 
