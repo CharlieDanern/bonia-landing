@@ -56,6 +56,28 @@ export const api = {
     }),
   rejectRegistration: (id) =>
     request(`/admin-portal/registrations/${id}/reject`, { method: "POST", body: {} }),
+
+  /**
+   * The freelancer's authorisation document.
+   *
+   * Fetched as a blob rather than linked: the endpoint is admin-realm and a
+   * plain <a href> carries no Authorization header, so a direct link would
+   * just 401. The caller revokes the object URL when the viewer closes.
+   */
+  proofBlobUrl: async (id) => {
+    const res = await fetch(`${BASE}/admin-portal/registrations/${id}/proof`, {
+      headers: { ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}) },
+    });
+    if (!res.ok) throw new Error(res.status === 404 ? "no_proof" : "proof_failed");
+    return { url: URL.createObjectURL(await res.blob()), mime: res.headers.get("content-type") };
+  },
+  reviewProof: (id, body) =>
+    request(`/admin-portal/registrations/${id}/proof-review`, { method: "PUT", body }),
+
+  // ── Closure queue ────────────────────────────────────────────────
+  closures: () => request("/admin-portal/closures"),
+  markClosurePaid: (id, body) =>
+    request(`/admin-portal/closures/${id}/paid`, { method: "POST", body }),
   cards: (status = "pending") => request(`/admin-portal/cards?status=${status}`),
   reviewCard: (id, body) =>
     request(`/admin-portal/cards/${id}/review`, { method: "POST", body }),

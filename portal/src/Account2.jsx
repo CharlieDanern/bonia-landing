@@ -20,6 +20,8 @@ export default function Account2({ me, onSignOut, showToast, refresh }) {
     giu: { label: "giữ", style: { background: "#ECEEF8", color: "#191970", border: "1px solid #D9DEF2" } },
     hoan_giu: { label: "hoàn giữ", style: { background: "#F7F9FC", color: "#5A6378", border: "1px solid #E4E8F0" } },
     tru_phi: { label: "trừ phí", style: { background: "#FDF3E2", color: "#8A5B08", border: "1px solid #F3E1BE" } },
+    // Closing refund — money that actually left for the rep's bank account.
+    rut: { label: "hoàn số dư về ngân hàng", style: { background: "#F7F9FC", color: "#5A6378", border: "1px solid #E4E8F0" } },
   };
 
   return (
@@ -58,7 +60,7 @@ export default function Account2({ me, onSignOut, showToast, refresh }) {
         </div>
         {w?.heldVnd > 0 && (
           <div className="bid-micro" style={{ marginTop: 6 }}>
-            Tổng số dư {vnd(total)} — phần giữ vẫn là tiền của bạn cho tới khi khách mở thẻ.
+            Tổng số dư {vnd(total)} — khoản tạm giữ vẫn là tiền của bạn cho tới khi khách mở thẻ.
           </div>
         )}
         {w?.freeLeadsLeft > 0 && (
@@ -66,15 +68,15 @@ export default function Account2({ me, onSignOut, showToast, refresh }) {
             <div style={{ display: "flex", gap: 5, justifyContent: "center", marginBottom: 4 }}>
               {[...Array(3)].map((_, i) => <span key={i} className="reg-pip" style={i >= w.freeLeadsLeft ? { opacity: 0.25 } : {}} />)}
             </div>
-            <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--navy)" }}>Còn {w.freeLeadsLeft} lead đầu miễn phí</div>
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--navy)" }}>Còn {w.freeLeadsLeft} lead không cần tạm giữ</div>
           </div>
         )}
 
         <div className="eyebrow mono" style={{ margin: "18px 0 8px" }}>LỊCH SỬ SỐ DƯ</div>
         {ledger.length === 0 && (
           <div className="bid-micro">
-            Chưa có giao dịch. Phần giữ được hoàn lại khi lead không thành công. Khi khách mở thẻ,
-            Bonia trừ phí và hoàn phần giữ còn lại. Nạp tiền để nhận lead sau 3 lead đầu miễn phí.
+            Chưa có giao dịch. Khoản tạm giữ được hoàn lại vào ví khi lead không thành công; khi khách
+            mở thẻ, khoản tạm giữ được chuyển thành phí thành công. Nạp tiền để nhận lead sau 3 lead đầu không cần tạm giữ.
           </div>
         )}
         {ledger.map((e, i) => {
@@ -108,7 +110,7 @@ export default function Account2({ me, onSignOut, showToast, refresh }) {
         })}
         {ledger.length > 0 && (
           <div className="bid-micro" style={{ marginTop: 8 }}>
-            Phần giữ được hoàn lại khi lead không thành công. Khi khách mở thẻ, Bonia trừ phí và hoàn phần giữ còn lại.
+            Khoản tạm giữ được hoàn lại vào ví khi lead không thành công. Khi khách mở thẻ, khoản tạm giữ được chuyển thành phí thành công.
           </div>
         )}
       </div>
@@ -135,6 +137,10 @@ export default function Account2({ me, onSignOut, showToast, refresh }) {
       {/* ── Chi nhánh & khu vực phục vụ ── */}
       <ServiceArea me={me} showToast={showToast} refresh={refresh} />
 
+      {/* ── Đóng tài khoản ── last, and quiet: a real action with a
+          7-business-day consequence should not sit next to "Nạp tiền". */}
+      <CloseAccount me={me} showToast={showToast} refresh={refresh} />
+
       {depositOpen && <DepositModal me={me} onClose={() => setDepositOpen(false)} />}
     </div>
   );
@@ -153,6 +159,10 @@ function ServiceArea({ me, showToast, refresh }) {
   const [branch, setBranch] = useState(me.profile.branchName || "");
   const [cities, setCities] = useState(me.profile.cities || []);
   const [cityList, setCityList] = useState([]);
+  // Derived, never stored — see the button below. MUST come after cityList:
+  // reading it above the declaration is a temporal dead zone ReferenceError
+  // that crashes this card at render, and the bundler does not catch it.
+  const allCities = cityList.length > 0 && cities.length === cityList.length;
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -220,6 +230,18 @@ function ServiceArea({ me, showToast, refresh }) {
           <label className="bid-label" style={{ marginTop: 14 }}>
             Bạn có thể phục vụ khách ở tỉnh/thành nào?
           </label>
+          {/* Same nationwide shortcut as the register flow — a rep who takes
+              applications online serves every province. Stores the explicit
+              list, not an "all" sentinel, so routing is unchanged. */}
+          <button
+            type="button"
+            className={`reg-city-chip ${allCities ? "on" : ""}`}
+            style={{ marginTop: 8 }}
+            onClick={() => setCities(allCities ? [] : [...cityList])}
+            disabled={!cityList.length}
+          >
+            {allCities ? "✓ Toàn quốc" : "Toàn quốc"}
+          </button>
           <div className="reg-city-grid" style={{ marginTop: 8 }}>
             {cityList.map((c) => {
               const on = cities.includes(c);
@@ -350,10 +372,12 @@ function SpendCap({ me, showToast, refresh }) {
 function DepositModal({ me, onClose }) {
   const d = me.wallet?.deposit;
   // WALLET HOLD, not the consumer reward. Collateral against the fee,
-  // fixed at 50% (server: connect-user.ts needHold) and deliberately NOT
+  // fixed at the full bid (server: connect-user.ts needHold) and deliberately NOT
   // tracking platform_settings.consumer_reward_pct — the copy below keeps
-  // saying 50% for the same reason.
-  const holdExample = (bid) => Math.floor(bid / 2);
+  // saying a percentage for the same reason.
+  // The hold is the FULL bid (server: holdRequiredVnd). Halving it here
+  // made the deposit modal suggest roughly twice the leads a top-up buys.
+  const holdExample = (bid) => bid;
   return (
     <div className="scrim" onClick={onClose}>
       <div className="modal pay bn-up" style={{ maxWidth: 490 }} onClick={(e) => e.stopPropagation()}>
@@ -387,10 +411,218 @@ function DepositModal({ me, onClose }) {
             </div>
           ))}
           <div className="bid-micro" style={{ marginTop: 6 }}>
-            Tính theo mức giữ 50% của bid hiện tại. Bạn chọn số tiền trong app ngân hàng.
+            Tính theo mức giữ bằng bid hiện tại. Bạn chọn số tiền trong app ngân hàng.
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Đóng tài khoản & hoàn số dư.
+ *
+ * Deliberately the last card on the page and visually quiet: it is a real
+ * action with a 7-business-day consequence, not something to stumble into.
+ *
+ * The checklist is rendered from the server's own blockers rather than
+ * re-derived here — a button that simply refuses, with the reason living only
+ * in an API response, is how a rep ends up messaging support to ask why.
+ */
+function CloseAccount({ me, showToast, refresh }) {
+  const [open, setOpen] = useState(false);
+  const [state, setState] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [bank, setBank] = useState("");
+  const [accName, setAccName] = useState("");
+  const [accNo, setAccNo] = useState("");
+
+  const load = () =>
+    api
+      .closure()
+      .then((r) => {
+        setState(r);
+        if (r.refund_account) {
+          setBank(r.refund_account.bank || "");
+          setAccName(r.refund_account.account_name || "");
+          setAccNo(r.refund_account.account_number || "");
+        } else if (!accName) {
+          // Prefill the holder name: it must match the verified partner, so
+          // offering anything else would only invite a rejected save.
+          setAccName(me.profile.displayName || "");
+        }
+      })
+      .catch(() => {});
+
+  useEffect(() => {
+    if (open || me?.profile?.status === "closing") load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const closing = state?.status === "closing";
+
+  const BLOCKER_TEXT = {
+    active_leads: (b) => `Còn ${b.count} lead chưa tất toán.`,
+    unsettled_claims: (b) => `Còn ${b.count} giao dịch chưa đối soát xong.`,
+    negative_balance: () => "Số dư đang âm — cần thanh toán trước khi đóng.",
+    no_refund_account: () => "Chưa có tài khoản ngân hàng nhận hoàn tiền.",
+    refund_name_mismatch: (b) => `Tên tài khoản phải trùng với ${b.expected}.`,
+    funds_held: (b) => `Còn ${vnd(b.heldVnd)} đang tạm giữ cho lead chưa tất toán.`,
+  };
+
+  const saveAccount = async () => {
+    setBusy(true);
+    try {
+      const r = await api.setRefundAccount({
+        bank: bank.trim(),
+        account_name: accName.trim(),
+        account_number: accNo.trim(),
+      });
+      showToast(
+        r.window_restarted
+          ? "Đã lưu. Thời hạn 7 ngày làm việc được tính lại từ hôm nay."
+          : "Đã lưu tài khoản nhận hoàn tiền."
+      );
+      await load();
+    } catch (ex) {
+      showToast(
+        ex.body?.error === "account_name_mismatch"
+          ? `Tên tài khoản phải trùng với ${ex.body.expected}.`
+          : ex.body?.error === "invalid_account_number"
+            ? "Số tài khoản chưa đúng."
+            : "Không lưu được, thử lại."
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doRequest = async () => {
+    if (!window.confirm(
+      "Đóng tài khoản? Tài khoản sẽ bị tạm ngưng ngay (không nhận lead mới, " +
+      "không trao đổi với khách) và Bonia hoàn số dư sau 7 ngày làm việc. " +
+      "Bạn có thể huỷ bất cứ lúc nào trước khi Bonia chuyển tiền."
+    )) return;
+    setBusy(true);
+    try {
+      await api.requestClosure();
+      showToast("Đã gửi yêu cầu đóng tài khoản.");
+      await load();
+      refresh?.();
+    } catch (ex) {
+      showToast(ex.body?.error === "not_eligible" ? "Chưa đủ điều kiện đóng." : "Không gửi được, thử lại.");
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doCancel = async () => {
+    setBusy(true);
+    try {
+      await api.cancelClosure();
+      showToast("Đã huỷ yêu cầu. Tài khoản hoạt động trở lại.");
+      await load();
+      refresh?.();
+    } catch {
+      showToast("Không huỷ được, thử lại.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!open && !closing) {
+    return (
+      <div className="card" style={{ marginTop: 14 }}>
+        <span className="bid-card-h">Đóng tài khoản</span>
+        <div className="bid-micro" style={{ marginTop: 8 }}>
+          Số dư trong ví chỉ được hoàn khi bạn đóng tài khoản — Bonia không hỗ
+          trợ rút một phần. Điều kiện: mọi lead đã tất toán và số dư không âm.
+        </div>
+        <button className="btn btn-ghost" style={{ marginTop: 12 }} onClick={() => setOpen(true)}>
+          Xem điều kiện đóng tài khoản
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card" style={{ marginTop: 14 }}>
+      <span className="bid-card-h">Đóng tài khoản & hoàn số dư</span>
+
+      {closing ? (
+        <>
+          <div className="reg-free-card" style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 13, lineHeight: 1.6 }}>
+              Tài khoản đang <b>tạm ngưng</b> theo yêu cầu đóng. Bonia hoàn{" "}
+              <b className="mono">{vnd(state?.availableVnd || 0)}</b> về tài khoản của
+              bạn sau{" "}
+              <b>
+                {state?.payout_due_at
+                  ? new Date(state.payout_due_at).toLocaleDateString("vi-VN")
+                  : "7 ngày làm việc"}
+              </b>
+              .
+            </div>
+          </div>
+          <div className="bid-micro" style={{ marginTop: 8 }}>
+            Trong thời gian này bạn không nhận lead mới và không trao đổi với khách.
+            Nếu phát sinh khiếu nại hoặc xác nhận muộn, thời hạn được tính lại.
+          </div>
+          <button className="btn btn-ghost" style={{ marginTop: 12 }} disabled={busy} onClick={doCancel}>
+            Huỷ yêu cầu đóng tài khoản
+          </button>
+        </>
+      ) : (
+        <>
+          <div className="bid-micro" style={{ marginTop: 8 }}>
+            Bonia hoàn số dư khả dụng về tài khoản ngân hàng mang tên bạn, sau
+            7 ngày làm việc kể từ khi yêu cầu. Trong thời gian đó tài khoản bị
+            tạm ngưng hoàn toàn.
+          </div>
+
+          <div className="eyebrow mono" style={{ margin: "16px 0 8px" }}>ĐIỀU KIỆN</div>
+          {state?.blockers?.length ? (
+            state.blockers.map((b, i) => (
+              <div key={i} className="acc-ledger-row" style={{ color: "#B42318", fontSize: 13 }}>
+                {(BLOCKER_TEXT[b.code] || (() => b.code))(b)}
+              </div>
+            ))
+          ) : (
+            <div className="acc-ledger-row" style={{ color: "#00734F", fontSize: 13 }}>
+              Đủ điều kiện đóng tài khoản. Số dư hoàn lại:{" "}
+              <b className="mono">{vnd(state?.availableVnd || 0)}</b>
+            </div>
+          )}
+
+          <div className="eyebrow mono" style={{ margin: "16px 0 8px" }}>TÀI KHOẢN NHẬN HOÀN TIỀN</div>
+          <div className="bid-micro" style={{ marginBottom: 8 }}>
+            Phải mang tên <b>{me.profile.displayName}</b>. Đổi tài khoản này sẽ
+            tính lại thời hạn 7 ngày làm việc.
+          </div>
+          <input className="input" style={{ height: 44 }} placeholder="Ngân hàng (VD: Vietcombank)"
+            value={bank} onChange={(e) => setBank(e.target.value)} />
+          <input className="input" style={{ height: 44, marginTop: 8 }} placeholder="Tên chủ tài khoản"
+            value={accName} onChange={(e) => setAccName(e.target.value)} />
+          <input className="input mono" style={{ height: 44, marginTop: 8 }} placeholder="Số tài khoản"
+            value={accNo} onChange={(e) => setAccNo(e.target.value)} />
+          <button className="btn btn-ghost" style={{ marginTop: 10 }} disabled={busy} onClick={saveAccount}>
+            Lưu tài khoản nhận tiền
+          </button>
+
+          <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+            <button className="btn btn-ghost" onClick={() => setOpen(false)}>Để sau</button>
+            <button
+              className="btn"
+              style={{ background: "#B42318", color: "#fff" }}
+              disabled={busy || !state?.eligible}
+              onClick={doRequest}
+            >
+              Yêu cầu đóng tài khoản
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -138,8 +138,8 @@ function ClaimDetail({ claim, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone 
       setConfirmOpen(false);
       showToast(
         outcome === "won"
-          ? "Đã xử lý THẮNG — khiếu nại chuyển sang chờ thu phí."
-          : "Đã xử lý THUA — hoàn phần giữ cho đối tác."
+          ? "Đã xử lý THẮNG — phí đã khấu trừ từ ví đối tác."
+          : "Đã xử lý THUA — hoàn khoản tạm giữ vào ví đối tác."
       );
       onDone();
     } catch (ex) {
@@ -288,7 +288,7 @@ function ClaimDetail({ claim, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone 
                 Thua — không đủ căn cứ, không thu phí
               </div>
               <div className="queue-sub">
-                Khiếu nại bị từ chối, lead chuyển Thất bại, hoàn phần giữ.
+                Khiếu nại bị từ chối, lead chuyển Thất bại, hoàn khoản tạm giữ vào ví.
               </div>
             </div>
           </label>
@@ -372,16 +372,15 @@ function ClaimDetail({ claim, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone 
             {outcome === "won" ? (
               <>
                 Thẻ chốt: <b>{wonCardName || "—"}</b> · phí chốt{" "}
-                <b className="mono">{vnd(Number(finalFee))}</b>. Khiếu nại chuyển
-                {/* HOLD, not the consumer share: collateral fixed at 50%,
-                    does not follow platform_settings.consumer_reward_pct. */}
-                sang chờ thu phí — <b>phần giữ 50% sẽ được cấn trừ vào phí</b> khi
-                thanh toán. Lead chuyển Thành công và các bên được thông báo.
+                <b className="mono">{vnd(Number(finalFee))}</b>. Phí được khấu
+                trừ từ ví ngay khi xác nhận — <b>khoản tạm giữ (toàn bộ mức
+                bid) chuyển thành phí thành công</b>. Lead chuyển Thành công và
+                các bên được thông báo.
               </>
             ) : (
               <>
                 Khiếu nại bị từ chối, lead chuyển Thất bại và{" "}
-                <b>hoàn phần giữ</b> cho đối tác. Các bên được thông báo.
+                <b>hoàn khoản tạm giữ vào ví</b> đối tác. Các bên được thông báo.
               </>
             )}
           </ConfirmModal>

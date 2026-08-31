@@ -552,3 +552,28 @@ h1.page { font-size: 25px; font-weight: 600; letter-spacing: -.02em; margin: 7px
   background: var(--navy, #191970); border-color: var(--navy, #191970);
   color: #fff; font-weight: 600;
 }
+
+/* ── Register: the partner-type choice ────────────────────────────────
+   Its own screen rather than a field on the form. It decides the email
+   rule, whether a document is required and whether a human must approve,
+   so every field that follows depends on the answer — asking it inline
+   made the first screen carry two decisions at once. */
+/* Stacked, not side by side: the register card is a fixed 404px, so two
+   columns inside it left ~190px each and wrapped every line — including the
+   card titles. Full width reads in one pass. */
+.reg-choice-grid { display: grid; gap: 10px; margin-top: 20px; }
+
+.reg-choice {
+  position: relative; text-align: left; cursor: pointer;
+  background: #fff; border: 1px solid #E4E8F0; border-radius: 14px;
+  padding: 16px 17px 14px; transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.reg-choice:hover { border-color: #C3CCDB; box-shadow: 0 6px 18px -12px rgba(25,25,112,.35); transform: translateY(-1px); }
+.reg-choice:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+.reg-choice-t { font-size: 15.5px; font-weight: 700; color: var(--ink); letter-spacing: -.01em; }
+.reg-choice-s { font-size: 12.5px; color: var(--ink-45); margin-top: 2px; }
+.reg-choice-rule { height: 1px; background: #EEF1F6; margin: 11px 0 9px; }
+.reg-choice-pt { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; line-height: 1.45; color: var(--ink-55); padding: 2px 0; }
+.reg-choice-pt i { font-style: normal; color: var(--navy); flex: none; width: 13px; }
+.reg-choice-go { margin-top: 12px; font-size: 12.5px; font-weight: 600; color: var(--navy); }

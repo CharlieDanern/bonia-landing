@@ -83,7 +83,7 @@ export const DEFAULT_REWARD_PCT = 50;
  * rather than kept as decoration.
  *
  * NOT the wallet hold. The hold is collateral against the fee and stays
- * at a fixed 50% — see statusChip() in Board.jsx.
+ * at the full bid — see statusChip() in Board.jsx.
  */
 export function rewardOf(bid, pct = DEFAULT_REWARD_PCT) {
   return Math.floor((bid * pct) / 100);

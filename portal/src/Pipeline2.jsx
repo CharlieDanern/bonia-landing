@@ -110,7 +110,7 @@ function laneOf(lead) {
  * one the CUSTOMER declared by tapping "Tôi đã nhận thẻ", which is inserted
  * in state `pending_rm` and is waiting on THIS rep. Treating that as closed
  * hid "Gọi qua Bonia" and both close controls, so the lead went permanently
- * read-only: no call, no final card, no invoice — and the 50% hold frozen
+ * read-only: no call, no final card, no invoice — and the hold frozen
  * with no in-product route to release or capture it. A pending_rm claim is
  * an OPEN lead; the rep closes it through /rm/leads/:id/outcome, which
  * already converges with the existing claim.
@@ -137,8 +137,8 @@ function outcomeOf(lead) {
 function lostHoldNote(lead) {
   const held = lead.hold_vnd || 0;
   return held > 0
-    ? `phần giữ ${vnd(held)} được hoàn sau khi khách xác nhận, chậm nhất 7 ngày`
-    : "phần giữ đã hoàn vào số dư khả dụng";
+    ? `khoản tạm giữ ${vnd(held)} được hoàn vào ví sau khi khách xác nhận, chậm nhất 7 ngày`
+    : "khoản tạm giữ đã hoàn vào số dư khả dụng";
 }
 
 function hoursLeft(iso) {
@@ -1185,7 +1185,7 @@ function LostModal({ lead, onClose, onDone, showToast }) {
       showToast(
         res?.hold_pending_user_confirm === false || !(lead.hold_vnd || 0)
           ? "Đã lưu trữ lead"
-          : "Đã lưu trữ lead · phần giữ được hoàn sau khi khách xác nhận, chậm nhất 7 ngày"
+          : "Đã lưu trữ lead · khoản tạm giữ được hoàn vào ví sau khi khách xác nhận, chậm nhất 7 ngày"
       );
       onDone();
     } catch {
@@ -1206,7 +1206,7 @@ function LostModal({ lead, onClose, onDone, showToast }) {
         {(lead.hold_vnd || 0) > 0 && (
           <div style={{ fontSize: 12.5, color: "var(--ink-55)", marginTop: 8, lineHeight: 1.5 }}>
             Phần giữ <b className="mono">{vnd(lead.hold_vnd)}</b> được hoàn sau khi khách xác nhận,
-            chậm nhất 7 ngày. Nếu khách báo đã mở thẻ, lead chuyển sang đối soát và phần giữ vẫn được giữ.
+            chậm nhất 7 ngày. Nếu khách báo đã mở thẻ, lead chuyển sang đối soát và khoản tạm giữ tiếp tục được giữ.
           </div>
         )}
         <div style={{ display: "flex", gap: 9, marginTop: 12, justifyContent: "flex-end" }}>

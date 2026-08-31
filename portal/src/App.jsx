@@ -341,7 +341,7 @@ function Portal({ onSignOut, target, onTargetApplied }) {
               </div>
               {me.wallet.freeLeadsLeft > 0 && (
                 <div className="bid-load-label" style={{ color: "var(--navy, #191970)", fontWeight: 600, marginTop: 3 }}>
-                  Còn {me.wallet.freeLeadsLeft} lead đầu miễn phí
+                  Còn {me.wallet.freeLeadsLeft} lead không cần tạm giữ
                 </div>
               )}
               {me.wallet.freeLeadsLeft === 0 && me.wallet.availableVnd < 200000 && (

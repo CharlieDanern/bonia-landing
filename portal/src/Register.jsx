@@ -10,7 +10,9 @@ const FREE_MAIL_RE = /@(gmail|yahoo|hotmail|outlook|icloud)\./i;
 const BANKS_BY_DOMAIN_HINT = "vd. ten@vpbank.com.vn";
 
 function StepHeader({ step }) {
-  const steps = ["Thông tin", "Xác minh", "Mật khẩu"];
+  // The partner-type choice is a real step, not a preamble: it changes the
+  // email rule, what else is required and who approves the account.
+  const steps = ["Hình thức", "Thông tin", "Xác minh", "Mật khẩu"];
   return (
     <div className="reg-steps">
       {steps.map((label, i) => (
@@ -31,7 +33,8 @@ function StepHeader({ step }) {
 }
 
 export default function Register({ onDone }) {
-  const [step, setStep] = useState(0); // 0 info · 1 otp · 2 password · 3 result
+  // -1 = choose partner type · 0 info · 1 otp · 2 password · 3 result
+  const [step, setStep] = useState(-1);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -41,6 +44,16 @@ export default function Register({ onDone }) {
   // canonical list by exact string match, so a local copy that drifted by
   // one accent would fail as an empty shelf rather than a visible error.
   const [cityList, setCityList] = useState([]);
+  // Which of the two ways of proving standing this signup is taking. Asked
+  // first, because it changes the email rule, what else is required, and
+  // whether the account can ever go live without a human looking at it.
+  const [partnerType, setPartnerType] = useState("employee");
+  const [declaredBank, setDeclaredBank] = useState("");
+  const [proof, setProof] = useState(null); // { base64, mime, filename, size }
+  const isFreelancer = partnerType === "freelancer";
+  // Derived, never stored: "toàn quốc" is just every province selected, so it
+  // self-corrects if the canonical list ever grows.
+  const allCities = cityList.length > 0 && cities.length === cityList.length;
   useEffect(() => {
     api
       .cities()
@@ -56,10 +69,15 @@ export default function Register({ onDone }) {
   const [resendIn, setResendIn] = useState(0);
   const otpRefs = useRef([]);
 
-  const freeMail = FREE_MAIL_RE.test(email);
-  const emailHelper = freeMail
-    ? "Cần email công việc, không dùng Gmail/Yahoo."
-    : `Dùng email ngân hàng của bạn (${BANKS_BY_DOMAIN_HINT}) — đây là cách Bonia xác minh bạn.`;
+  // The free-mail rule is the EMPLOYEE rule: a bank mailbox is their proof of
+  // standing. A freelancer has none by definition — warning them off Gmail
+  // would flag the normal case as an error.
+  const freeMail = !isFreelancer && FREE_MAIL_RE.test(email);
+  const emailHelper = isFreelancer
+    ? "Dùng email bạn kiểm tra thường xuyên — Bonia gửi mã xác minh và thông báo lead tới đây."
+    : freeMail
+      ? "Cần email công việc, không dùng Gmail/Yahoo."
+      : `Dùng email ngân hàng của bạn (${BANKS_BY_DOMAIN_HINT}) — đây là cách Bonia xác minh bạn.`;
 
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -81,6 +99,15 @@ export default function Register({ onDone }) {
         branch_name: branch.trim(),
         cities,
         resend,
+        partner_type: partnerType,
+        ...(isFreelancer
+          ? {
+              declared_bank: declaredBank.trim(),
+              proof_base64: proof?.base64,
+              proof_mime: proof?.mime,
+              proof_filename: proof?.filename,
+            }
+          : {}),
       });
       setBank(res.bank || null);
       setStep(1);
@@ -90,6 +117,14 @@ export default function Register({ onDone }) {
       setErr(
         ex.body?.error === "work_email_required"
           ? "Cần email công việc, không dùng Gmail/Yahoo."
+          : ex.body?.error === "bank_required"
+            ? "Chọn ngân hàng bạn đang hợp tác."
+            : ex.body?.error === "proof_required" || ex.body?.error === "invalid_proof"
+              ? "Cần tải lên văn bản chứng minh hợp tác với ngân hàng."
+              : ex.body?.error === "unsupported_proof_type"
+                ? "Chỉ nhận PDF, JPG, PNG hoặc WEBP."
+                : ex.body?.error === "proof_too_large"
+                  ? "File quá lớn — tối đa 5MB."
           : ex.body?.error === "email_already_registered"
             ? "Email này đã có tài khoản. Đăng nhập thay vì đăng ký."
             : ex.body?.error === "invalid_phone"
@@ -193,10 +228,60 @@ export default function Register({ onDone }) {
             Bonia <span>Business</span>
           </span>
         </div>
-        {step < 3 && <StepHeader step={step} />}
+        {step < 3 && <StepHeader step={step + 1} />}
 
         <div className="login-card" style={{ marginTop: 12 }}>
           {err && <div className="err-panel">{err}</div>}
+
+          {step === -1 && (
+            <>
+              <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>
+                Tạo tài khoản tư vấn viên
+              </h1>
+              <p style={{ fontSize: 13, color: "var(--ink-55)" }}>
+                Bạn làm việc với ngân hàng theo hình thức nào? Cách Bonia xác
+                minh và điều kiện nhận lead khác nhau ở hai hình thức.
+              </p>
+
+              <div className="reg-choice-grid">
+                <button
+                  type="button"
+                  className="reg-choice"
+                  onClick={() => { setPartnerType("employee"); setStep(0); }}
+                >
+                  <span className="reg-choice-t">Nhân viên ngân hàng</span>
+                  <span className="reg-choice-s">Có email công việc do ngân hàng cấp</span>
+                  <span className="reg-choice-rule" />
+                  <span className="reg-choice-pt"><i>✓</i> Xác minh tự động qua email công việc</span>
+                  <span className="reg-choice-pt"><i>✓</i> 3 lead đầu không cần tạm giữ tiền</span>
+                  <span className="reg-choice-pt"><i>✓</i> Dùng được ngay sau khi xác minh</span>
+                  <span className="reg-choice-go">Tiếp tục →</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="reg-choice"
+                  onClick={() => { setPartnerType("freelancer"); setStep(0); }}
+                >
+                  <span className="reg-choice-t">Cộng tác viên</span>
+                  <span className="reg-choice-s">Hợp tác với ngân hàng, không có email nội bộ</span>
+                  <span className="reg-choice-rule" />
+                  <span className="reg-choice-pt"><i>•</i> Dùng được email bất kỳ</span>
+                  <span className="reg-choice-pt"><i>•</i> Cần văn bản hợp tác do ngân hàng cấp</span>
+                  <span className="reg-choice-pt"><i>•</i> Tạm giữ toàn bộ mức bid từ lead đầu tiên</span>
+                  <span className="reg-choice-go">Tiếp tục →</span>
+                </button>
+              </div>
+
+              <p className="bid-micro" style={{ marginTop: 18 }}>
+                Chọn nhầm cũng không sao — bạn quay lại được ở bước sau.
+              </p>
+              <p className="bid-micro" style={{ marginTop: 14 }}>
+                Đã có tài khoản?{" "}
+                <button className="bid-link-btn" onClick={onDone}>Đăng nhập</button>
+              </p>
+            </>
+          )}
 
           {step === 0 && (
             <>
@@ -210,8 +295,28 @@ export default function Register({ onDone }) {
                   marginBottom: 14,
                 }}
               >
-                Bonia xác minh bạn qua email công việc. Không cần giấy tờ.
+                {isFreelancer
+                  ? "Bonia xác minh cộng tác viên qua văn bản hợp tác với ngân hàng. Hồ sơ được duyệt thủ công."
+                  : "Bonia xác minh bạn qua email công việc. Không cần giấy tờ."}
               </p>
+              <div
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  gap: 10, padding: "9px 12px", marginBottom: 14,
+                  background: "var(--paper, #F7F9FC)", border: "1px solid #E4E8F0", borderRadius: 10,
+                }}
+              >
+                <span style={{ fontSize: 12.5, color: "var(--ink-55)" }}>
+                  Đăng ký với tư cách{" "}
+                  <b style={{ color: "var(--ink)" }}>
+                    {isFreelancer ? "Cộng tác viên" : "Nhân viên ngân hàng"}
+                  </b>
+                </span>
+                <button className="bid-link-btn" type="button" onClick={() => setStep(-1)}>
+                  Đổi
+                </button>
+              </div>
+
               <label className="bid-label">Họ tên</label>
               <input
                 className="input"
@@ -220,7 +325,7 @@ export default function Register({ onDone }) {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Nguyễn Duy Anh"
               />
-              <label className="bid-label">Email công việc</label>
+              <label className="bid-label">{isFreelancer ? "Email" : "Email công việc"}</label>
               <input
                 className="input"
                 style={{
@@ -229,7 +334,7 @@ export default function Register({ onDone }) {
                 }}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="ten@vpbank.com.vn"
+                placeholder={isFreelancer ? "ten@email.com" : "ten@vpbank.com.vn"}
                 autoCapitalize="none"
               />
               <div
@@ -266,6 +371,55 @@ export default function Register({ onDone }) {
                   proxy, and a misleading one — a rep sitting in one district
                   routinely covers several provinces. Ask the question routing
                   actually needs answered. */}
+              {isFreelancer && (
+                <>
+                  <label className="bid-label" style={{ marginTop: 14 }}>
+                    Ngân hàng bạn đang hợp tác
+                  </label>
+                  <input
+                    className="input"
+                    style={{ height: 46 }}
+                    value={declaredBank}
+                    onChange={(e) => setDeclaredBank(e.target.value)}
+                    placeholder="VD: VIB"
+                  />
+                  <label className="bid-label" style={{ marginTop: 14 }}>
+                    Văn bản chứng minh hợp tác
+                  </label>
+                  <div style={{ fontSize: 12, color: "var(--ink-45)", marginBottom: 8 }}>
+                    Hợp đồng cộng tác viên, thư uỷ quyền hoặc mã đại lý do ngân hàng
+                    cấp. PDF hoặc ảnh chụp, tối đa 5MB.
+                  </div>
+                  <input
+                    type="file"
+                    accept="application/pdf,image/jpeg,image/png,image/webp"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return setProof(null);
+                      if (f.size > 5 * 1024 * 1024) {
+                        setErr("File quá lớn — tối đa 5MB.");
+                        return setProof(null);
+                      }
+                      const r = new FileReader();
+                      r.onload = () =>
+                        setProof({
+                          // strip the data: prefix — the API takes raw base64
+                          base64: String(r.result).split(",")[1] || "",
+                          mime: f.type,
+                          filename: f.name,
+                          size: f.size,
+                        });
+                      r.readAsDataURL(f);
+                    }}
+                  />
+                  {proof && (
+                    <div style={{ fontSize: 12, color: "var(--ink-45)", marginTop: 6 }}>
+                      Đã chọn: {proof.filename} ({Math.round(proof.size / 1024)}KB)
+                    </div>
+                  )}
+                </>
+              )}
+
               <label className="bid-label" style={{ marginTop: 14 }}>
                 Bạn có thể phục vụ khách ở tỉnh/thành nào?
               </label>
@@ -273,6 +427,20 @@ export default function Register({ onDone }) {
                 Chọn tất cả khu vực bạn nhận khách. Bonia chỉ hiển thị thẻ của bạn
                 cho khách ở những khu vực này.
               </div>
+              {/* Nationwide shortcut: reps who take applications through an
+                  online form genuinely serve every province, and ticking 63
+                  chips one at a time is the kind of friction that loses a
+                  signup. Stores the same explicit list the server expects —
+                  no "all" sentinel — so routing and coverage stay unchanged. */}
+              <button
+                type="button"
+                className={`reg-city-chip ${allCities ? "on" : ""}`}
+                style={{ marginBottom: 8 }}
+                onClick={() => setCities(allCities ? [] : [...cityList])}
+                disabled={!cityList.length}
+              >
+                {allCities ? "✓ Toàn quốc" : "Toàn quốc"}
+              </button>
               <div className="reg-city-grid">
                 {cityList.map((c) => {
                   const on = cities.includes(c);
@@ -294,7 +462,7 @@ export default function Register({ onDone }) {
               </div>
               {cities.length > 0 ? (
                 <div style={{ fontSize: 12, color: "var(--ink-45)", marginTop: 8 }}>
-                  Đã chọn {cities.length} khu vực.
+                  {allCities ? "Đã chọn toàn quốc." : `Đã chọn ${cities.length} khu vực.`}
                 </div>
               ) : null}
 
@@ -540,7 +708,7 @@ export default function Register({ onDone }) {
                       color: "var(--navy)",
                     }}
                   >
-                    3 lead đầu tiên miễn phí
+                    3 lead đầu tiên không cần tạm giữ tiền
                   </div>
                   <div
                     style={{
@@ -550,10 +718,10 @@ export default function Register({ onDone }) {
                       lineHeight: 1.5,
                     }}
                   >
-                    {/* HOLD copy — collateral, fixed 50%, not the
+                    {/* HOLD copy — collateral, the full bid, not the
                         consumer commission setting. Leave as a literal. */}
-                    Sau 3 lead đầu, mỗi lead nhận được sẽ giữ tạm 50% mức bid
-                    trong số dư. Không mở được thẻ thì Bonia hoàn lại phần giữ.
+                    Sau 3 lead đầu, mỗi lead nhận được sẽ giữ tạm toàn bộ mức bid
+                    trong số dư. Không mở được thẻ thì khoản tạm giữ được hoàn lại vào ví.
                   </div>
                 </div>
               ) : (

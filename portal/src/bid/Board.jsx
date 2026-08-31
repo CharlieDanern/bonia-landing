@@ -27,10 +27,10 @@ export function statusChip(card, wallet) {
   // §9: no funds for the next hold → routing skips this rep.
   //
   // floor(bid/2) here is the WALLET HOLD, not the consumer reward. It is
-  // collateral against the fee and stays at a fixed 50% no matter where
+  // collateral against the fee and stays at the full bid no matter where
   // the commission setting goes (server: connect-user.ts needHold). Do
   // NOT swap it for rewardOf() because the two look alike.
-  if (wallet && wallet.freeLeadsLeft === 0 && wallet.availableVnd < Math.floor(card.my_bid_vnd / 2))
+  if (wallet && wallet.freeLeadsLeft === 0 && wallet.availableVnd < card.my_bid_vnd)
     return { text: "Hết số dư", cls: "amber" };
   return { text: `Đang nhận lead · ${card.active_leads}/${card.max_active_leads}`, cls: "green" };
 }

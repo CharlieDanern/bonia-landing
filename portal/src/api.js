@@ -110,6 +110,11 @@ export const api = {
     request(`/rm/leads/${leadId}/outcome`, { method: "POST", body }),
   ledger: () => request("/rm/wallet/ledger"),
   updateAccount: (body) => request("/rm/account", { method: "PUT", body }),
+  // Closure — the only way wallet money leaves. See services/rm-closure.ts.
+  closure: () => request("/rm/closure"),
+  setRefundAccount: (body) => request("/rm/closure/refund-account", { method: "PUT", body }),
+  requestClosure: () => request("/rm/closure/request", { method: "POST", body: {} }),
+  cancelClosure: () => request("/rm/closure/cancel", { method: "POST", body: {} }),
 };
 
 // ── Formatting (VN conventions from the design handoff) ──────────────
