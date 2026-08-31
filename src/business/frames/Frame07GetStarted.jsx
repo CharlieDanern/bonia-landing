@@ -13,13 +13,13 @@ export default function Frame07GetStarted() {
           <div data-cta="" data-delay="60" style={{ opacity: '1', transform: 'none', transition: 'opacity .7s ease, transform .8s ease', fontFamily: '\'JetBrains Mono\', monospace', fontSize: 'clamp(10.5px, min(1.15cqw, 2vh), 13px)', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#7A6F62' }}>
             Dành cho Banker
           </div>
-          <h2 data-cta="" data-delay="200" style={{ opacity: '1', transform: 'none', transition: 'opacity .7s ease, transform .8s ease', fontFamily: '\'Source Serif 4\', Georgia, serif', fontWeight: '400', fontSize: 'clamp(19px, min(2.95cqw, 5.2vh), 44px)', lineHeight: '1.14', letterSpacing: '-0.024em', margin: 'clamp(10px, 1.8vh, 22px) 0 0' }}>
+          <h2 data-cta="" data-delay="200" style={{ opacity: '1', transform: 'none', transition: 'opacity .7s ease, transform .8s ease', fontFamily: '\'Source Serif 4\', Georgia, serif', fontWeight: '400', fontSize: 'clamp(17px, min(2.35cqw, 4.2vh), 35px)', lineHeight: '1.18', letterSpacing: '-0.02em', margin: 'clamp(10px, 1.8vh, 22px) 0 0' }}>
             <span style={{ display: 'block' }}>
               Kết nối với khách hàng đang có nhu cầu.
             </span>
-            <span style={{ display: 'block', color: '#1E7A52' }}>
+            <em style={{ display: 'block', fontStyle: 'italic', color: '#1E7A52' }}>
               Chỉ trả phí khi khách hàng mở thẻ thành công.
-            </span>
+            </em>
           </h2>
           <div data-cta="" data-delay="380" style={{ opacity: '1', transform: 'none', transition: 'opacity .7s ease, transform .8s ease', display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: 'clamp(18px, 3vh, 34px)' }}>
             <a href="/app/dang-ky" style={{ fontSize: 'clamp(13.5px, min(1.5cqw, 2.6vh), 16px)', fontWeight: '500', background: '#1F1B16', color: '#F7F4EE', padding: 'clamp(13px, 1.9vh, 17px) clamp(20px, 2.4cqw, 28px)', borderRadius: '999px', whiteSpace: 'nowrap' }}>
