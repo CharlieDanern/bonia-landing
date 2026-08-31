@@ -13,10 +13,10 @@ export default function Frame05NoFees() {
         <div style={{ flex: '1 1 330px', minWidth: '0', position: 'relative' }}>
           <div style={{ position: 'relative' }}>
             <div data-fd="" data-delay="80" style={{ opacity: '1', transform: 'none', transition: 'opacity .8s ease, transform .9s cubic-bezier(.2,.6,.2,1)', fontFamily: '\'Source Serif 4\', Georgia, serif', fontWeight: '400', fontSize: 'clamp(32px, min(6.4cqw, 11.5vh), 104px)', lineHeight: '1.08', letterSpacing: '-0.034em', paddingBottom: '0.06em', background: 'linear-gradient(180deg, #C4813C 0%, #7B4A2D 100%)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
-              Không có phí.
+              Không phí trả trước.
             </div>
             <div data-fd="" data-delay="280" style={{ opacity: '1', transform: 'none', transition: 'opacity .8s ease, transform .9s cubic-bezier(.2,.6,.2,1)', fontFamily: '\'Source Serif 4\', Georgia, serif', fontWeight: '400', fontSize: 'clamp(32px, min(6.4cqw, 11.5vh), 104px)', lineHeight: '1.08', letterSpacing: '-0.034em', paddingBottom: '0.06em', color: '#1F1B16' }}>
-              {"Kể cả các loại "}
+              {"Không "}
               <span data-blur="" style={{ display: 'inline-block', willChange: 'filter' }}>
                 phí ẩn
               </span>
@@ -26,16 +26,16 @@ export default function Frame05NoFees() {
         </div>
         <div style={{ flex: '0 1 clamp(260px, 32%, 420px)', minWidth: '0' }}>
           <div data-fl="" data-delay="520" style={{ opacity: '1', transform: 'none', transition: 'opacity .8s ease, transform .9s ease', fontFamily: '\'JetBrains Mono\', monospace', fontSize: 'clamp(10.5px, min(1.15cqw, 2vh), 13px)', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#7A6F62', marginBottom: 'clamp(8px, 1.4vh, 16px)' }}>
-            Dành cho banker
+            Dành cho Banker
           </div>
           <div data-fl="" data-delay="600" style={{ opacity: '1', transform: 'none', transition: 'opacity .8s ease, transform .9s cubic-bezier(.2,.6,.2,1)', fontSize: 'clamp(13.5px, min(1.5cqw, 2.6vh), 19px)', lineHeight: '1.5', color: '#4A4239', borderTop: '1px solid #D9D0BF', padding: 'clamp(11px, 1.7vh, 20px) 0', textWrap: 'pretty' }}>
-            Không phí đăng ký.
+            Không thu phí đăng ký.
           </div>
           <div data-fl="" data-delay="720" style={{ opacity: '1', transform: 'none', transition: 'opacity .8s ease, transform .9s cubic-bezier(.2,.6,.2,1)', fontSize: 'clamp(13.5px, min(1.5cqw, 2.6vh), 19px)', lineHeight: '1.5', color: '#4A4239', borderTop: '1px solid #D9D0BF', padding: 'clamp(11px, 1.7vh, 20px) 0', textWrap: 'pretty' }}>
-            Không phí đăng và cập nhật thẻ.
+            Không thu phí đăng hoặc cập nhật thẻ.
           </div>
           <div data-fl="" data-delay="840" style={{ opacity: '1', transform: 'none', transition: 'opacity .8s ease, transform .9s cubic-bezier(.2,.6,.2,1)', fontSize: 'clamp(13.5px, min(1.5cqw, 2.6vh), 19px)', lineHeight: '1.5', color: '#4A4239', borderTop: '1px solid #D9D0BF', padding: 'clamp(11px, 1.7vh, 20px) 0', textWrap: 'pretty' }}>
-            Không tốn phí tư vấn khách hàng nếu khách hàng không mở thẻ thành công.
+            Chỉ phát sinh phí khi khách hàng mở thẻ thành công.
           </div>
         </div>
       </div>

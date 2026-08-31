@@ -53,19 +53,19 @@
       Áp dụng cho tư vấn viên ("Đối tác") sử dụng cổng bonia.vn/app.
       Tạo tài khoản đồng nghĩa với việc đồng ý các điều khoản dưới đây.
     </p>
-    <p class="mt-3 text-[13px] ff-mono" style="color: var(--ink-mute);">Phiên bản 23/08/2026</p>
+    <p class="mt-3 text-[13px] ff-mono" style="color: var(--ink-mute);">Phiên bản 31/08/2026</p>
   </header>
 
   <article class="max-w-3xl mt-4">
 
     <h2 class="sec">1. Dịch vụ</h2>
-    <p class="clause">1.1. Bonia Business kết nối Đối tác (nhân viên tư vấn của tổ chức tín dụng) với khách hàng đã chủ động bày tỏ nhu cầu mở thẻ tín dụng trên ứng dụng Bonia. Bonia cung cấp kênh liên lạc bảo mật (cuộc gọi và tin nhắn qua hệ thống Bonia, hai bên không thấy số điện thoại của nhau) và hệ thống đối soát giao dịch.</p>
+    <p class="clause">1.1. Bonia Business kết nối Đối tác — gồm <b>nhân viên tư vấn của tổ chức tín dụng</b> và <b>cộng tác viên được tổ chức tín dụng cho phép tư vấn hoặc giới thiệu sản phẩm thẻ</b> — với khách hàng đã chủ động bày tỏ nhu cầu mở thẻ tín dụng trên ứng dụng Bonia. Bonia cung cấp kênh liên lạc bảo mật, trong đó cuộc gọi và tin nhắn được thực hiện qua hệ thống để hai bên không nhìn thấy số điện thoại của nhau, cùng công cụ ghi nhận và đối soát kết quả giao dịch.</p>
     <p class="clause">1.2. Bonia <b>không phải</b> là đại lý ngân hàng, không tiếp nhận hồ sơ, không thẩm định, không quyết định phát hành thẻ, và không thu thập giấy tờ định danh của khách hàng thay cho ngân hàng. Toàn bộ quy trình mở thẻ diễn ra trực tiếp giữa khách hàng và ngân hàng theo quy trình của ngân hàng.</p>
 
     <h2 class="sec">2. Tài khoản</h2>
-    <p class="clause">2.1. Đối tác đăng ký bằng email công việc. Email thuộc tên miền ngân hàng được xác minh tự động; các trường hợp khác do Bonia duyệt thủ công.</p>
+    <p class="clause">2.1. Có hai hình thức đăng ký, tương ứng hai cách chứng minh tư cách. <b>Nhân viên</b> đăng ký bằng email công việc do ngân hàng cấp; email thuộc tên miền ngân hàng được xác minh tự động, các tên miền khác do Bonia duyệt thủ công. <b>Cộng tác viên</b> đăng ký bằng email bất kỳ nhưng phải cung cấp văn bản chứng minh quan hệ hợp tác/uỷ quyền với ngân hàng, và <b>luôn</b> do Bonia duyệt thủ công. Bonia có quyền từ chối hoặc yêu cầu bổ sung tài liệu.</p>
     <p class="clause">2.2. Tài khoản là của cá nhân Đối tác, không chuyển nhượng. Đối tác chịu trách nhiệm về mọi hoạt động phát sinh từ tài khoản của mình.</p>
-    <p class="clause">2.3. Khi Đối tác nghỉ việc hoặc chuyển đơn vị công tác, Đối tác có trách nhiệm thông báo cho Bonia; Bonia có quyền tạm ngưng tài khoản khi email công việc không còn hiệu lực.</p>
+    <p class="clause">2.3. Đối tác có trách nhiệm thông báo cho Bonia khi tư cách làm việc hoặc hợp tác thay đổi. Bonia có quyền tạm ngưng tài khoản nếu email công việc không còn hiệu lực hoặc văn bản chứng minh hợp tác đã hết hạn. Cộng tác viên cần cung cấp văn bản còn hiệu lực để tiếp tục nhận lead và thực hiện các hoạt động tư vấn trên hệ thống.</p>
 
     <h2 class="sec">3. Phí, bid và ví</h2>
     <!-- 3.1 NO LONGER STATES A LITERAL RATE, ON PURPOSE.
@@ -82,17 +82,21 @@
          its user_share_vnd from that snapshot (services/platform-settings
          .ts → promisedShareVnd), so a later rate change cannot move a
          lead already routed. The document stays true at any rate.
-         The "50%" in 3.2 is the WALLET HOLD — collateral, fixed, and
+         The hold in 3.2 is the WALLET HOLD — collateral, the full bid, and
          deliberately does NOT follow that setting. Leave it alone. -->
     <p class="clause">3.1. <b>Bid</b> là mức phí thành công Đối tác tự cam kết trả Bonia khi một khách hàng do Bonia kết nối mở thẻ thành công. Khách hàng nhận một phần mức phí này qua Bonia theo <b>tỷ lệ thưởng được công bố trên ứng dụng Bonia tại thời điểm phát sinh lead</b>; tỷ lệ áp dụng cho từng lead được ghi nhận khi lead được chuyển cho Đối tác và không thay đổi sau đó, kể cả khi Bonia điều chỉnh tỷ lệ chung. Đối tác xem được số tiền thưởng của khách hàng trên từng lead trong cổng Đối tác. Đối tác không thanh toán trực tiếp bất kỳ khoản nào cho khách hàng.</p>
-    <p class="clause">3.2. <b>3 lead đầu tiên miễn phí.</b> Từ lead thứ 4, khi một lead được chuyển cho Đối tác, hệ thống tạm giữ 50% mức bid từ số dư ví ("phần giữ"). Giao dịch không thành công → hoàn phần giữ. Giao dịch thành công → phần giữ được cấn trừ vào phí; Đối tác thanh toán phần còn lại theo hoá đơn.</p>
-    <p class="clause">3.3. Tiền nạp vào ví dùng để nhận lead. Hoàn tiền ví về tài khoản ngân hàng chỉ thực hiện khi đóng tài khoản, sau khi cấn trừ mọi nghĩa vụ chưa tất toán, trong 30 ngày làm việc.</p>
-    <p class="clause">3.4. Phí đã cam kết theo giao dịch thành công đã xác nhận là nghĩa vụ thanh toán. Không thanh toán hoá đơn trong 14 ngày → tạm ngưng nhận lead; trong 30 ngày → chấm dứt tài khoản theo Điều 6.</p>
+    <p class="clause">3.2. <b>Ba lead đầu tiên của Đối tác đăng ký với tư cách nhân viên ngân hàng không yêu cầu tạm giữ tiền</b>; phí thành công vẫn áp dụng nếu khách hàng mở thẻ. Đối tác đăng ký với tư cách cộng tác viên cần có số dư khả dụng đủ bằng mức bid ngay từ lead đầu tiên.</p>
+    <p class="clause">Đối với các lead có tạm giữ, hệ thống tạm giữ toàn bộ mức bid khi giao lead. Nếu giao dịch không thành công, khoản tạm giữ được hoàn lại vào ví. Nếu giao dịch thành công, khoản tạm giữ được chuyển thành phí thành công. <b>Mức phí của lead được ghi nhận tại thời điểm giao lead và không thay đổi sau đó.</b></p>
+    <p class="clause">Với lead không yêu cầu tạm giữ, phí thành công được trừ trực tiếp vào số dư ví. Nếu số dư trở thành số âm, Đối tác ngừng nhận lead mới cho đến khi nạp đủ.</p>
+    <p class="clause">3.3. Tiền nạp vào ví được dùng để nhận lead và thanh toán phí thành công. <b>Bonia không hỗ trợ rút một phần số dư.</b> Số dư khả dụng chỉ được hoàn về tài khoản ngân hàng khi Đối tác đóng tài khoản, sau khi mọi lead, khoản tạm giữ và nghĩa vụ liên quan đã được tất toán.</p>
+    <p class="clause">Kể từ khi gửi yêu cầu đóng, tài khoản bị tạm ngưng và không thể nhận lead mới hoặc tiếp tục trao đổi với khách hàng. Sau <b>bảy ngày làm việc</b>, Bonia hoàn số dư còn lại về tài khoản ngân hàng mang tên Đối tác. Nếu phát sinh khiếu nại, xác nhận muộn hoặc nghĩa vụ mới, thời hạn được tính lại sau khi nghĩa vụ đó được xử lý. Đối tác có thể huỷ yêu cầu trước khi Bonia chuyển tiền.</p>
+    <p class="clause">3.4. Phí thành công được khấu trừ trực tiếp từ số dư ví khi giao dịch được cả hai bên xác nhận. Bonia không gửi yêu cầu chuyển khoản riêng cho khoản phí đã được khấu trừ. Nếu số dư ví trở thành số âm, Đối tác phải nạp đủ trước khi tiếp tục nhận lead mới. Số dư âm kéo dài quá 30 ngày có thể là căn cứ để Bonia chấm dứt tài khoản theo Điều 6.</p>
+    <p class="clause">3.5. <b>Bonia là bên trung gian, không phải bên bảo lãnh thanh toán thay cho Đối tác.</b> Bonia thu phí thành công từ ví của Đối tác và chuyển phần thưởng tương ứng cho khách hàng. Đối với lead có tạm giữ, toàn bộ mức bid được tạm giữ khi giao lead. Đối với ba lead đầu không yêu cầu tạm giữ, phí thành công được khấu trừ sau khi giao dịch thành công; nếu số dư không đủ, phần thiếu được ghi nhận vào số dư ví của Đối tác.</p>
 
     <h2 class="sec">4. Xác nhận giao dịch hai phía</h2>
     <p class="clause">4.1. Kết quả một giao dịch chỉ được chốt khi <b>cả hai phía xác nhận cùng một kết quả và cùng một sản phẩm thẻ</b>: Đối tác xác nhận trên cổng, khách hàng xác nhận trên ứng dụng.</p>
-    <p class="clause">4.2. Hai phía xác nhận khác nhau (về kết quả hoặc về thẻ đã mở) → giao dịch chuyển trạng thái <b>đối soát</b>. Trong thời gian đối soát, phần giữ tiếp tục được giữ.</p>
-    <p class="clause">4.3. Đối tác báo "không thành công" mà khách hàng không phản hồi trong 7 ngày → coi như khách hàng đồng ý, phần giữ được hoàn.</p>
+    <p class="clause">4.2. Nếu hai bên xác nhận khác nhau về kết quả hoặc sản phẩm thẻ đã mở, giao dịch chuyển sang trạng thái <b>đối soát</b>. Khoản tạm giữ tiếp tục được giữ trong thời gian Bonia xem xét.</p>
+    <p class="clause">4.3. Khi Đối tác báo giao dịch không thành công, Bonia thông báo cho khách hàng để xác nhận. Nếu khách hàng không phản hồi trong <b>bảy ngày</b> kể từ thời điểm kết quả được ghi nhận, giao dịch được xem là không thành công và khoản tạm giữ được hoàn lại vào ví của Đối tác. Nếu khách hàng cho biết đã mở thẻ, giao dịch chuyển sang đối soát.</p>
 
     <h2 class="sec">5. Hành vi bị cấm</h2>
     <p class="clause">5.1. <b>Gian lận kết quả</b>: khai "không thành công" cho giao dịch thực tế đã thành công (né phí); khai "thành công" cho giao dịch không có thật hoặc dàn xếp với khách hàng để trục lợi khoản thưởng; kê khai sai sản phẩm thẻ để hưởng mức phí thấp hơn.</p>

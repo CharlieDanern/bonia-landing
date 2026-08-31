@@ -15,10 +15,10 @@ export default function Frame07GetStarted() {
           </div>
           <h2 data-cta="" data-delay="200" style={{ opacity: '1', transform: 'none', transition: 'opacity .7s ease, transform .8s ease', fontFamily: '\'Source Serif 4\', Georgia, serif', fontWeight: '400', fontSize: 'clamp(19px, min(2.95cqw, 5.2vh), 44px)', lineHeight: '1.14', letterSpacing: '-0.024em', margin: 'clamp(10px, 1.8vh, 22px) 0 0' }}>
             <span style={{ display: 'block' }}>
-              Kết nối khách hàng tiềm năng.
+              Kết nối với khách hàng đang có nhu cầu.
             </span>
             <span style={{ display: 'block', color: '#1E7A52' }}>
-              Chỉ thanh toán khi thành công.
+              Chỉ trả phí khi khách hàng mở thẻ thành công.
             </span>
           </h2>
           <div data-cta="" data-delay="380" style={{ opacity: '1', transform: 'none', transition: 'opacity .7s ease, transform .8s ease', display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: 'clamp(18px, 3vh, 34px)' }}>
@@ -30,7 +30,7 @@ export default function Frame07GetStarted() {
             </a>
           </div>
           <div data-cta="" data-delay="520" style={{ opacity: '1', transform: 'none', transition: 'opacity .7s ease, transform .8s ease', fontFamily: '\'JetBrains Mono\', monospace', fontSize: 'clamp(10.5px, min(1.15cqw, 2vh), 13px)', letterSpacing: '0.06em', color: '#6E6255', marginTop: 'clamp(12px, 2vh, 22px)' }}>
-            3 lượt kết nối đầu không cần Deposit.
+            Nhân viên ngân hàng: 3 lead đầu không cần tạm giữ tiền.
           </div>
         </div>
         <div className="bn-rule" style={{ background: '#D9D0BF' }} />

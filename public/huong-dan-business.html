@@ -101,9 +101,10 @@
       <a href="#s7"><span>07</span>Xác nhận kết quả</a>
       <a href="#s8"><span>08</span>Số dư, khoản tạm giữ và phí</a>
       <a href="#s9"><span>09</span>Hồ sơ và khu vực phục vụ</a>
-      <a href="#s10"><span>10</span>Nguyên tắc bắt buộc</a>
-      <a href="#s11"><span>11</span>Hỗ trợ</a>
-      <a href="#s12" style="border-bottom: 1px solid var(--hair);"><span>12</span>Câu hỏi thường gặp</a>
+      <a href="#s10"><span>10</span>Đóng tài khoản và hoàn số dư</a>
+      <a href="#s11"><span>11</span>Nguyên tắc bắt buộc</a>
+      <a href="#s12"><span>12</span>Hỗ trợ</a>
+      <a href="#s13" style="border-bottom: 1px solid var(--hair);"><span>13</span>Câu hỏi thường gặp</a>
     </nav>
 
     <h2 class="sec" id="s1">1. Bonia Business hoạt động như thế nào</h2>
@@ -125,22 +126,51 @@
     </p>
 
     <h2 class="sec" id="s2">2. Tạo tài khoản</h2>
+    <p class="clause">
+      Có hai cách chứng minh bạn được phép tư vấn thẻ của một ngân hàng, và bạn
+      chọn ngay ở bước đầu tiên.
+    </p>
+    <table class="states">
+      <tr><td>Nhân viên ngân hàng</td><td>Đăng ký bằng <b>email công việc</b>. Tên miền ngân hàng được xác minh tự động. Được <b>3 lead đầu không cần tạm giữ tiền</b>, nhận lead khi số dư bằng 0 (phí thành công vẫn áp dụng).</td></tr>
+      <tr><td>Cộng tác viên</td><td>Dùng <b>email bất kỳ</b>, nhưng phải tải lên <b>văn bản hợp tác/uỷ quyền</b> do ngân hàng cấp (hợp đồng CTV, thư uỷ quyền hoặc mã đại lý). Hồ sơ <b>luôn</b> được Bonia duyệt thủ công. <b>Không có 3 lead không cần tạm giữ</b> — mỗi lead cần số dư khả dụng đủ bằng mức bid của thẻ.</td></tr>
+    </table>
+    <div class="note">
+      Vì sao khác nhau: email công việc là thứ chứng minh tư cách của nhân viên,
+      và cũng là thứ đổi lấy 3 lead dùng thử. Cộng tác viên không có email đó,
+      nên tư cách được chứng minh bằng văn bản và bằng số dư thật trong ví.
+      Văn bản hợp tác có <b>ngày hết hiệu lực</b>; khi đến hạn, tài khoản tạm
+      ngưng cho tới khi bạn cung cấp văn bản mới.
+    </div>
     <ol class="steps">
-      <li>Truy cập <span class="ui">bonia.vn/app/dang-ky</span>.</li>
-      <li>Nhập <b>email công việc</b> do ngân hàng cấp. Bonia không chấp nhận
-        Gmail, Yahoo hoặc email cá nhân; email công việc được dùng để xác minh
-        đơn vị bạn đang công tác.</li>
-      <li>Nhập <b>mã gồm 6 chữ số</b> được gửi đến email. Nếu mã hết hạn hoặc bạn
-        nhập sai nhiều lần, hãy bấm <span class="ui">Gửi lại mã</span>.</li>
-      <li>Điền <b>họ tên</b>, <b>số điện thoại</b>, <b>chi nhánh</b>
-        (ví dụ: <i>Chi nhánh Quận 7</i>) và <b>khu vực phục vụ</b>. Hãy chọn tất
-        cả tỉnh, thành phố nơi bạn có thể nhận khách; cần chọn ít nhất một khu
-        vực.</li>
-      <li>Đặt <b>mật khẩu</b> có ít nhất 8 ký tự. Từ những lần sau, bạn đăng nhập
-        bằng email công việc và mật khẩu này.</li>
-      <li>Chờ Bonia duyệt tài khoản. Nếu Bonia đã xác thực tên miền email của
-        ngân hàng, tài khoản thường được duyệt ngay. Trường hợp cần kiểm tra
-        thủ công, Bonia sẽ xử lý trong <b>một ngày làm việc</b>.</li>
+      <li><b>Bước 1 · Hình thức.</b> Truy cập <span class="ui">bonia.vn/app/dang-ky</span>
+        và chọn <span class="ui">Nhân viên ngân hàng</span> hoặc
+        <span class="ui">Cộng tác viên</span>. Lựa chọn này quyết định email nào
+        được chấp nhận, giấy tờ cần nộp và ai duyệt hồ sơ — chọn nhầm vẫn quay
+        lại được ở bước sau.</li>
+      <li><b>Bước 2 · Thông tin.</b> Điền <b>họ tên</b>, <b>email</b>,
+        <b>số điện thoại</b>, <b>chi nhánh</b> (ví dụ: Chi nhánh Quận 7) và
+        <b>khu vực phục vụ</b>. Chọn tất cả tỉnh, thành phố nơi bạn có thể nhận
+        khách — cần ít nhất một; nếu bạn nhận hồ sơ trực tuyến trên cả nước,
+        bấm <span class="ui">Toàn quốc</span>.
+        <br /><br />
+        <b>Nhân viên:</b> phải dùng <b>email công việc</b> do ngân hàng cấp —
+        Bonia không chấp nhận Gmail, Yahoo hay email cá nhân, vì đây chính là
+        cách xác minh nơi bạn công tác.
+        <br />
+        <b>Cộng tác viên:</b> dùng email bất kỳ, nhưng phải chọn <b>ngân hàng
+        đang hợp tác</b> và tải lên <b>văn bản chứng minh hợp tác</b> (hợp đồng
+        cộng tác viên, thư uỷ quyền hoặc mã đại lý). Nhận PDF hoặc ảnh chụp,
+        tối đa 5MB.</li>
+      <li><b>Bước 3 · Xác minh.</b> Nhập <b>mã gồm 6 chữ số</b> được gửi đến
+        email bạn vừa khai. Nếu mã hết hạn hoặc bạn nhập sai nhiều lần, bấm
+        <span class="ui">Gửi lại mã</span>.</li>
+      <li><b>Bước 4 · Mật khẩu.</b> Đặt mật khẩu có ít nhất 8 ký tự. Từ những
+        lần sau, bạn đăng nhập bằng chính email này và mật khẩu vừa đặt.</li>
+      <li><b>Chờ duyệt.</b> Với <b>nhân viên</b>, nếu Bonia đã xác thực tên miền
+        email của ngân hàng thì tài khoản thường được duyệt ngay; tên miền lạ
+        được kiểm tra thủ công trong một ngày làm việc. Với <b>cộng tác viên</b>,
+        hồ sơ <b>luôn</b> do Bonia duyệt thủ công — không có tên miền nào có thể
+        bảo chứng thay cho văn bản hợp tác.</li>
     </ol>
     <div class="note">
       <b>Khu vực phục vụ ảnh hưởng trực tiếp đến lead bạn nhận được.</b> Khách
@@ -275,7 +305,7 @@
       <li>Lead chuyển sang <i>Chờ khách xác nhận</i>. Khách bấm
         <span class="ui">Tôi đã nhận thẻ</span> trong app Bonia.</li>
       <li>Khi xác nhận của hai bên trùng khớp, phí thành công được trừ vào số dư
-        của bạn và Bonia chuyển tiền thưởng cho khách.</li>
+        của bạn, và Bonia dùng chính khoản vừa thu để chuyển thưởng cho khách.</li>
     </ol>
 
     <h3 class="sub">Trường hợp ngược lại — khách xác nhận trước</h3>
@@ -287,7 +317,7 @@
     </p>
     <div class="note">
       <b>Hãy xử lý sớm các lead mà khách đã xác nhận.</b> Khi bạn chưa xác nhận,
-      giao dịch chưa hoàn tất và 50% mức bid vẫn ở trạng thái tạm giữ: khoản này
+      giao dịch chưa hoàn tất và toàn bộ mức bid vẫn ở trạng thái tạm giữ: khoản này
       chưa được hoàn lại nhưng cũng chưa được ghi nhận là phí. Khoản tạm giữ chỉ
       được xử lý khi bạn xác nhận mở thẻ thành công hoặc đóng lead do thất bại.
     </div>
@@ -298,35 +328,64 @@
 
     <h2 class="sec" id="s8">8. Số dư, khoản tạm giữ và phí</h2>
     <p class="clause">
-      Bonia không thu phí đăng ký hoặc phí theo lead. Các khoản tiền được xử lý
-      như sau:
-    </p>
-    <table class="states">
-      <tr><td>3 lead đầu tiên</td><td><b>Hoàn toàn miễn phí.</b> Bonia không tạm giữ hoặc trừ tiền, kể cả khi mở thẻ thành công.</td></tr>
-      <tr><td>Từ lead thứ 4 — khi nhận lead</td><td>Hệ thống <b>tạm giữ 50% mức bid</b> của thẻ. Khoản tiền này chưa được tính là phí.</td></tr>
-      <tr><td>Khi giao dịch thất bại</td><td>Khoản tạm giữ được <b>hoàn lại toàn bộ</b> vào số dư.</td></tr>
-      <tr><td>Khi giao dịch thành công</td><td>Bonia thu <b>phí thành công bằng đúng mức bid</b>. Khoản đã tạm giữ được tính vào phí; hệ thống chỉ trừ thêm phần còn lại.</td></tr>
-    </table>
-    <p class="clause">
-      Lịch sử giao dịch trong tab <span class="ui">Tài khoản</span> ghi rõ bốn
-      loại biến động: <span class="ui">nạp</span>, <span class="ui">giữ</span>,
-      <span class="ui">hoàn giữ</span> và <span class="ui">trừ phí</span>.
-    </p>
-    <div class="note">
-      <b>Khi hết số dư, bạn sẽ tạm ngừng nhận lead mới.</b> Hệ thống hiển thị
-      <span class="ui">Hết số dư</span> trên thẻ và chuyển lead mới cho tư vấn
-      viên khác. Sản phẩm của bạn vẫn được lưu nhưng sẽ không được ghép với
-      khách cho đến khi có số dư trở lại. Các lead đang xử lý không bị ảnh hưởng.
-    </div>
-    <p class="clause">
-      Mức bid là khoản bạn trả cho Bonia khi mở thẻ thành công. Khách hàng nhận
-      một phần khoản này dưới dạng tiền thưởng do Bonia chi trả; phần còn lại là
-      phí nền tảng. Tỷ lệ thưởng áp dụng cho từng lead được <b>cố định tại thời
-      điểm lead được chuyển cho bạn</b>. Những thay đổi về tỷ lệ thưởng sau đó
-      sẽ không ảnh hưởng đến lead đã nhận.
+      Bonia không thu phí đăng ký và không thu phí theo lead. Tiền chỉ chuyển
+      động ở ba thời điểm: khi bạn nhận lead, khi giao dịch kết thúc, và khi
+      bạn nạp thêm.
     </p>
 
-    <h2 class="sec" id="s9">9. Hồ sơ và khu vực phục vụ</h2>
+    <h3 class="sub">Khoản tạm giữ khi nhận lead</h3>
+    <table class="states">
+      <tr><td>3 lead đầu tiên<br /><span style="font-weight:400;color:var(--ink-mute)">(nhân viên ngân hàng)</span></td><td><b>Không cần tạm giữ tiền.</b> Bonia chưa tạm giữ khoản nào, nên bạn nhận được lead ngay cả khi số dư bằng 0. Đây là phần dùng thử để bạn đánh giá nền tảng bằng khách thật.</td></tr>
+      <tr><td>Từ lead thứ 4</td><td>Hệ thống <b>tạm giữ toàn bộ mức bid</b> của thẻ đó. Đây là khoản giữ, chưa phải phí.</td></tr>
+      <tr><td>Cộng tác viên</td><td><b>Tạm giữ toàn bộ mức bid ngay từ lead đầu tiên</b> — không có phần dùng thử, vì phần dùng thử gắn với email công việc.</td></tr>
+    </table>
+
+    <h3 class="sub">Khi giao dịch kết thúc</h3>
+    <table class="states">
+      <tr><td>Không thành công</td><td>Khoản tạm giữ được <b>hoàn lại toàn bộ</b> vào số dư. Bạn không mất gì.</td></tr>
+      <tr><td>Thành công</td><td>Bonia thu <b>phí thành công bằng đúng mức bid</b>. Vì khoản tạm giữ cũng bằng đúng mức bid, khoản đã giữ được chuyển thẳng thành phí — <b>không trừ thêm khoản nào</b>.</td></tr>
+    </table>
+
+    <div class="note">
+      <b>Lưu ý về 3 lead đầu: không cần tạm giữ không có nghĩa là miễn phí.</b> Ba lead
+      này không yêu cầu tạm giữ tiền, nhưng nếu khách mở thẻ thành công thì phí thành
+      công vẫn được tính đầy đủ như mọi lead khác. Nếu lúc đó ví của bạn đang
+      trống, <b>số dư sẽ âm</b> — số dư âm là khoản bạn còn nợ, và bạn tạm ngừng
+      nhận lead mới cho tới khi nạp đủ.
+    </div>
+
+    <h3 class="sub">Lịch sử số dư</h3>
+    <p class="clause">
+      Tab <span class="ui">Tài khoản</span> ghi rõ từng biến động theo năm loại:
+      <span class="ui">nạp</span>, <span class="ui">giữ</span>,
+      <span class="ui">hoàn giữ</span>, <span class="ui">trừ phí</span> và
+      <span class="ui">hoàn số dư về ngân hàng</span> (khi bạn đóng tài khoản —
+      xem mục 10).
+    </p>
+
+    <div class="note">
+      <b>Hết số dư thì ngừng nhận lead mới.</b> Hệ thống hiển thị
+      <span class="ui">Hết số dư</span> trên thẻ và chuyển lead mới cho tư vấn
+      viên khác. Thẻ của bạn không bị gỡ, nhưng không được ghép khách cho tới
+      khi bạn nạp lại. Các lead đang xử lý không bị ảnh hưởng.
+    </div>
+
+    <h3 class="sub">Mức bid dùng để làm gì</h3>
+    <p class="clause">
+      Mức bid là khoản bạn trả khi khách mở thẻ thành công. Khách hàng nhận một
+      phần khoản này làm <b>thưởng tiền mặt</b>; phần còn lại là phí nền tảng.
+      Khoản thưởng đó là <b>nghĩa vụ của bạn</b> — Bonia thu từ ví của bạn rồi
+      chuyển cho khách, chứ không chi trả thay. Vì hệ thống đã giữ đủ tiền ngay
+      khi giao lead, khoản thưởng luôn được thu xong trước khi Bonia chuyển cho
+      khách hàng.
+    </p>
+    <p class="clause">
+      Tỷ lệ thưởng của một lead được <b>cố định tại thời điểm lead chuyển cho
+      bạn</b>. Bonia điều chỉnh tỷ lệ chung về sau cũng không áp lại cho lead đã
+      nhận.
+    </p>
+
+<h2 class="sec" id="s9">9. Hồ sơ và khu vực phục vụ</h2>
     <p class="clause">
       Trong tab <span class="ui">Tài khoản</span>, bạn có thể cập nhật
       <b>chi nhánh</b> và <b>khu vực phục vụ</b> bất cứ lúc nào, chẳng hạn khi
@@ -341,7 +400,41 @@
       tục nhận lead khi tài khoản còn số dư, rồi bật lại khi cần.
     </p>
 
-    <h2 class="sec" id="s10">10. Nguyên tắc bắt buộc</h2>
+    <h2 class="sec" id="s10">10. Đóng tài khoản và hoàn số dư</h2>
+    <p class="clause">
+      Tiền trong ví chỉ quay về tài khoản ngân hàng của bạn theo một đường duy
+      nhất: <b>đóng tài khoản</b>. Bonia không hỗ trợ rút một phần số dư.
+    </p>
+    <h3 class="sub">Điều kiện</h3>
+    <table class="states">
+      <tr><td>Mọi lead đã tất toán</td><td>Thẻ mở thành công đã thanh toán xong, hoặc lead không thành công và được cả hai bên xác nhận. Không còn giao dịch nào đang đối soát.</td></tr>
+      <tr><td>Số dư không âm</td><td>Số dư âm là khoản bạn còn nợ, không phải khoản được hoàn.</td></tr>
+      <tr><td>Có tài khoản nhận tiền</td><td>Tài khoản ngân hàng <b>mang đúng tên bạn</b>. Bonia không chuyển cho người thứ ba.</td></tr>
+    </table>
+    <p class="clause">
+      Tab <span class="ui">Tài khoản</span> hiển thị danh sách này theo thời
+      gian thực, kèm lý do cụ thể nếu chưa đủ điều kiện.
+    </p>
+    <h3 class="sub">Sau khi gửi yêu cầu</h3>
+    <ol class="steps">
+      <li>Tài khoản bị <b>tạm ngưng ngay</b>: không nhận lead mới, thẻ không còn
+        hiển thị với khách, không trao đổi với khách. Bạn vẫn đăng nhập được để
+        theo dõi.</li>
+      <li>Chờ <b>7 ngày làm việc</b>. Đây là khoảng đệm để xử lý khiếu nại hoặc
+        xác nhận muộn — nếu phát sinh, thời hạn được tính lại và nghĩa vụ được
+        xử lý trước.</li>
+      <li>Bonia chuyển số dư còn lại và ghi nhận mã giao dịch. Tài khoản chuyển
+        sang trạng thái đã đóng.</li>
+    </ol>
+    <div class="note">
+      <b>Đổi tài khoản nhận tiền sẽ tính lại 7 ngày làm việc.</b> Đây là chỗ
+      tiền rời khỏi hệ thống, nên việc đổi đích đến luôn khởi động lại đồng hồ —
+      kể cả khi bạn chỉ sửa một chữ số. Bạn cũng có thể <b>huỷ yêu cầu đóng</b>
+      bất cứ lúc nào trước khi Bonia chuyển tiền.
+    </div>
+
+
+<h2 class="sec" id="s11">11. Nguyên tắc bắt buộc</h2>
     <p class="clause">
       Tài khoản có thể bị khoá theo Điều khoản đối tác nếu vi phạm những nguyên
       tắc sau:
@@ -353,7 +446,7 @@
       <tr><td>Tôn trọng quyết định của khách</td><td>Nếu khách từ chối, hãy đóng lead. Không gọi lại nhiều lần ngoài lịch hai bên đã hẹn.</td></tr>
     </table>
 
-    <h2 class="sec" id="s11">11. Hỗ trợ</h2>
+    <h2 class="sec" id="s12">12. Hỗ trợ</h2>
     <p class="clause">
       Nếu gặp vướng mắc hoặc cần đối soát giao dịch, hãy liên hệ trực tiếp với
       Bonia. Đội ngũ hỗ trợ sẽ phản hồi trong giờ làm việc.
@@ -363,7 +456,7 @@
       · 0909 291 268 (gọi / Zalo)
     </p>
 
-    <h2 class="sec" id="s12">12. Câu hỏi thường gặp</h2>
+    <h2 class="sec" id="s13">13. Câu hỏi thường gặp</h2>
 
     <h3 class="sub">Tôi đã được duyệt nhưng không có lead nào?</h3>
     <p class="clause">

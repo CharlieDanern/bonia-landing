@@ -17,7 +17,7 @@ export default function Frame04Fee() {
           </span>
         </div>
         <div data-in="fade" data-delay="1600" style={{ opacity: '1', transform: 'none', transition: 'opacity .7s ease', fontFamily: '\'JetBrains Mono\', monospace', fontSize: 'clamp(10.5px, min(1.2cqw, 2.1vh), 13px)', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#8A6A3E', marginTop: 'calc(-1 * clamp(4px, min(1.5cqw, 2.6vh), 22px))' }}>
-          * Phí thành công banker tự đặt
+          * Mức phí thành công do Banker tự đặt
         </div>
         <div data-x="pts" style={{ opacity: '1', transition: 'opacity .8s ease', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 'clamp(14px, 2.2vw, 34px)', marginTop: 'clamp(20px, 3.4vh, 44px)' }}>
           <div data-pt="" data-delay="0" style={{ opacity: '1', transform: 'none', transition: 'opacity .7s ease, transform .8s ease', textAlign: 'center', borderTop: '1px solid rgba(123,74,45,0.28)', paddingTop: 'clamp(14px, 2.2vh, 26px)' }}>
@@ -25,7 +25,7 @@ export default function Frame04Fee() {
               01
             </div>
             <div style={{ fontSize: 'clamp(13px, min(1.45cqw, 2.5vh), 18px)', lineHeight: '1.45', color: '#3A2E1E', textWrap: 'pretty', marginTop: 'clamp(8px, 1.3vh, 14px)' }}>
-              Banker chỉ thanh toán phần thưởng cho khách hàng khi 2 bên xác nhận mở thẻ thành công.
+              Bạn chỉ trả phí khi hai bên xác nhận khách hàng đã mở thẻ thành công.
             </div>
           </div>
           <div data-pt="" data-delay="160" style={{ opacity: '1', transform: 'none', transition: 'opacity .7s ease, transform .8s ease', textAlign: 'center', borderTop: '1px solid rgba(123,74,45,0.28)', paddingTop: 'clamp(14px, 2.2vh, 26px)' }}>
@@ -33,7 +33,7 @@ export default function Frame04Fee() {
               02
             </div>
             <div style={{ fontSize: 'clamp(13px, min(1.45cqw, 2.5vh), 18px)', lineHeight: '1.45', color: '#3A2E1E', textWrap: 'pretty', marginTop: 'clamp(8px, 1.3vh, 14px)' }}>
-              Thẻ có mức phí cao nhất được ưu tiên hiển thị, sau đó đến thẻ có mức phí cao tiếp theo.
+              Trong cùng một sản phẩm, thẻ có mức thưởng cao hơn được ưu tiên hiển thị.
             </div>
           </div>
           <div data-pt="" data-delay="320" style={{ opacity: '1', transform: 'none', transition: 'opacity .7s ease, transform .8s ease', textAlign: 'center', borderTop: '1px solid rgba(123,74,45,0.28)', paddingTop: 'clamp(14px, 2.2vh, 26px)' }}>
@@ -41,7 +41,7 @@ export default function Frame04Fee() {
               03
             </div>
             <div style={{ fontSize: 'clamp(13px, min(1.45cqw, 2.5vh), 18px)', lineHeight: '1.45', color: '#3A2E1E', textWrap: 'pretty', marginTop: 'clamp(8px, 1.3vh, 14px)' }}>
-              Bonia đảm bảo khách hàng luôn nhận được phần thưởng cao nhất tại bất kỳ thời điểm nào.
+              Khách hàng luôn thấy rõ khoản thưởng trước khi bày tỏ sự quan tâm.
             </div>
           </div>
         </div>
