@@ -363,7 +363,7 @@ function Portal({ onSignOut, target, onTargetApplied }) {
         </aside>
 
         <main className="content">
-          {route === "offers" && <BidTab cards={cards} bank={me?.profile?.bank} wallet={me?.wallet} rewardPct={rewardPct} refresh={refresh} showToast={showToast} />}
+          {route === "offers" && <BidTab cards={cards} bank={me?.profile?.bank} wallet={me?.wallet} rewardPct={rewardPct} refresh={refresh} showToast={showToast} onDeposit={() => setRoute("account")} />}
           {route === "pipeline" && (
             <Pipeline2
               leads={leads}

@@ -17,22 +17,48 @@ export function useWindowWidth() {
   return w;
 }
 
-export function statusChip(card, wallet) {
-  if (card.status === "pending") return { text: "Chờ Bonia duyệt", cls: "amber" };
-  if (card.status === "rejected") return { text: "Cần sửa nội dung", cls: "red" };
-  if (card.status === "draft") return { text: "Bản nháp", cls: "navy" };
-  if (card.paused) return { text: "Đã tạm dừng", cls: "amber" };
-  if (card.active_leads >= card.max_active_leads)
-    return { text: `Pipeline đầy · ${card.active_leads}/${card.max_active_leads}`, cls: "amber" };
-  // §9: no funds for the next hold → routing skips this rep.
-  //
-  // floor(bid/2) here is the WALLET HOLD, not the consumer reward. It is
-  // collateral against the fee and stays at the full bid no matter where
-  // the commission setting goes (server: connect-user.ts needHold). Do
-  // NOT swap it for rewardOf() because the two look alike.
-  if (wallet && wallet.freeLeadsLeft === 0 && wallet.availableVnd < card.my_bid_vnd)
-    return { text: "Hết số dư", cls: "amber" };
-  return { text: `Đang nhận lead · ${card.active_leads}/${card.max_active_leads}`, cls: "green" };
+/**
+ * What a customer sees, said from the customer's side.
+ *
+ * The server now computes visibility with the same predicate the catalog
+ * uses (card.visibility) — the portal used to re-derive it from the wallet
+ * alone, so a card hidden by arrears, the monthly cap, or having no service
+ * area still showed a green "Đang nhận lead". The screen said the opposite
+ * of the truth in exactly the cases that cost the partner leads.
+ *
+ * Every blocked state answers three things: that customers cannot see it,
+ * why, and what fixes it. "Hết số dư" answered none of them — it described
+ * our ledger, not their loss.
+ */
+const BLOCKED = {
+  draft: { short: "Bản nháp", why: "Chưa gửi Bonia duyệt.", fix: "Hoàn tất và gửi duyệt." },
+  in_review: { short: "Chờ Bonia duyệt", why: "Bonia đang xem nội dung thẻ.", fix: "Thường trong ngày làm việc." },
+  rejected: { short: "Cần sửa nội dung", why: "Bonia đã trả lại thẻ này.", fix: "Sửa theo ghi chú rồi gửi lại." },
+  below_floor: { short: "Bid dưới mức sàn", why: "Mức bid thấp hơn sàn của loại thẻ này.", fix: "Tăng bid lên ít nhất bằng mức sàn." },
+  paused: { short: "Bạn đã tạm dừng", why: "Thẻ đang tạm dừng theo yêu cầu của bạn.", fix: "Bật lại bất cứ lúc nào — bid giữ nguyên." },
+  pipeline_full: { short: "Pipeline đầy", why: "Đã đạt số lead đang xử lý tối đa.", fix: "Tất toán bớt lead, hoặc tăng giới hạn." },
+  arrears: { short: "Số dư âm", why: "Ví đang âm nên mọi thẻ đều tạm ngưng.", fix: "Nạp đủ để số dư về 0 trở lên." },
+  no_funds: { short: "Chưa đủ số dư", why: "Không đủ tiền để tạm giữ cho lead tiếp theo.", fix: "Nạp thêm tiền vào ví." },
+  monthly_cap: { short: "Chạm giới hạn tháng", why: "Đã đạt giới hạn chi tiêu bạn tự đặt.", fix: "Tăng hoặc tắt giới hạn trong Tài khoản." },
+  no_coverage: { short: "Chưa chọn khu vực", why: "Chưa có tỉnh/thành nào nên thẻ không hiện với ai.", fix: "Chọn khu vực phục vụ trong Tài khoản." },
+  account_inactive: { short: "Tài khoản tạm ngưng", why: "Tài khoản đang không hoạt động.", fix: "Liên hệ Bonia." },
+  account_closing: { short: "Đang đóng tài khoản", why: "Tài khoản đang trong quá trình đóng.", fix: "Huỷ yêu cầu đóng nếu muốn nhận lead lại." },
+  proof_expired: { short: "Văn bản hết hiệu lực", why: "Văn bản uỷ quyền đã hết hạn.", fix: "Gửi Bonia văn bản mới." },
+};
+
+/** The blocked-state record for a card, or null when it is live. */
+export function blockOf(card) {
+  const v = card.visibility;
+  if (!v || v.live) return null;
+  return { code: v.blocked_by, ...(BLOCKED[v.blocked_by] || { short: "Chưa hiển thị", why: "", fix: "" }), v };
+}
+
+export function statusChip(card) {
+  const b = blockOf(card);
+  if (!b) return { text: `Đang nhận lead · ${card.active_leads}/${card.max_active_leads}`, cls: "green" };
+  // One visual weight for every blocked state: the difference that matters
+  // to a partner is binary — customers can see this card, or they cannot.
+  return { text: b.short, cls: b.code === "in_review" || b.code === "draft" ? "amber" : "red" };
 }
 
 export function RankChip({ card, pos }) {
@@ -145,7 +171,7 @@ function ReviewBanner({ card, onSubmitDraft }) {
   return null;
 }
 
-function BidRow({ card, wide, wallet, rewardPct, onOpen, onApplied, showToast }) {
+function BidRow({ card, wide, wallet, rewardPct, onOpen, onApplied, showToast, onDeposit }) {
   const [draft, setDraft] = useState(card.my_bid_vnd);
   const [busy, setBusy] = useState(false);
   useEffect(() => setDraft(card.my_bid_vnd), [card.my_bid_vnd]);
@@ -156,7 +182,8 @@ function BidRow({ card, wide, wallet, rewardPct, onOpen, onApplied, showToast })
   const pos = ranked
     ? computePosition(card.others_vnd, card.my_bid_vnd, card.i_hold_tiebreak, true)
     : null;
-  const chip = statusChip(card, wallet);
+  const chip = statusChip(card);
+  const block = blockOf(card);
 
   const apply = async (amount) => {
     const target = amount ?? draft;
@@ -194,12 +221,52 @@ function BidRow({ card, wide, wallet, rewardPct, onOpen, onApplied, showToast })
         rewardVnd={rewardOf(card.my_bid_vnd, rewardPct)}
         imageUrl={card.image_url}
         cta="Chi tiết"
-        dimmed={!card.listed}
+        dimmed={!!block}
         onClick={onOpen}
       />
-      {!card.listed && <div className="bid-unlisted">Chưa hiển thị với khách hàng</div>}
+      {block && <div className="bid-unlisted">Khách hàng không nhìn thấy thẻ này</div>}
     </div>
   );
+
+  // Consequence first, then why, then the fix. A partner does not care that
+  // a ledger column is below a threshold; they care that nobody can see their
+  // card and that a deposit fixes it.
+  const blockBanner = block ? (
+    <div
+      style={{
+        display: "flex", gap: 10, alignItems: "flex-start",
+        padding: "10px 12px", borderRadius: 8, marginBottom: 10,
+        background: block.code === "in_review" || block.code === "draft" ? "#FBF7EC" : "#FDF1F0",
+        border: `1px solid ${block.code === "in_review" || block.code === "draft" ? "#E8DCC2" : "#F3D3D0"}`,
+      }}
+    >
+      <span style={{ fontSize: 15, lineHeight: 1.2 }}>
+        {block.code === "in_review" || block.code === "draft" ? "⏳" : "👁"}
+      </span>
+      <div style={{ fontSize: 13, lineHeight: 1.5 }}>
+        <b>
+          {block.code === "in_review" || block.code === "draft"
+            ? "Chưa hiển thị với khách hàng"
+            : "Khách hàng KHÔNG nhìn thấy thẻ này"}
+        </b>
+        <div style={{ color: "var(--ink-55)" }}>
+          {block.why}{" "}
+          {block.code === "no_funds" && block.v.shortfall_vnd > 0
+            ? `Cần thêm ${vnd(block.v.shortfall_vnd)} (giữ ${vnd(block.v.need_hold_vnd)} cho mỗi lead).`
+            : block.fix}
+        </div>
+        {(block.code === "no_funds" || block.code === "arrears") && onDeposit && (
+          <button
+            className="btn btn-navy btn-navy-inline"
+            style={{ marginTop: 8 }}
+            onClick={onDeposit}
+          >
+            Nạp tiền
+          </button>
+        )}
+      </div>
+    </div>
+  ) : null;
 
   const info = (
     <div className="bid-info" style={wide ? { justifyContent: "space-between" } : undefined}>
@@ -235,6 +302,9 @@ function BidRow({ card, wide, wallet, rewardPct, onOpen, onApplied, showToast })
 
   return (
     <div className={`bid-row ${card.status === "rejected" ? "rejected" : ""}`}>
+      {/* Above everything: whether this card is working at all outranks any
+          detail inside it. */}
+      {blockBanner}
       {wide ? (
         <div style={{ display: "flex", gap: 18, alignItems: "stretch" }}>
           {mirror}
@@ -250,7 +320,7 @@ function BidRow({ card, wide, wallet, rewardPct, onOpen, onApplied, showToast })
   );
 }
 
-export function BidBoard({ cards, bank, wallet, rewardPct, onAdd, onOpen, refresh, showToast }) {
+export function BidBoard({ cards, bank, wallet, rewardPct, onAdd, onOpen, refresh, showToast, onDeposit }) {
   const width = useWindowWidth();
   const wide = width >= 1150;
 
@@ -268,6 +338,42 @@ export function BidBoard({ cards, bank, wallet, rewardPct, onAdd, onOpen, refres
         <button className="btn-navy" onClick={onAdd}>Thêm thẻ</button>
       </div>
 
+      {/* When NOTHING is live, that is the most important fact on the page —
+          more important than any single card's detail. Reps were losing days
+          to a small amber chip that read like a note rather than an outage. */}
+      {cards.length > 0 && cards.every((c) => blockOf(c)) && (
+        <div
+          style={{
+            display: "flex", gap: 12, alignItems: "flex-start", marginTop: 16,
+            padding: "13px 15px", borderRadius: 9,
+            background: "#FDF1F0", border: "1px solid #F3D3D0",
+          }}
+        >
+          <span style={{ fontSize: 18, lineHeight: 1.1 }}>👁</span>
+          <div style={{ fontSize: 13.5, lineHeight: 1.55 }}>
+            <b>
+              Hiện không có thẻ nào hiển thị với khách hàng
+              {cards.length > 1 ? ` (0/${cards.length})` : ""}
+            </b>
+            <div style={{ color: "var(--ink-55)" }}>
+              Bạn sẽ không nhận được lead nào cho tới khi xử lý xong lý do bên dưới.
+            </div>
+            {(() => {
+              // Money is the one cause the rep can clear in a minute, so it
+              // gets the button; everything else is explained per card.
+              const money = cards
+                .map(blockOf)
+                .find((b) => b && (b.code === "no_funds" || b.code === "arrears"));
+              return money && onDeposit ? (
+                <button className="btn btn-navy btn-navy-inline" style={{ marginTop: 9 }} onClick={onDeposit}>
+                  Nạp tiền để bật lại
+                </button>
+              ) : null;
+            })()}
+          </div>
+        </div>
+      )}
+
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 18 }}>
         {cards.map((c) => (
           <BidRow
@@ -279,6 +385,7 @@ export function BidBoard({ cards, bank, wallet, rewardPct, onAdd, onOpen, refres
             onOpen={() => onOpen(c.card_id)}
             onApplied={refresh}
             showToast={showToast}
+            onDeposit={onDeposit}
           />
         ))}
       </div>

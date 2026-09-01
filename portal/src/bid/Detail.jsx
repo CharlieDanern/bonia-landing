@@ -30,7 +30,7 @@ export function BidDetail({ card, wallet, rewardPct = DEFAULT_REWARD_PCT, onBack
   const pos = ranked
     ? computePosition(card.others_vnd, card.my_bid_vnd, card.i_hold_tiebreak, true)
     : null;
-  const chip = statusChip(card, wallet);
+  const chip = statusChip(card);
   const reward = rewardOf(card.my_bid_vnd, rewardPct);
   const dirty = draft !== card.my_bid_vnd;
   const atCap = card.active_leads >= card.max_active_leads;

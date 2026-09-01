@@ -6,7 +6,7 @@ import { BidDetail } from "./Detail.jsx";
 // The Bid tab — board / wizard / detail as a small in-tab state machine
 // (the portal has no router; Pipeline and Tài khoản work the same way).
 
-export function BidTab({ cards, bank, wallet, rewardPct, refresh, showToast }) {
+export function BidTab({ cards, bank, wallet, rewardPct, refresh, showToast, onDeposit }) {
   const [view, setView] = useState({ kind: "board" });
 
   if (view.kind === "wizard") {
@@ -56,6 +56,7 @@ export function BidTab({ cards, bank, wallet, rewardPct, refresh, showToast }) {
       onOpen={(id) => setView({ kind: "detail", id })}
       refresh={refresh}
       showToast={showToast}
+      onDeposit={onDeposit}
     />
   );
 }
