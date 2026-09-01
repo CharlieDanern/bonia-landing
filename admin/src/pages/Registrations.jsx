@@ -95,6 +95,44 @@ export default function Registrations({ showToast }) {
   );
 }
 
+/**
+ * Defined at MODULE scope on purpose. These started life inside RegRow, which
+ * meant React saw a brand-new component type on every render, unmounted the
+ * subtree and remounted it — so the review-note input lost focus after every
+ * single keystroke and looked like it only accepted one letter.
+ */
+function Section({ n, title, children }) {
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div
+        className="mono-eyebrow"
+        style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}
+      >
+        <span
+          style={{
+            display: "inline-grid", placeItems: "center", width: 17, height: 17,
+            borderRadius: "50%", background: "#EEF1F6", color: "#5A6378",
+            fontSize: 10.5, fontWeight: 700,
+          }}
+        >
+          {n}
+        </span>
+        {title}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Field({ label, children, warn }) {
+  return (
+    <div style={{ display: "flex", gap: 10, fontSize: 13, padding: "3px 0" }}>
+      <span style={{ color: "var(--ink-45, #5A6378)", minWidth: 104 }}>{label}</span>
+      <span style={{ color: warn ? "#8A5B08" : "inherit" }}>{children}</span>
+    </div>
+  );
+}
+
 function RegRow({ reg, banks = [], showToast, onDone }) {
   // While pending_review the backend's bank column holds the claimed
   // email DOMAIN placeholder — never pre-fill that as the bank, or a
@@ -194,34 +232,6 @@ function RegRow({ reg, banks = [], showToast, onDone }) {
   ];
   const blocked = checks.filter((c) => !c.ok);
 
-  const Section = ({ n, title, children }) => (
-    <div style={{ marginTop: 14 }}>
-      <div
-        className="mono-eyebrow"
-        style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}
-      >
-        <span
-          style={{
-            display: "inline-grid", placeItems: "center", width: 17, height: 17,
-            borderRadius: "50%", background: "#EEF1F6", color: "#5A6378",
-            fontSize: 10.5, fontWeight: 700,
-          }}
-        >
-          {n}
-        </span>
-        {title}
-      </div>
-      {children}
-    </div>
-  );
-
-  const Field = ({ label, children, warn }) => (
-    <div style={{ display: "flex", gap: 10, fontSize: 13, padding: "3px 0" }}>
-      <span style={{ color: "var(--ink-45, #5A6378)", minWidth: 104 }}>{label}</span>
-      <span style={{ color: warn ? "#8A5B08" : "inherit" }}>{children}</span>
-    </div>
-  );
-
   return (
     <div className="card reg-row">
       <div className="reg-info">
@@ -257,10 +267,14 @@ function RegRow({ reg, banks = [], showToast, onDone }) {
           <Field label="Điện thoại">
             <span className="mono">{reg.phone || "—"}</span>
           </Field>
-          <Field label="Tên miền">
-            <span className="mono">{reg.claimed_domain || "—"}</span>
+          {/* The API's `claimed_domain` is actually rm_users.bank — the
+              pre-approval placeholder — so the old label was wrong and it
+              duplicated the row below. The email's own domain is the useful
+              thing here: for an employee it is the evidence being weighed. */}
+          <Field label="Tên miền email">
+            <span className="mono">{(reg.email || "").split("@")[1] || "—"}</span>
           </Field>
-          <Field label="Ngân hàng">{reg.bank || "— (chưa gán)"}</Field>
+          <Field label="Ngân hàng khai">{reg.bank || "— (chưa gán)"}</Field>
           <Field label="Chi nhánh">{reg.branch_name || "—"}</Field>
           {/* You are approving someone whose entire value is "can serve
               customers in X" — no coverage means their cards reach nobody. */}
