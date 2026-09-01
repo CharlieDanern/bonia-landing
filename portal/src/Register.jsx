@@ -143,6 +143,13 @@ export default function Register({ onDone }) {
                     ? `Bạn đã gửi mã quá nhiều lần. Đợi 10 phút rồi thử lại, hoặc nhắn Zalo ${ZALO}.`
                     : ex.body?.error === "email_send_failed"
                       ? `Chưa gửi được email tới ${email.trim()}. Kiểm tra lại địa chỉ, hoặc nhắn Zalo ${ZALO} để Bonia mở tài khoản giúp bạn.`
+                      // 413 comes from the web server, not the API, so it has
+                      // no JSON body to match on — say something useful rather
+                      // than the generic fallback, which is what this looked
+                      // like when nginx's 1MB default silently ate every
+                      // proof upload (2026-09-01).
+                      : ex.status === 413
+                      ? "File quá lớn để tải lên. Thử ảnh chụp nhỏ hơn hoặc PDF dưới 5MB."
                       : `Không gửi được mã, thử lại. Nếu vẫn lỗi, nhắn Zalo ${ZALO}.`,
       );
     } finally {
