@@ -60,6 +60,19 @@ export default function Register({ onDone }) {
       .then((r) => setCityList(r.cities || []))
       .catch(() => setCityList([]));
   }, []);
+  // The canonical bank list, served by the backend so the portal, the admin
+  // and the auto-verify domain map cannot drift apart (they used to: this
+  // field was free text, which is where inconsistent bank names came from).
+  const [bankList, setBankList] = useState([]);
+  useEffect(() => {
+    api
+      .banks()
+      .then((r) => setBankList((r.banks || []).map((b) => b.brand)))
+      .catch(() => setBankList([]));
+  }, []);
+  // "Khác…" — never block a registration because a bank is missing from the
+  // list; an unknown name just means the admin sees it verbatim at review.
+  const [bankOther, setBankOther] = useState(false);
   const [bank, setBank] = useState(null);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [password, setPassword] = useState("");
@@ -383,13 +396,38 @@ export default function Register({ onDone }) {
                   <label className="bid-label" style={{ marginTop: 14 }}>
                     Ngân hàng bạn đang hợp tác
                   </label>
-                  <input
-                    className="input"
-                    style={{ height: 46 }}
-                    value={declaredBank}
-                    onChange={(e) => setDeclaredBank(e.target.value)}
-                    placeholder="VD: VIB"
-                  />
+                  {bankOther || bankList.length === 0 ? (
+                    <input
+                      className="input"
+                      style={{ height: 46 }}
+                      value={declaredBank}
+                      onChange={(e) => setDeclaredBank(e.target.value)}
+                      placeholder="Tên ngân hàng"
+                      autoFocus={bankOther}
+                    />
+                  ) : (
+                    <select
+                      className="input"
+                      style={{ height: 46 }}
+                      value={declaredBank}
+                      onChange={(e) => {
+                        if (e.target.value === "__other__") {
+                          setBankOther(true);
+                          setDeclaredBank("");
+                        } else {
+                          setDeclaredBank(e.target.value);
+                        }
+                      }}
+                    >
+                      <option value="">— Chọn ngân hàng —</option>
+                      {bankList.map((b) => (
+                        <option key={b} value={b}>
+                          {b}
+                        </option>
+                      ))}
+                      <option value="__other__">Khác…</option>
+                    </select>
+                  )}
                   <label className="bid-label" style={{ marginTop: 14 }}>
                     Văn bản chứng minh hợp tác
                   </label>

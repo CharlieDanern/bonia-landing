@@ -94,6 +94,7 @@ export const api = {
     request(`/admin-portal/rms/${id}/suspend`, { method: "POST", body: {} }),
   unsuspendRm: (id) =>
     request(`/admin-portal/rms/${id}/unsuspend`, { method: "POST", body: {} }),
+  banks: () => request("/rm/banks"),
   bankTxn: (body) => request("/admin-portal/bank-txn", { method: "POST", body }),
   transfers: (limit = 30) => request(`/admin-portal/transfers?limit=${limit}`),
   // Platform settings — currently just the consumer commission.
@@ -140,27 +141,9 @@ export const shortId = (id) => (id == null ? "—" : String(id).slice(0, 8));
 
 // ~20 VN bank names — the BANK_DOMAINS values from the backend
 // (src/routes/rm-register.ts), de-duplicated.
-export const BANKS = [
-  "VPBank",
-  "Techcombank",
-  "TPBank",
-  "VIB",
-  "MB Bank",
-  "Vietcombank",
-  "VietinBank",
-  "BIDV",
-  "ACB",
-  "Sacombank",
-  "HDBank",
-  "SHB",
-  "OCB",
-  "MSB",
-  "SeABank",
-  "VietBank",
-  "Eximbank",
-  "PVcomBank",
-  "LPBank",
-];
+// The bank list is served by the backend (GET /rm/banks) so the portal, this
+// admin and the auto-verify domain map cannot drift — there used to be three
+// copies of it. `api.banks()` below is the only source now.
 
 // Design vocabulary ↔ backend lead states (copied from the RM portal).
 export const STAGE_LABEL = {

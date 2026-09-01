@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { api, BANKS, fmtDate } from "../api.js";
+import { api, fmtDate } from "../api.js";
 import {
   ConfirmModal,
   Empty,
@@ -20,6 +20,14 @@ export default function Registrations({ showToast }) {
   };
   const rows = pending.data?.registrations || [];
   const all = history.data?.registrations || [];
+  // One canonical list from the backend, loaded once and passed down —
+  // approving must not be able to invent a new spelling of a bank that
+  // already exists (rm_cards.bank keys the intra-bank ranking pools by exact
+  // string, so "VPBank" and "VPbank" would be two separate markets).
+  const [bankList, setBankList] = useState([]);
+  useEffect(() => {
+    api.banks().then((r) => setBankList(r.banks || [])).catch(() => setBankList([]));
+  }, []);
 
   return (
     <div className="bn-up">
@@ -27,12 +35,6 @@ export default function Registrations({ showToast }) {
         title="Đăng ký đối tác"
         sub="Nhân viên ngân hàng đăng ký làm đối tác Bonia Connect — xác minh email công ty rồi gán ngân hàng."
       />
-
-      <datalist id="bank-dl">
-        {BANKS.map((b) => (
-          <option key={b} value={b} />
-        ))}
-      </datalist>
 
       <div className="mono-eyebrow">Chờ duyệt ({rows.length})</div>
       {pending.loading ? <Loading /> : null}
@@ -45,7 +47,7 @@ export default function Registrations({ showToast }) {
       ) : null}
       <div className="stack">
         {rows.map((r) => (
-          <RegRow key={r.id} reg={r} showToast={showToast} onDone={reloadAll} />
+          <RegRow key={r.id} reg={r} banks={bankList} showToast={showToast} onDone={reloadAll} />
         ))}
       </div>
 
@@ -93,11 +95,12 @@ export default function Registrations({ showToast }) {
   );
 }
 
-function RegRow({ reg, showToast, onDone }) {
+function RegRow({ reg, banks = [], showToast, onDone }) {
   // While pending_review the backend's bank column holds the claimed
   // email DOMAIN placeholder — never pre-fill that as the bank, or a
   // default one-click approve would store the domain string.
-  const [bank, setBank] = useState(BANKS.includes(reg.bank) ? reg.bank : "");
+  const [bank, setBank] = useState(reg.bank || "");
+  const [bankOther, setBankOther] = useState(false);
   const [busy, setBusy] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
 
@@ -169,103 +172,221 @@ function RegRow({ reg, showToast, onDone }) {
     }
   };
 
+  // Every condition the Duyệt button depends on, as data — so the screen can
+  // SAY why it is disabled instead of hiding the reason in a hover tooltip.
+  // Mirrors approveRegistration() on the server exactly; if that changes,
+  // change this with it.
+  const expiryDate = savedReview.expiry ? new Date(savedReview.expiry) : null;
+  const checks = [
+    { ok: !!bank.trim(), label: "Đã chọn ngân hàng" },
+    ...(isCtv
+      ? [
+          { ok: !!reg.has_proof, label: "Có văn bản uỷ quyền" },
+          { ok: !!savedReview.note.trim(), label: "Đã lưu ghi chú xét duyệt" },
+          {
+            ok: !!expiryDate && expiryDate > new Date(),
+            label: savedReview.expiry
+              ? "Ngày hết hiệu lực còn hạn"
+              : "Đã lưu ngày hết hiệu lực",
+          },
+        ]
+      : []),
+  ];
+  const blocked = checks.filter((c) => !c.ok);
+
+  const Section = ({ n, title, children }) => (
+    <div style={{ marginTop: 14 }}>
+      <div
+        className="mono-eyebrow"
+        style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}
+      >
+        <span
+          style={{
+            display: "inline-grid", placeItems: "center", width: 17, height: 17,
+            borderRadius: "50%", background: "#EEF1F6", color: "#5A6378",
+            fontSize: 10.5, fontWeight: 700,
+          }}
+        >
+          {n}
+        </span>
+        {title}
+      </div>
+      {children}
+    </div>
+  );
+
+  const Field = ({ label, children, warn }) => (
+    <div style={{ display: "flex", gap: 10, fontSize: 13, padding: "3px 0" }}>
+      <span style={{ color: "var(--ink-45, #5A6378)", minWidth: 104 }}>{label}</span>
+      <span style={{ color: warn ? "#8A5B08" : "inherit" }}>{children}</span>
+    </div>
+  );
+
   return (
     <div className="card reg-row">
       <div className="reg-info">
-        <div style={{ fontSize: 14.5, fontWeight: 600 }}>
-          {reg.display_name || "(chưa có tên)"}
-        </div>
-        <div className="queue-sub mono">{reg.email}</div>
-        <div className="queue-sub">
-          <span className="mono">{reg.phone || "—"}</span> · tên miền{" "}
-          <span className="mono">{reg.claimed_domain || "—"}</span> ·{" "}
-          {fmtDate(reg.created_at)}
-        </div>
-        {/* Branch and service area. You are approving someone whose entire
-            value is "can serve customers in X" — approving without seeing X
-            is approving blind. No coverage means their cards reach nobody,
-            so that reads as a warning rather than a blank. */}
-        <div className="queue-sub">Chi nhánh: {reg.branch_name || "—"}</div>
-        {isCtv && (
-          <div
+        {/* Which kind of partner this is decides everything below, so it is
+            the first thing on the row rather than something to infer. */}
+        <div style={{ display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap" }}>
+          <span
             style={{
-              marginTop: 8, padding: "9px 11px", borderRadius: 6,
-              background: "#FBF7EC", border: "1px solid #E8DCC2",
+              fontSize: 11, fontWeight: 700, letterSpacing: ".04em",
+              padding: "3px 8px", borderRadius: 4,
+              background: isCtv ? "#FBF7EC" : "#E9F4EE",
+              color: isCtv ? "#8A5B08" : "#00734F",
+              border: `1px solid ${isCtv ? "#E8DCC2" : "#CBE9DC"}`,
             }}
           >
-            <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 6 }}>
-              Cộng tác viên — cần kiểm tra văn bản uỷ quyền
-            </div>
-            {reg.has_proof ? (
-              <button className="btn btn-ghost" style={{ marginBottom: 8 }} onClick={openProof}>
-                Mở văn bản {reg.proof_filename ? `(${reg.proof_filename})` : ""}
-              </button>
-            ) : (
-              <div className="queue-sub" style={{ color: "#B42318", marginBottom: 8 }}>
-                Chưa có văn bản — không đủ căn cứ để duyệt.
-              </div>
-            )}
-            <input
-              className="input"
-              style={{ marginBottom: 6 }}
-              placeholder="Đã kiểm tra gì? (lưu lại để rút ra quy tắc sau)"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-            />
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {isCtv ? "CỘNG TÁC VIÊN" : "NHÂN VIÊN NGÂN HÀNG"}
+          </span>
+          <span style={{ fontSize: 15, fontWeight: 600 }}>
+            {reg.display_name || "(chưa có tên)"}
+          </span>
+          <span className="queue-sub">{fmtDate(reg.created_at)}</span>
+        </div>
+        <div className="queue-sub" style={{ marginTop: 3 }}>
+          {isCtv
+            ? "Email cá nhân — danh tính dựa hoàn toàn vào văn bản uỷ quyền bên dưới."
+            : "Tên miền email công việc chưa nằm trong danh sách tự xác minh."}
+        </div>
+
+        <Section n="1" title="Họ khai gì">
+          <Field label="Email">
+            <span className="mono">{reg.email}</span>
+          </Field>
+          <Field label="Điện thoại">
+            <span className="mono">{reg.phone || "—"}</span>
+          </Field>
+          <Field label="Tên miền">
+            <span className="mono">{reg.claimed_domain || "—"}</span>
+          </Field>
+          <Field label="Ngân hàng">{reg.bank || "— (chưa gán)"}</Field>
+          <Field label="Chi nhánh">{reg.branch_name || "—"}</Field>
+          {/* You are approving someone whose entire value is "can serve
+              customers in X" — no coverage means their cards reach nobody. */}
+          <Field
+            label="Phục vụ"
+            warn={!reg.cities || reg.cities.length === 0}
+          >
+            {reg.cities && reg.cities.length > 0
+              ? reg.cities.join(", ")
+              : "chưa chọn khu vực — thẻ sẽ không hiển thị cho ai"}
+          </Field>
+        </Section>
+
+        {isCtv && (
+          <>
+            <Section n="2" title="Văn bản uỷ quyền">
+              {reg.has_proof ? (
+                <button className="btn btn-ghost" onClick={openProof}>
+                  Mở văn bản {reg.proof_filename ? `(${reg.proof_filename})` : ""}
+                </button>
+              ) : (
+                <div className="queue-sub" style={{ color: "#B42318" }}>
+                  Chưa có văn bản — không đủ căn cứ để duyệt.
+                </div>
+              )}
+            </Section>
+
+            <Section n="3" title="Xét duyệt của bạn">
               <input
                 className="input"
-                type="date"
-                style={{ marginBottom: 0, width: 170 }}
-                value={expiry}
-                onChange={(e) => setExpiry(e.target.value)}
+                style={{ marginBottom: 6 }}
+                placeholder="Đã kiểm tra gì? (lưu lại để rút ra quy tắc sau)"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
               />
-              <button className="btn btn-ghost" onClick={saveReview}>Lưu</button>
-            </div>
-            <div className="queue-sub" style={{ marginTop: 6 }}>
-              Ngày hết hiệu lực: hết hạn thì tài khoản ngừng nhận lead cho tới khi có văn bản mới.
-            </div>
-          </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <input
+                  className="input"
+                  type="date"
+                  style={{ marginBottom: 0, width: 170 }}
+                  value={expiry}
+                  onChange={(e) => setExpiry(e.target.value)}
+                />
+                <button className="btn btn-ghost" onClick={saveReview}>
+                  Lưu xét duyệt
+                </button>
+                {savedReview.note.trim() && savedReview.expiry ? (
+                  <span className="queue-sub" style={{ color: "#00734F" }}>
+                    đã lưu
+                  </span>
+                ) : (
+                  <span className="queue-sub">chưa lưu</span>
+                )}
+              </div>
+              <div className="queue-sub" style={{ marginTop: 6 }}>
+                Ngày hết hiệu lực: hết hạn thì tài khoản ngừng nhận lead cho tới khi có
+                văn bản mới. Phải bấm <b>Lưu xét duyệt</b> thì mới duyệt được — máy chủ
+                đọc giá trị đã lưu, không đọc ô đang gõ.
+              </div>
+            </Section>
+          </>
         )}
-        <div className="queue-sub">
-          Phục vụ:{" "}
-          {reg.cities && reg.cities.length > 0 ? (
-            reg.cities.join(", ")
-          ) : (
-            <span style={{ color: "#8A5B08" }}>chưa chọn khu vực — thẻ sẽ không hiển thị cho ai</span>
-          )}
-        </div>
       </div>
       <div className="reg-actions">
-        <input
-          className="input"
-          style={{ marginBottom: 0, width: 190 }}
-          list="bank-dl"
-          placeholder="Ngân hàng…"
-          value={bank}
-          onChange={(e) => setBank(e.target.value)}
-        />
-        {/* Mirrors the server-side floor in approveRegistration(): a
-            freelancer cannot be approved without an uploaded proof, a SAVED
-            review note and a future expiry. The saved values (reg.*) are
-            what the server will see — unsaved edits in the fields above
-            don't count until "Lưu xét duyệt" persists them. */}
+        <div className="mono-eyebrow" style={{ marginBottom: 6 }}>
+          {isCtv ? "4 · Quyết định" : "2 · Quyết định"}
+        </div>
+
+        {/* A picker, not a text box: approving used to be able to invent a
+            new spelling of an existing bank. "Khác…" keeps a bank that is not
+            on the list from blocking an approval. */}
+        {bankOther || banks.length === 0 ? (
+          <input
+            className="input"
+            style={{ marginBottom: 8, width: 210 }}
+            placeholder="Tên ngân hàng"
+            value={bank}
+            onChange={(e) => setBank(e.target.value)}
+            autoFocus={bankOther}
+          />
+        ) : (
+          <select
+            className="input"
+            style={{ marginBottom: 8, width: 210 }}
+            value={bank}
+            onChange={(e) => {
+              if (e.target.value === "__other__") {
+                setBankOther(true);
+                setBank("");
+              } else {
+                setBank(e.target.value);
+              }
+            }}
+          >
+            <option value="">— Chọn ngân hàng —</option>
+            {banks.map((b) => (
+              <option key={b.brand} value={b.brand}>
+                {b.brand}
+                {b.auto_verify ? "" : " (không tự xác minh)"}
+              </option>
+            ))}
+            <option value="__other__">Khác…</option>
+          </select>
+        )}
+
+        {/* The gate, spelled out. This used to be a hover tooltip on a
+            greyed-out button, which meant the answer to "why can't I click
+            this" was invisible. */}
+        <div style={{ marginBottom: 10 }}>
+          {checks.map((c) => (
+            <div
+              key={c.label}
+              style={{
+                fontSize: 12.5, display: "flex", gap: 7, alignItems: "baseline",
+                color: c.ok ? "#00734F" : "#8A5B08", padding: "1px 0",
+              }}
+            >
+              <span style={{ fontWeight: 700 }}>{c.ok ? "✓" : "○"}</span>
+              {c.label}
+            </div>
+          ))}
+        </div>
+
         <button
           className="btn btn-navy btn-navy-inline"
-          disabled={
-            busy ||
-            !bank.trim() ||
-            (isCtv &&
-              (!reg.has_proof ||
-                !savedReview.note.trim() ||
-                !savedReview.expiry ||
-                new Date(savedReview.expiry) <= new Date()))
-          }
-          title={
-            isCtv && (!reg.has_proof || !savedReview.note.trim() || !savedReview.expiry)
-              ? "CTV: cần văn bản + lưu ghi chú xét duyệt + ngày hết hiệu lực trước khi duyệt"
-              : undefined
-          }
+          disabled={busy || blocked.length > 0}
           onClick={approve}
         >
           Duyệt

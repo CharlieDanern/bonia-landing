@@ -99,6 +99,7 @@ export const api = {
   // string equality, and a one-accent difference would fail silently as an
   // empty shelf rather than a visible error.
   cities: () => request("/rm/cities"),
+  banks: () => request("/rm/banks"),
   registerVerify: (body) => request("/rm/register/verify", { method: "POST", body }),
   messages: (leadId) => request(`/rm/leads/${leadId}/messages`),
   sendMessage: (leadId, text) =>
