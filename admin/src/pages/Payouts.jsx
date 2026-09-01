@@ -50,7 +50,12 @@ export default function Payouts({ showToast }) {
       // that never received the money.
       await api.markPayoutPaid(sel.claim_id, {
         reference: reference.trim(),
+        // All three fields exactly as rendered above. The server compares the
+        // locked row against THESE, not against its own fresh read — which
+        // would already reflect a change made after the transfer.
         account_number: sel.payout?.account_number,
+        bank: sel.payout?.bank,
+        holder: sel.payout?.holder,
       });
       showToast("Đã ghi nhận chuyển thưởng");
       setConfirming(false);
