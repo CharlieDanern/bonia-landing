@@ -267,7 +267,28 @@ function Portal({ onSignOut, target, onTargetApplied }) {
     return () => clearInterval(t);
   }, [call?.phase]);
 
+  // Ask once per session (or never again) before dropping a rep into a live
+  // customer call. `pendingCall` holds the lead while the sheet is open.
+  const [pendingCall, setPendingCall] = useState(null);
+  const readyAcked = useRef(false);
+
   const startCall = async (lead) => {
+    let acked = readyAcked.current;
+    if (!acked) {
+      try {
+        acked = localStorage.getItem("bonia.callReady.ack") === "1";
+      } catch {
+        acked = false; // private mode — show the sheet, it costs one tap
+      }
+    }
+    if (!acked) {
+      setPendingCall(lead);
+      return;
+    }
+    return dial(lead);
+  };
+
+  const dial = async (lead) => {
     failedRef.current = false;
     // Browser gate BEFORE the overlay: no WebRTC/SIP means no call is even
     // attempted, and "khách không nghe máy" would be a lie.
