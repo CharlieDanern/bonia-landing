@@ -18,6 +18,7 @@ export function BidDetail({ card, wallet, rewardPct = DEFAULT_REWARD_PCT, onBack
   const [draft, setDraft] = useState(card.my_bid_vnd);
   const [busy, setBusy] = useState(false);
   const [capBusy, setCapBusy] = useState(false);
+  const [archiveBusy, setArchiveBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [pendingImage, setPendingImage] = useState(null); // {b64, mime, fileName, dataUrl}
   const [imageBusy, setImageBusy] = useState(false);
@@ -290,6 +291,49 @@ export function BidDetail({ card, wallet, rewardPct = DEFAULT_REWARD_PCT, onBack
           </div>
           <button className={`bid-switch ${card.paused ? "on" : ""}`} onClick={togglePause} aria-label="Tạm dừng nhận lead">
             <span />
+          </button>
+        </div>
+        <div className="bid-divider" />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>
+              {card.archived ? "Khôi phục thẻ" : "Lưu trữ thẻ"}
+            </div>
+            <div className="bid-micro">
+              {card.archived
+                ? "Đưa thẻ trở lại danh sách đang dùng."
+                : "Ẩn khỏi khách hàng và khỏi bảng bid. Lead và giao dịch đã có vẫn giữ nguyên."}
+            </div>
+          </div>
+          <button
+            className="btn btn-ghost"
+            disabled={archiveBusy}
+            onClick={async () => {
+              setArchiveBusy(true);
+              try {
+                if (card.archived) {
+                  await api.restoreCard(card.card_id);
+                  showToast("Đã khôi phục thẻ");
+                } else {
+                  await api.archiveCard(card.card_id);
+                  showToast("Đã lưu trữ thẻ");
+                }
+                refresh();
+              } catch (ex) {
+                // The only refusal that matters: a card with live leads would
+                // vanish from the board while its leads stayed in the
+                // pipeline — collateral held, customer waiting.
+                showToast(
+                  ex.body?.error === "has_active_leads"
+                    ? `Còn ${ex.body.count} lead đang xử lý trên thẻ này — tất toán xong rồi lưu trữ.`
+                    : "Không thực hiện được, thử lại"
+                );
+              } finally {
+                setArchiveBusy(false);
+              }
+            }}
+          >
+            {card.archived ? "Khôi phục" : "Lưu trữ"}
           </button>
         </div>
       </div>

@@ -68,6 +68,8 @@ export const api = {
   // Bid-tab v2 — rep-owned cards
   cards: () => request("/rm/cards"),
   createCard: (body) => request("/rm/cards", { method: "POST", body }),
+  archiveCard: (id) => request(`/rm/cards/${id}`, { method: "DELETE" }),
+  restoreCard: (id) => request(`/rm/cards/${id}/restore`, { method: "POST" }),
   updateCard: (id, body) => request(`/rm/cards/${id}`, { method: "PUT", body }),
   uploadCardMedia: (id, body) =>
     request(`/rm/cards/${id}/media`, { method: "POST", body }),

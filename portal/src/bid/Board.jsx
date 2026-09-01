@@ -44,7 +44,38 @@ const BLOCKED = {
   account_inactive: { short: "Tài khoản tạm ngưng", why: "Tài khoản đang không hoạt động.", fix: "Liên hệ Bonia." },
   account_closing: { short: "Đang đóng tài khoản", why: "Tài khoản đang trong quá trình đóng.", fix: "Huỷ yêu cầu đóng nếu muốn nhận lead lại." },
   proof_expired: { short: "Văn bản hết hiệu lực", why: "Văn bản uỷ quyền đã hết hạn.", fix: "Gửi Bonia văn bản mới." },
+  archived: { short: "Đã lưu trữ", why: "Thẻ đã được bạn lưu trữ.", fix: "Khôi phục để dùng lại." },
 };
+
+/**
+ * Fourteen states, five groups — a rep only ever asks one thing of a card:
+ * is it earning, and if not, whose move is it?
+ *
+ * The split that matters is `todo` vs `paused`: both mean "not earning", but
+ * one is a problem and the other is a choice. Collapsing them is what let a
+ * funding outage read like a note. The account-level blocks (suspended,
+ * closing, expired proof) are deliberately NOT a group — they stop every
+ * card at once, so they belong in one line at the top of the page rather
+ * than filing an entire board under one alarming heading.
+ */
+export const GROUPS = [
+  { key: "live", label: "Đang nhận lead", codes: [null] },
+  {
+    key: "todo",
+    label: "Cần xử lý",
+    codes: ["no_funds", "arrears", "no_coverage", "monthly_cap", "below_floor", "rejected", "pipeline_full",
+            "account_inactive", "account_closing", "proof_expired"],
+  },
+  { key: "review", label: "Chờ duyệt", codes: ["draft", "in_review"] },
+  { key: "paused", label: "Tạm dừng", codes: ["paused"] },
+  { key: "archived", label: "Lưu trữ", codes: ["archived"] },
+];
+
+export function groupOf(card) {
+  const b = blockOf(card);
+  const code = b ? b.code : null;
+  return (GROUPS.find((g) => g.codes.includes(code)) || GROUPS[1]).key;
+}
 
 /** The blocked-state record for a card, or null when it is live. */
 export function blockOf(card) {
@@ -253,6 +284,25 @@ function BidRow({ card, wide, wallet, rewardPct, onOpen, onApplied, showToast, o
           ? `cần thêm ${vnd(block.v.shortfall_vnd)}`
           : block.short.toLowerCase()}
       </span>
+      {block.code === "archived" && (
+        <button
+          onClick={async () => {
+            try {
+              await api.restoreCard(card.card_id);
+              showToast("Đã khôi phục thẻ");
+              onApplied();
+            } catch {
+              showToast("Không khôi phục được, thử lại");
+            }
+          }}
+          style={{
+            border: 0, background: "none", padding: 0, cursor: "pointer",
+            font: "inherit", color: "var(--ink)", textDecoration: "underline",
+          }}
+        >
+          Khôi phục
+        </button>
+      )}
       {(block.code === "no_funds" || block.code === "arrears") && onDeposit && (
         <button
           onClick={onDeposit}
@@ -322,6 +372,16 @@ function BidRow({ card, wide, wallet, rewardPct, onOpen, onApplied, showToast, o
 }
 
 export function BidBoard({ cards, bank, wallet, rewardPct, onAdd, onOpen, refresh, showToast, onDeposit }) {
+  // Open on the group that needs the rep, not on the happy one — seeded
+  // rather than set in an effect so the first paint is already right.
+  const [tab, setTab] = useState(() =>
+    cards.some((c) => groupOf(c) === "todo")
+      ? "todo"
+      : cards.some((c) => groupOf(c) === "live")
+        ? "live"
+        : (GROUPS.find((g) => cards.some((c) => groupOf(c) === g.key)) || GROUPS[0]).key
+  );
+  const shown = cards.filter((c) => groupOf(c) === tab);
   const width = useWindowWidth();
   const wide = width >= 1150;
 
@@ -339,9 +399,41 @@ export function BidBoard({ cards, bank, wallet, rewardPct, onAdd, onOpen, refres
         <button className="btn-navy" onClick={onAdd}>Thêm thẻ</button>
       </div>
 
+      {/* Horizontal groups with counts. Cần xử lý is red when non-zero: it
+          is the only number costing money right now. Archived is excluded
+          from "nothing is live" below — archiving is intentional. */}
+      <div
+        style={{
+          display: "flex", gap: 6, flexWrap: "wrap", marginTop: 16,
+          borderBottom: "1px solid var(--border-faint, #EEF1F6)", paddingBottom: 10,
+        }}
+      >
+        {GROUPS.map((g) => {
+          const n = cards.filter((c) => groupOf(c) === g.key).length;
+          if (n === 0 && g.key !== tab) return null;
+          const on = tab === g.key;
+          const urgent = g.key === "todo" && n > 0;
+          return (
+            <button
+              key={g.key}
+              onClick={() => setTab(g.key)}
+              style={{
+                border: "1px solid", borderRadius: 999, padding: "5px 12px",
+                cursor: "pointer", fontSize: 12.5, fontWeight: 600,
+                borderColor: on ? "var(--navy)" : "var(--border, #E4E8F0)",
+                background: on ? "var(--navy)" : "transparent",
+                color: on ? "#fff" : urgent ? "#B42318" : "var(--ink-55)",
+              }}
+            >
+              {g.label} {n}
+            </button>
+          );
+        })}
+      </div>
+
       {/* When NOTHING is live that outranks any per-card detail — but it is
           still one line. */}
-      {cards.length > 0 && cards.every((c) => blockOf(c)) && (
+      {shown.length > 0 && cards.some((c) => !blockOf(c)) === false && tab !== "archived" && (
         <div
           style={{
             display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
@@ -374,7 +466,12 @@ export function BidBoard({ cards, bank, wallet, rewardPct, onAdd, onOpen, refres
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 18 }}>
-        {cards.map((c) => (
+        {shown.length === 0 && (
+          <div className="bid-footnote" style={{ padding: "18px 0" }}>
+            Không có thẻ nào trong nhóm này.
+          </div>
+        )}
+        {shown.map((c) => (
           <BidRow
             key={c.card_id}
             card={c}
