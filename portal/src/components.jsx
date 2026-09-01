@@ -225,61 +225,68 @@ export function CallReadyModal({ name, softphoneReady, onStart, onClose }) {
       try {
         localStorage.setItem("bonia.callReady.ack", "1");
       } catch {
-        /* private mode — just proceed */
+        /* private mode — proceed, the sheet just shows again next time */
       }
     }
     onStart();
   };
-  const Item = ({ children }) => (
-    <li style={{ display: "flex", gap: 9, alignItems: "flex-start", padding: "5px 0" }}>
-      <span style={{ color: "var(--ink-45)" }}>•</span>
-      <span>{children}</span>
-    </li>
-  );
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="modal bn-up" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>
-          Chuẩn bị gọi {name ? `cho ${name}` : ""}
-        </h2>
-        <p style={{ fontSize: 13, color: "var(--ink-55)", lineHeight: 1.55, marginBottom: 12 }}>
-          Cuộc gọi bắt đầu ngay khi bạn bấm — khách sẽ nghe máy trong vài giây.
-        </p>
-        <ul style={{ listStyle: "none", padding: 0, margin: "0 0 14px", fontSize: 13.5, lineHeight: 1.5 }}>
-          <Item>Dùng <b>tai nghe có micro</b> — loa ngoài dễ vọng âm và khách nghe không rõ.</Item>
-          <Item>Kết nối <b>internet ổn định</b>; wifi tốt hơn 4G cho cuộc gọi.</Item>
-          <Item>Ở nơi <b>yên tĩnh</b>, tránh tiếng ồn nền.</Item>
-          <Item>Trình duyệt sẽ hỏi quyền dùng micro — chọn <b>Cho phép</b>.</Item>
+      <div className="modal ready bn-up" onClick={(e) => e.stopPropagation()}>
+        <h2 className="ready-title">Chuẩn bị gọi{name ? ` cho ${name}` : ""}</h2>
+        <p className="ready-sub">Khách nghe máy ngay sau khi bạn bấm gọi.</p>
+
+        <ul className="ready-list">
+          <li>
+            <span className="tick">✓</span>
+            <span>
+              Dùng <b>tai nghe có micro</b> — loa ngoài dễ vọng âm.
+            </span>
+          </li>
+          <li>
+            <span className="tick">✓</span>
+            <span>
+              <b>Internet ổn định</b> — wifi tốt hơn 4G.
+            </span>
+          </li>
+          <li>
+            <span className="tick">✓</span>
+            <span>
+              Ngồi ở nơi <b>yên tĩnh</b>.
+            </span>
+          </li>
+          <li>
+            <span className="tick">✓</span>
+            <span>
+              Trình duyệt hỏi quyền micro — chọn <b>Cho phép</b>.
+            </span>
+          </li>
         </ul>
-        <div
-          style={{
-            fontSize: 12.5, lineHeight: 1.55, padding: "9px 11px", borderRadius: 6,
-            background: "var(--paper-2, #F7F9FC)", border: "1px solid var(--border-faint, #EEF1F6)",
-            marginBottom: 12,
-          }}
-        >
+
+        <div className="ready-note">
           Khách chỉ thấy <b>số Bonia</b>, không thấy số của bạn. Cuộc gọi được ghi âm và
           bản ghi nội dung hiển thị cho cả hai bên.
         </div>
+
         {!softphoneReady && (
-          <div
-            style={{
-              fontSize: 12.5, fontWeight: 600, color: "#B42318", padding: "7px 10px",
-              borderRadius: 5, background: "#FDF1F0", border: "1px solid #F3D3D0", marginBottom: 12,
-            }}
-          >
-            Tổng đài chưa kết nối — tải lại trang trước khi gọi.
-          </div>
+          <div className="ready-warn">Tổng đài chưa kết nối — tải lại trang trước khi gọi.</div>
         )}
-        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+
+        <div className="ready-foot">
           <button className="btn-navy" onClick={start} disabled={!softphoneReady}>
             Gọi ngay
           </button>
           <button className="btn btn-ghost" onClick={onClose}>
             Để sau
           </button>
-          <label style={{ marginLeft: "auto", fontSize: 12.5, display: "flex", gap: 6, alignItems: "center" }}>
-            <input type="checkbox" checked={dontShow} onChange={(e) => setDontShow(e.target.checked)} />
+          {/* In the footer, not on its own row: it is a preference about the
+              sheet, not a third step in the checklist. */}
+          <label className="ready-again">
+            <input
+              type="checkbox"
+              checked={dontShow}
+              onChange={(e) => setDontShow(e.target.checked)}
+            />
             Không hiện lại
           </label>
         </div>

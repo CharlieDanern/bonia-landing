@@ -263,6 +263,46 @@ h1.page { font-size: 25px; font-weight: 600; letter-spacing: -.02em; margin: 7px
 }
 .modal.call { max-width: 392px; padding: 28px 24px 22px; text-align: center; }
 .modal.pay { max-width: 480px; padding: 24px; }
+/* .modal itself carries NO padding — each variant sets its own. A modal
+   without a variant class renders flush to the card edge, which is what the
+   readiness sheet did before this existed. */
+.modal.ready { max-width: 452px; padding: 26px 26px 20px; }
+.ready-title { font-size: 19px; font-weight: 700; line-height: 1.3; letter-spacing: -.01em; }
+.ready-sub { font-size: 13.5px; line-height: 1.55; color: var(--ink-55); margin-top: 5px; }
+.ready-list { list-style: none; padding: 0; margin: 18px 0 0; }
+.ready-list li {
+  display: grid; grid-template-columns: 18px 1fr; gap: 10px; align-items: start;
+  font-size: 13.5px; line-height: 1.55; padding: 6px 0;
+}
+.ready-list .tick {
+  width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--border-faint); color: var(--ink-45); font-size: 10.5px; margin-top: 1px;
+}
+.ready-note {
+  margin-top: 18px; padding: 12px 14px; border-radius: 12px;
+  background: var(--paper-2, #f7f9fc); border: 1px solid var(--border-faint);
+  font-size: 12.5px; line-height: 1.6; color: var(--ink-55);
+}
+.ready-warn {
+  margin-top: 14px; padding: 10px 13px; border-radius: 10px;
+  background: #fdf1f0; border: 1px solid #f3d3d0;
+  font-size: 12.5px; font-weight: 600; line-height: 1.5; color: #b42318;
+}
+.ready-foot { margin-top: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ready-foot .btn-navy, .ready-foot .btn { min-width: 116px; justify-content: center; }
+.ready-again {
+  display: flex; gap: 7px; align-items: center; margin-left: auto;
+  font-size: 12.5px; color: var(--ink-45); cursor: pointer; white-space: nowrap;
+}
+.ready-again input { margin: 0; }
+@media (max-width: 420px) {
+  .modal.ready { padding: 22px 18px 18px; }
+  .ready-foot { gap: 8px; }
+  .ready-foot .btn-navy, .ready-foot .btn { flex: 1 1 auto; }
+  /* On a phone the preference wraps to its own full-width line rather than
+     squeezing the two buttons. */
+  .ready-again { margin-left: 0; flex-basis: 100%; margin-top: 4px; }
+}
 .phase {
   font-family: var(--mono); font-size: 10.5px; letter-spacing: .2em;
   text-transform: uppercase; color: var(--ink-45);
