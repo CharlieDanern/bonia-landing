@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   api,
-  consumerRewardVnd,
   DEFAULT_REWARD_PCT,
   fmtDate,
   shortId,
@@ -114,9 +113,10 @@ function ClaimDetail({ claim, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone 
   const [finalCard, setFinalCard] = useState(
     claim.proposed_card_id ? "proposed" : "customer"
   );
-  const [finalFee, setFinalFee] = useState(
-    String(claim.final_fee_vnd ?? claim.fee_vnd ?? "")
-  );
+  // Read-only since audit round 3: the fee is the routing-time bid and the
+  // server no longer accepts an override — arbitration picks the outcome
+  // and the card, never the price.
+  const finalFee = claim.fee_vnd;
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -131,9 +131,6 @@ function ClaimDetail({ claim, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone 
       await api.resolveClaim(claim.id, {
         outcome,
         ...(outcome === "won" && finalCardId ? { final_card_id: finalCardId } : {}),
-        ...(outcome === "won" && finalFee !== "" && !Number.isNaN(Number(finalFee))
-          ? { final_fee_vnd: Number(finalFee) }
-          : {}),
       });
       setConfirmOpen(false);
       showToast(
@@ -324,23 +321,14 @@ function ClaimDetail({ claim, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone 
                   </div>
                 </label>
               ) : null}
-              <label className="lbl" htmlFor="final-fee">
-                Phí chốt (VND)
-              </label>
-              <input
-                id="final-fee"
-                className="input mono"
-                type="number"
-                min="0"
-                step="10000"
-                value={finalFee}
-                onChange={(e) => setFinalFee(e.target.value)}
-              />
-              <div className="bid-helper">
-                Phần người dùng = {rewardPct}% phí chốt ={" "}
-                {finalFee !== "" && !Number.isNaN(Number(finalFee))
-                  ? vnd(consumerRewardVnd(Number(finalFee), rewardPct))
-                  : "—"}
+              {/* The price is not arbitrable. Both figures are the lead's own
+                  snapshots, straight from the server — never recomputed from
+                  the live reward rate, which may have moved since. */}
+              <div className="bid-helper" style={{ marginTop: 10 }}>
+                Phí thành công (theo bid đã chốt khi giao lead):{" "}
+                <b className="mono">{vnd(finalFee)}</b>
+                <br />
+                Khách hàng nhận: <b className="mono">{vnd(claim.user_share_vnd)}</b>
               </div>
             </div>
           ) : null}
@@ -348,12 +336,7 @@ function ClaimDetail({ claim, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone 
           <div className="action-row">
             <button
               className="btn btn-navy btn-navy-inline"
-              disabled={
-                busy ||
-                !outcome ||
-                (outcome === "won" &&
-                  (finalFee === "" || Number.isNaN(Number(finalFee))))
-              }
+              disabled={busy || !outcome}
               onClick={() => setConfirmOpen(true)}
             >
               Phân xử
@@ -372,7 +355,7 @@ function ClaimDetail({ claim, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone 
             {outcome === "won" ? (
               <>
                 Thẻ chốt: <b>{wonCardName || "—"}</b> · phí chốt{" "}
-                <b className="mono">{vnd(Number(finalFee))}</b>. Phí được khấu
+                <b className="mono">{vnd(finalFee)}</b>. Phí được khấu
                 trừ từ ví ngay khi xác nhận — <b>khoản tạm giữ (toàn bộ mức
                 bid) chuyển thành phí thành công</b>. Lead chuyển Thành công và
                 các bên được thông báo.

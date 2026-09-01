@@ -44,7 +44,7 @@ export default function Payouts({ showToast }) {
 
   const markPaid = async () => {
     try {
-      await api.markPayoutPaid(sel.claim_id, { reference: reference.trim() || undefined });
+      await api.markPayoutPaid(sel.claim_id, { reference: reference.trim() });
       showToast("Đã ghi nhận chuyển thưởng");
       setConfirming(false);
       setReference("");
@@ -175,13 +175,13 @@ export default function Payouts({ showToast }) {
                 <div className="po-actions">
                   <input
                     className="input"
-                    placeholder="Mã giao dịch ngân hàng (không bắt buộc)"
+                    placeholder="Mã giao dịch ngân hàng (bắt buộc)"
                     value={reference}
                     onChange={(e) => setReference(e.target.value)}
                   />
                   <button
                     className="btn btn-navy btn-navy-inline"
-                    disabled={!sel.payout}
+                    disabled={!sel.payout || !reference.trim()}
                     onClick={() => setConfirming(true)}
                   >
                     Đã chuyển tiền

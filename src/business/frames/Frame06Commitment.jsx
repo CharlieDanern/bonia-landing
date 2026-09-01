@@ -23,7 +23,7 @@ export default function Frame06Commitment() {
               </div>
             </div>
             <a href="/privacy-business.html" style={{ fontFamily: '\'JetBrains Mono\', monospace', fontSize: 'clamp(10.5px, min(1.05cqw, 1.8vh), 12px)', letterSpacing: '0.08em', color: '#8A6A3E', whiteSpace: 'nowrap' }}>
-              Bảo mật § 03
+              Bảo mật § 04
             </a>
           </div>
           <div data-in="up" data-delay="280" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: '3px clamp(14px, 2vw, 32px)', alignItems: 'baseline', padding: 'clamp(7px, 1.2vh, 14px) 0', borderBottom: '1px solid #D9D0BF' }}>
@@ -36,7 +36,7 @@ export default function Frame06Commitment() {
               </div>
             </div>
             <a href="/privacy-business.html" style={{ fontFamily: '\'JetBrains Mono\', monospace', fontSize: 'clamp(10.5px, min(1.05cqw, 1.8vh), 12px)', letterSpacing: '0.08em', color: '#8A6A3E', whiteSpace: 'nowrap' }}>
-              Bảo mật § 05
+              Bảo mật § 06
             </a>
           </div>
           <div data-in="up" data-delay="390" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: '3px clamp(14px, 2vw, 32px)', alignItems: 'baseline', padding: 'clamp(7px, 1.2vh, 14px) 0', borderBottom: '1px solid #D9D0BF' }}>
@@ -49,7 +49,7 @@ export default function Frame06Commitment() {
               </div>
             </div>
             <a href="/privacy-business.html" style={{ fontFamily: '\'JetBrains Mono\', monospace', fontSize: 'clamp(10.5px, min(1.05cqw, 1.8vh), 12px)', letterSpacing: '0.08em', color: '#8A6A3E', whiteSpace: 'nowrap' }}>
-              Bảo mật § 06
+              Bảo mật § 07
             </a>
           </div>
           <div data-in="up" data-delay="500" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: '3px clamp(14px, 2vw, 32px)', alignItems: 'baseline', padding: 'clamp(7px, 1.2vh, 14px) 0', borderBottom: '1px solid #D9D0BF' }}>

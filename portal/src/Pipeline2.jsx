@@ -802,7 +802,7 @@ function DetailPane({
             </span>
           )}
           {o.kind === "reconciling" && (
-            <>Hai bên chọn thẻ khác nhau — Bonia liên hệ cả hai để đối soát. Phần giữ vẫn được giữ trong lúc đối soát.</>
+            <>Hai bên chọn thẻ khác nhau — Bonia sẽ liên hệ để đối soát. Khoản tạm giữ tiếp tục được giữ trong thời gian này.</>
           )}
           {o.kind === "lost" && (
             <>{LOST_REASONS.find((r) => r.key === o.reason)?.label || "Đã đóng"} · {lostHoldNote(lead)}.</>
@@ -1077,6 +1077,14 @@ function WonModal({ lead, myCards, onClose, onDone, showToast }) {
         : "Đã ghi nhận — chờ khách xác nhận trong app");
       onDone();
     } catch (ex) {
+      // claim_conflict = the customer's declaration landed first — their
+      // claim is the one on file now, so a retry would 409 forever. Reload
+      // the pipeline instead of telling the rep to hammer the button.
+      if (ex.body?.error === "claim_conflict" || ex.body?.error === "claim_not_pending") {
+        showToast("Khách đã xác nhận trước — đang tải lại");
+        onDone();
+        return;
+      }
       showToast(ex.body?.error === "final_card_required" ? "Chọn thẻ đã mở" : "Không lưu được, thử lại");
       setBusy(false);
     }
@@ -1154,7 +1162,7 @@ function WonModal({ lead, myCards, onClose, onDone, showToast }) {
         <div style={{ fontSize: 12.5, marginTop: 6 }}>
           Khách nhận <b className="mono">{vnd(promisedRewardOf(lead.reward_vnd, lead.fee_vnd, fee))}</b>.{" "}
           <span style={{ color: "var(--ink-55)" }}>
-            {excess > 0 ? `Phần giữ dư ${vnd(excess)} được hoàn lại vào số dư.` : "Phần giữ được tính hết vào phí này."}
+            {excess > 0 ? `Khoản tạm giữ dư ${vnd(excess)} được hoàn lại vào ví.` : "Toàn bộ khoản tạm giữ được chuyển thành phí thành công."}
           </span>
         </div>
         <div className="bid-banner amber" style={{ marginTop: 10 }}>
@@ -1205,7 +1213,7 @@ function LostModal({ lead, onClose, onDone, showToast }) {
         ))}
         {(lead.hold_vnd || 0) > 0 && (
           <div style={{ fontSize: 12.5, color: "var(--ink-55)", marginTop: 8, lineHeight: 1.5 }}>
-            Phần giữ <b className="mono">{vnd(lead.hold_vnd)}</b> được hoàn sau khi khách xác nhận,
+            Khoản tạm giữ <b className="mono">{vnd(lead.hold_vnd)}</b> được hoàn vào ví sau khi khách xác nhận,
             chậm nhất 7 ngày. Nếu khách báo đã mở thẻ, lead chuyển sang đối soát và khoản tạm giữ tiếp tục được giữ.
           </div>
         )}
