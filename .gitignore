@@ -28,3 +28,7 @@ Thumbs.db
 coverage/
 
 portal/node_modules
+
+# Local Claude Code permission overrides — machine-specific, and has held a
+# production credential before (2026-09-01). Never tracked.
+.claude/settings.local.json
