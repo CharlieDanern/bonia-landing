@@ -1,4 +1,14 @@
 # Bonia — Business landing page brief
+> **⚠️ HISTORICAL — DO NOT BUILD FROM THIS FILE.**
+> Written before the 2026-08-31 collateral change. Its economics are obsolete:
+> it describes a 50% hold and "ba khách đầu tiên hoàn toàn miễn phí", neither of
+> which is true. The system now holds **the full bid** on every lead beyond an
+> employee's three trial leads, those three are **không cần tạm giữ (not free)** —
+> the success fee still applies — and the customer's reward is a per-lead
+> snapshot, not a fixed 50%. The authoritative copy lives in
+> `public/terms-business.html`, `public/huong-dan-business.html` and
+> `src/business/frames/`. Kept only as a record of the original design intent.
+
 
 **Route:** `bonia.vn/business`  
 **Audience:** Nhân viên quan hệ khách hàng / tư vấn thẻ tín dụng tại Việt Nam  

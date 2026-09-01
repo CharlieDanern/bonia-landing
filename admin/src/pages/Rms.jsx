@@ -257,7 +257,7 @@ function ManualDeposit({ showToast, onDone }) {
         onChange={(e) => setMemo(e.target.value)}
       />
       <label className="lbl" htmlFor="txn-ref">
-        Mã tham chiếu (ref)
+        Mã tham chiếu ngân hàng (bắt buộc)
       </label>
       <input
         id="txn-ref"
@@ -266,10 +266,14 @@ function ManualDeposit({ showToast, onDone }) {
         onChange={(e) => setRef(e.target.value)}
         placeholder="FT26082…"
       />
+      {/* ref is required by the server too: the derived fallback hashes
+          memo+amount, so two genuine same-amount transfers from one partner
+          would collapse into a single credit. The reference is on the bank
+          statement in front of whoever is filling this in. */}
       <button
         className="btn btn-navy btn-navy-inline"
         type="submit"
-        disabled={busy || !amount || Number.isNaN(Number(amount)) || !memo.trim()}
+        disabled={busy || !amount || Number.isNaN(Number(amount)) || !memo.trim() || !ref.trim()}
       >
         {busy ? "Đang ghi nhận…" : "Ghi nhận giao dịch"}
       </button>

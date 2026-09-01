@@ -44,14 +44,26 @@ export default function Payouts({ showToast }) {
 
   const markPaid = async () => {
     try {
-      await api.markPayoutPaid(sel.claim_id, { reference: reference.trim() });
+      // Send the account THIS SCREEN showed. The server compares it with the
+      // live row and refuses if the customer changed their account between
+      // the transfer and this click, rather than snapshotting a destination
+      // that never received the money.
+      await api.markPayoutPaid(sel.claim_id, {
+        reference: reference.trim(),
+        account_number: sel.payout?.account_number,
+      });
       showToast("Đã ghi nhận chuyển thưởng");
       setConfirming(false);
       setReference("");
       setSelId(null);
       reload();
     } catch (e) {
-      showToast(e?.message || "Không ghi nhận được");
+      if (e?.body?.error === "destination_changed") {
+        showToast(e.body.message || "Tài khoản nhận đã thay đổi — kiểm tra lại");
+        reload();
+      } else {
+        showToast(e?.message || "Không ghi nhận được");
+      }
     }
   };
 
