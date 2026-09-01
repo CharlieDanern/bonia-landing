@@ -119,6 +119,40 @@ export function BidWizard({ bank, sampleOthers, rewardPct = DEFAULT_REWARD_PCT, 
     submit,
   });
 
+  /**
+   * Every 400 the card endpoint can return, in the user's words.
+   *
+   * The fallback deliberately prints the server's own code: a message that
+   * says only "thử lại" for a validation error the user could fix in five
+   * seconds is worse than useless — it sent them to Zalo instead. If a new
+   * code appears here, it shows up as text rather than vanishing.
+   */
+  const cardError = (ex) => {
+    const e = ex?.body?.error;
+    const floor = ex?.body?.floor ?? 100000;
+    const step = ex?.body?.step ?? 10000;
+    const n = (v) => Number(v).toLocaleString("vi-VN");
+    return (
+      {
+        invalid_name: "Đặt tên thẻ trước đã.",
+        perk_too_long: "Ưu đãi tối đa 40 ký tự.",
+        details_too_long: `Chi tiết thẻ tối đa ${DETAILS_MAX_CHARS} ký tự.`,
+        invalid_bullets: "Điểm nổi bật: tối đa 6 dòng, mỗi dòng 120 ký tự.",
+        invalid_reward_bullets:
+          "Điều kiện nhận thưởng: tối đa 6 điều kiện, mỗi điều kiện 120 ký tự.",
+        invalid_max_leads: "Giới hạn lead đang xử lý phải từ 1 đến 200.",
+        invalid_bid: "Mức bid phải là số nguyên (đồng).",
+        bid_below_floor: `Mức bid tối thiểu là ${n(floor)}đ.`,
+        bid_not_step: `Mức bid phải chia hết cho ${n(step)}đ.`,
+        bid_too_high: "Mức bid vượt mức tối đa cho phép.",
+        invalid_image: "Ảnh thẻ không hợp lệ.",
+        unsupported_image_type: "Ảnh phải là JPG, PNG hoặc WEBP.",
+        image_too_large: "Ảnh quá lớn.",
+        suspended: "Tài khoản đang tạm ngưng — liên hệ Bonia.",
+      }[e] || (e ? `Chưa gửi được: ${e}` : "Không gửi được, thử lại")
+    );
+  };
+
   const saveDraft = async () => {
     if (!name.trim()) return showToast("Đặt tên thẻ trước khi lưu nháp");
     setBusy(true);
@@ -127,13 +161,7 @@ export function BidWizard({ bank, sampleOthers, rewardPct = DEFAULT_REWARD_PCT, 
       showToast("Đã lưu nháp");
       onDone();
     } catch (ex) {
-      showToast(
-        ex.body?.error === "perk_too_long" ? "Ưu đãi tối đa 40 ký tự"
-          : ex.body?.error === "details_too_long" ? `Chi tiết thẻ tối đa ${DETAILS_MAX_CHARS} ký tự`
-            : ex.body?.error === "invalid_reward_bullets" ? "Điều kiện nhận thưởng: tối đa 6 điều kiện, mỗi điều kiện 120 ký tự"
-              : ex.body?.error === "invalid_max_leads" ? "Giới hạn lead từ 1 đến 200"
-                : "Không lưu được nháp, thử lại"
-      );
+      showToast(cardError(ex));
     } finally {
       setBusy(false);
     }
@@ -146,12 +174,7 @@ export function BidWizard({ bank, sampleOthers, rewardPct = DEFAULT_REWARD_PCT, 
       showToast(`Đã gửi Bonia duyệt. Bid ${vnd(bid)} sẽ có hiệu lực ngay khi thẻ được duyệt.`);
       onDone();
     } catch (ex) {
-      showToast(
-        ex.body?.error === "perk_too_long" ? "Ưu đãi tối đa 40 ký tự"
-          : ex.body?.error === "details_too_long" ? `Chi tiết thẻ tối đa ${DETAILS_MAX_CHARS} ký tự`
-            : ex.body?.error === "invalid_reward_bullets" ? "Điều kiện nhận thưởng: tối đa 6 điều kiện, mỗi điều kiện 120 ký tự"
-              : "Không gửi được, thử lại"
-      );
+      showToast(cardError(ex));
     } finally {
       setBusy(false);
     }
