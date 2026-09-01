@@ -231,40 +231,41 @@ function BidRow({ card, wide, wallet, rewardPct, onOpen, onApplied, showToast, o
   // Consequence first, then why, then the fix. A partner does not care that
   // a ledger column is below a threshold; they care that nobody can see their
   // card and that a deposit fixes it.
+  // One thin line above the card. The state a partner needs is binary and
+  // fits in a sentence — an icon and a paragraph made the page busy without
+  // adding anything the line does not already say.
+  const soft = block && (block.code === "in_review" || block.code === "draft");
   const blockBanner = block ? (
     <div
       style={{
-        display: "flex", gap: 10, alignItems: "flex-start",
-        padding: "10px 12px", borderRadius: 8, marginBottom: 10,
-        background: block.code === "in_review" || block.code === "draft" ? "#FBF7EC" : "#FDF1F0",
-        border: `1px solid ${block.code === "in_review" || block.code === "draft" ? "#E8DCC2" : "#F3D3D0"}`,
+        display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
+        padding: "6px 10px", marginBottom: 10, borderRadius: 5,
+        background: soft ? "#FBF7EC" : "#FDF1F0",
+        border: `1px solid ${soft ? "#E8DCC2" : "#F3D3D0"}`,
+        color: soft ? "#8A5B08" : "#B42318",
+        fontSize: 12.5, fontWeight: 600, lineHeight: 1.4,
       }}
     >
-      <span style={{ fontSize: 15, lineHeight: 1.2 }}>
-        {block.code === "in_review" || block.code === "draft" ? "⏳" : "👁"}
+      <span>
+        {soft ? "Chưa hiển thị với khách hàng" : "Khách không nhìn thấy thẻ này"}
+        {" · "}
+        {block.code === "no_funds" && block.v.shortfall_vnd > 0
+          ? `cần thêm ${vnd(block.v.shortfall_vnd)}`
+          : block.short.toLowerCase()}
       </span>
-      <div style={{ fontSize: 13, lineHeight: 1.5 }}>
-        <b>
-          {block.code === "in_review" || block.code === "draft"
-            ? "Chưa hiển thị với khách hàng"
-            : "Khách hàng KHÔNG nhìn thấy thẻ này"}
-        </b>
-        <div style={{ color: "var(--ink-55)" }}>
-          {block.why}{" "}
-          {block.code === "no_funds" && block.v.shortfall_vnd > 0
-            ? `Cần thêm ${vnd(block.v.shortfall_vnd)} (giữ ${vnd(block.v.need_hold_vnd)} cho mỗi lead).`
-            : block.fix}
-        </div>
-        {(block.code === "no_funds" || block.code === "arrears") && onDeposit && (
-          <button
-            className="btn btn-navy btn-navy-inline"
-            style={{ marginTop: 8 }}
-            onClick={onDeposit}
-          >
-            Nạp tiền
-          </button>
-        )}
-      </div>
+      {(block.code === "no_funds" || block.code === "arrears") && onDeposit && (
+        <button
+          onClick={onDeposit}
+          style={{
+            border: 0, background: "none", padding: 0, cursor: "pointer",
+            // Black, not the banner's red: the action is the calm part of an
+            // alarming line, and it reads as a link rather than more warning.
+            font: "inherit", color: "var(--ink)", textDecoration: "underline",
+          }}
+        >
+          Nạp tiền
+        </button>
+      )}
     </div>
   ) : null;
 
@@ -338,39 +339,37 @@ export function BidBoard({ cards, bank, wallet, rewardPct, onAdd, onOpen, refres
         <button className="btn-navy" onClick={onAdd}>Thêm thẻ</button>
       </div>
 
-      {/* When NOTHING is live, that is the most important fact on the page —
-          more important than any single card's detail. Reps were losing days
-          to a small amber chip that read like a note rather than an outage. */}
+      {/* When NOTHING is live that outranks any per-card detail — but it is
+          still one line. */}
       {cards.length > 0 && cards.every((c) => blockOf(c)) && (
         <div
           style={{
-            display: "flex", gap: 12, alignItems: "flex-start", marginTop: 16,
-            padding: "13px 15px", borderRadius: 9,
+            display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
+            marginTop: 16, padding: "7px 11px", borderRadius: 5,
             background: "#FDF1F0", border: "1px solid #F3D3D0",
+            color: "#B42318", fontSize: 13, fontWeight: 600, lineHeight: 1.4,
           }}
         >
-          <span style={{ fontSize: 18, lineHeight: 1.1 }}>👁</span>
-          <div style={{ fontSize: 13.5, lineHeight: 1.55 }}>
-            <b>
-              Hiện không có thẻ nào hiển thị với khách hàng
-              {cards.length > 1 ? ` (0/${cards.length})` : ""}
-            </b>
-            <div style={{ color: "var(--ink-55)" }}>
-              Bạn sẽ không nhận được lead nào cho tới khi xử lý xong lý do bên dưới.
-            </div>
-            {(() => {
-              // Money is the one cause the rep can clear in a minute, so it
-              // gets the button; everything else is explained per card.
-              const money = cards
-                .map(blockOf)
-                .find((b) => b && (b.code === "no_funds" || b.code === "arrears"));
-              return money && onDeposit ? (
-                <button className="btn btn-navy btn-navy-inline" style={{ marginTop: 9 }} onClick={onDeposit}>
-                  Nạp tiền để bật lại
-                </button>
-              ) : null;
-            })()}
-          </div>
+          <span>
+            Không có thẻ nào hiển thị với khách hàng
+            {cards.length > 1 ? ` (0/${cards.length})` : ""} — bạn sẽ không nhận được lead
+          </span>
+          {(() => {
+            const money = cards
+              .map(blockOf)
+              .find((b) => b && (b.code === "no_funds" || b.code === "arrears"));
+            return money && onDeposit ? (
+              <button
+                onClick={onDeposit}
+                style={{
+                  border: 0, background: "none", padding: 0, cursor: "pointer",
+                  font: "inherit", color: "var(--ink)", textDecoration: "underline",
+                }}
+              >
+                Nạp tiền
+              </button>
+            ) : null;
+          })()}
         </div>
       )}
 
