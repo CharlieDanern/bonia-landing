@@ -40,6 +40,7 @@ export default function Claims({ showToast }) {
       <PageHead
         title="Đối soát khiếu nại"
         sub="Đối tác khai đã mở thẻ, người dùng khai khác — xem cả hai phía và dòng thời gian rồi phân xử."
+        at={settings.at}
       />
       <div className="pl-lanes" style={{ marginBottom: 14 }}>
         {FILTERS.map((f) => (

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, getToken, setToken, clearToken, vnd, ZALO } from "./api.js";
 import { Softphone, classifyCallError } from "./softphone.js";
-import { Toast, useToast, CallOverlay } from "./components.jsx";
+import { Toast, useToast, CallOverlay, CallReadyModal } from "./components.jsx";
 import logo from "./logo-mark.png";
 import { BidTab } from "./bid/BidTab.jsx";
 import { DEFAULT_REWARD_PCT } from "./bid/position.js";
@@ -393,6 +393,20 @@ function Portal({ onSignOut, target, onTargetApplied }) {
         ))}
       </nav>
 
+      {pendingCall && (
+        <CallReadyModal
+          name={pendingCall.first_name}
+          softphoneReady={!!phoneRef.current?.ready}
+          onClose={() => setPendingCall(null)}
+          onStart={() => {
+            readyAcked.current = true;
+            const l = pendingCall;
+            setPendingCall(null);
+            dial(l);
+          }}
+        />
+      )}
+
       {call && call.phase !== "ended" && (
         <CallOverlay
           name={call.name}
@@ -402,7 +416,9 @@ function Portal({ onSignOut, target, onTargetApplied }) {
           muted={muted}
           onMute={() => { const m = !muted; setMuted(m); phoneRef.current?.setMuted(m); }}
           onHangup={() => phoneRef.current?.hangup()}
-          onRetry={() => { const l = leads.find((x) => x.lead_id === call.leadId); if (l) startCall(l); }}
+          // eslint-disable-next-line -- retry dials directly: the rep already
+          // saw the readiness sheet on the way to this failed call.
+          onRetry={() => { const l = leads.find((x) => x.lead_id === call.leadId); if (l) dial(l); }}
           onClose={() => setCall(null)}
         />
       )}

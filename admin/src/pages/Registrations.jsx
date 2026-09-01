@@ -34,6 +34,7 @@ export default function Registrations({ showToast }) {
       <PageHead
         title="Đăng ký đối tác"
         sub="Nhân viên ngân hàng đăng ký làm đối tác Bonia Connect — xác minh email công ty rồi gán ngân hàng."
+        at={pending.at}
       />
 
       <div className="mono-eyebrow">Chờ duyệt ({rows.length})</div>

@@ -47,6 +47,7 @@ export default function Cards({ showToast }) {
       <PageHead
         title="Duyệt thẻ"
         sub="Xem đúng những gì người dùng sẽ thấy, toàn bộ nội dung gốc, rồi gán loại thẻ và quyết định."
+        at={settings.at}
       />
       <div className="pl-lanes" style={{ marginBottom: 14 }}>
         {FILTERS.map((f) => (

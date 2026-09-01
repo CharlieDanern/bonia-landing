@@ -24,25 +24,67 @@ export function useToast() {
 }
 
 // Tiny load hook: loading / error / data / reload.
-export function useLoad(fn, deps = []) {
-  const [state, setState] = useState({ loading: true, error: null, data: null });
+/**
+ * Load once, then keep it fresh on its own.
+ *
+ * Every screen in here is a QUEUE — registrations, cards, claims, payouts —
+ * and a queue that only updates on F5 is a queue you have to remember to
+ * check. Two refresh paths, both SILENT (no loading flash, no scroll jump):
+ *
+ *   • a poll while the tab is actually visible, so a background tab costs
+ *     nothing and a laptop lid does not spend the night hitting the API;
+ *   • an immediate refetch when the tab regains focus, which is the moment
+ *     the answer is most likely stale and most likely being looked at.
+ *
+ * Silent means `loading` stays false and the old data stays on screen until
+ * the new data lands: rows keyed by id keep their local state, so a
+ * half-typed review note survives a refresh underneath it.
+ */
+export function useLoad(fn, deps = [], { pollMs = 30_000 } = {}) {
+  const [state, setState] = useState({ loading: true, error: null, data: null, at: null });
   const seq = useRef(0);
-  const reload = useCallback(() => {
+  const fnRef = useRef(fn);
+  fnRef.current = fn;
+
+  const run = useCallback((silent) => {
     const mine = ++seq.current;
-    setState((s) => ({ ...s, loading: true, error: null }));
-    fn().then(
+    if (!silent) setState((s) => ({ ...s, loading: true, error: null }));
+    fnRef.current().then(
       (data) => {
-        if (seq.current === mine) setState({ loading: false, error: null, data });
+        if (seq.current === mine) setState({ loading: false, error: null, data, at: Date.now() });
       },
       (error) => {
-        if (seq.current === mine) setState((s) => ({ ...s, loading: false, error }));
+        // A failed BACKGROUND refresh must not replace good data with an
+        // error panel — the admin is probably mid-task and the next poll
+        // will very likely succeed.
+        if (seq.current === mine && !silent) setState((s) => ({ ...s, loading: false, error }));
       }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
+
+  const reload = useCallback(() => run(false), [run]);
+
   useEffect(() => {
-    reload();
-  }, [reload]);
+    run(false);
+  }, [run]);
+
+  useEffect(() => {
+    if (!pollMs) return undefined;
+    const tick = () => {
+      if (document.visibilityState === "visible") run(true);
+    };
+    const id = setInterval(tick, pollMs);
+    const onFocus = () => tick();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [run, pollMs]);
+
   return { ...state, reload };
 }
 
@@ -131,12 +173,21 @@ export function ConfirmModal({
   );
 }
 
-export function PageHead({ title, sub }) {
+export function PageHead({ title, sub, at }) {
+  // `at` makes the silent refresh visible. Without it the screen changes
+  // under the admin with no explanation, which is worse than stale data —
+  // they cannot tell "nothing new" from "not updating".
   return (
     <header style={{ marginBottom: 18 }}>
       <div className="eyebrow">Bonia Admin</div>
       <h1 className="page">{title}</h1>
       {sub ? <div className="page-sub">{sub}</div> : null}
+      {at ? (
+        <div className="queue-sub" style={{ marginTop: 4 }}>
+          Tự động cập nhật · lần cuối{" "}
+          {new Date(at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+        </div>
+      ) : null}
     </header>
   );
 }

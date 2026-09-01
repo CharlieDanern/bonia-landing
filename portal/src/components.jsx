@@ -205,6 +205,89 @@ export function CallOverlay({ name, phase, failReason, seconds, muted, onMute, o
 }
 
 /** Payment modal: VietQR + line items + 3-dot settlement progress. */
+/**
+ * Readiness sheet before the first call of a session.
+ *
+ * "Gọi qua Bonia" used to dial straight into a live customer — a rep could
+ * be on a phone speaker in a café, with no headset and no idea the call is
+ * recorded, and the customer's first impression of Bonia is that call.
+ * Shown once per session (or never again if they say so), so it prepares a
+ * new rep without nagging an experienced one.
+ *
+ * `softphoneReady` is the one line here that is a FACT rather than advice:
+ * without it, an unregistered softphone is only discovered after the rep
+ * clicks and the call fails.
+ */
+export function CallReadyModal({ name, softphoneReady, onStart, onClose }) {
+  const [dontShow, setDontShow] = React.useState(false);
+  const start = () => {
+    if (dontShow) {
+      try {
+        localStorage.setItem("bonia.callReady.ack", "1");
+      } catch {
+        /* private mode — just proceed */
+      }
+    }
+    onStart();
+  };
+  const Item = ({ children }) => (
+    <li style={{ display: "flex", gap: 9, alignItems: "flex-start", padding: "5px 0" }}>
+      <span style={{ color: "var(--ink-45)" }}>•</span>
+      <span>{children}</span>
+    </li>
+  );
+  return (
+    <div className="scrim" onClick={onClose}>
+      <div className="modal bn-up" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>
+          Chuẩn bị gọi {name ? `cho ${name}` : ""}
+        </h2>
+        <p style={{ fontSize: 13, color: "var(--ink-55)", lineHeight: 1.55, marginBottom: 12 }}>
+          Cuộc gọi bắt đầu ngay khi bạn bấm — khách sẽ nghe máy trong vài giây.
+        </p>
+        <ul style={{ listStyle: "none", padding: 0, margin: "0 0 14px", fontSize: 13.5, lineHeight: 1.5 }}>
+          <Item>Dùng <b>tai nghe có micro</b> — loa ngoài dễ vọng âm và khách nghe không rõ.</Item>
+          <Item>Kết nối <b>internet ổn định</b>; wifi tốt hơn 4G cho cuộc gọi.</Item>
+          <Item>Ở nơi <b>yên tĩnh</b>, tránh tiếng ồn nền.</Item>
+          <Item>Trình duyệt sẽ hỏi quyền dùng micro — chọn <b>Cho phép</b>.</Item>
+        </ul>
+        <div
+          style={{
+            fontSize: 12.5, lineHeight: 1.55, padding: "9px 11px", borderRadius: 6,
+            background: "var(--paper-2, #F7F9FC)", border: "1px solid var(--border-faint, #EEF1F6)",
+            marginBottom: 12,
+          }}
+        >
+          Khách chỉ thấy <b>số Bonia</b>, không thấy số của bạn. Cuộc gọi được ghi âm và
+          bản ghi nội dung hiển thị cho cả hai bên.
+        </div>
+        {!softphoneReady && (
+          <div
+            style={{
+              fontSize: 12.5, fontWeight: 600, color: "#B42318", padding: "7px 10px",
+              borderRadius: 5, background: "#FDF1F0", border: "1px solid #F3D3D0", marginBottom: 12,
+            }}
+          >
+            Tổng đài chưa kết nối — tải lại trang trước khi gọi.
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <button className="btn-navy" onClick={start} disabled={!softphoneReady}>
+            Gọi ngay
+          </button>
+          <button className="btn btn-ghost" onClick={onClose}>
+            Để sau
+          </button>
+          <label style={{ marginLeft: "auto", fontSize: 12.5, display: "flex", gap: 6, alignItems: "center" }}>
+            <input type="checkbox" checked={dontShow} onChange={(e) => setDontShow(e.target.checked)} />
+            Không hiện lại
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function PaymentModal({ lead, payment, onClose }) {
   const step = payment?.state === "paid" || payment?.state === "settled" ? 2 : payment?.state === "invoiced" ? 1 : 1;
   const dots = ["Chờ thanh toán", "Đã nhận", "Hoàn tất"];
