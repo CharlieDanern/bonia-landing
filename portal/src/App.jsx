@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, getToken, setToken, clearToken, vnd, ZALO } from "./api.js";
 import { Softphone, classifyCallError } from "./softphone.js";
-import { Toast, useToast, CallOverlay, CallReadyModal } from "./components.jsx";
+import { Toast, useToast, CallOverlay, CallReadyModal, TermsGate } from "./components.jsx";
 import logo from "./logo-mark.png";
 import { BidTab } from "./bid/BidTab.jsx";
 import { DEFAULT_REWARD_PCT } from "./bid/position.js";
@@ -328,6 +328,19 @@ function Portal({ onSignOut, target, onTargetApplied }) {
 
   return (
     <>
+      {/* Terms acceptance blocks the portal until it is on record. Rendered
+          before everything else and non-dismissible: the server refuses
+          every write with terms_not_accepted until this is done, so showing
+          the board underneath would only offer actions that cannot succeed. */}
+      {me && me.terms && !me.terms.accepted && (
+        <TermsGate
+          version={me.terms.version}
+          onAccept={async () => {
+            await api.acceptTerms();
+            await refresh();
+          }}
+        />
+      )}
       <div className="mobile-header">
         <img src={logo} alt="" />
         <span style={{ fontSize: 14, fontWeight: 600 }}>

@@ -57,6 +57,7 @@ export const api = {
   login: (username, password) =>
     request("/rm/login", { method: "POST", body: { username, password } }),
   me: () => request("/rm/me"),
+  acceptTerms: () => request("/rm/terms/accept", { method: "POST" }),
   marketplace: () => request("/rm/marketplace"),
   bid: (intentId, amountVnd) =>
     request(`/rm/intents/${intentId}/bid`, {

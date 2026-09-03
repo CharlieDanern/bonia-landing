@@ -355,3 +355,92 @@ export function PaymentModal({ lead, payment, onClose }) {
     </div>
   );
 }
+
+/**
+ * Partner terms acceptance gate.
+ *
+ * Non-dismissible on purpose: this is the one screen in the portal with no
+ * escape hatch. Everything the marketplace enforces against a partner —
+ * the success fee they owe, suspension when an authorisation lapses, the
+ * dispute clause — rests on this document, and enforcing it against
+ * someone with no acceptance on record is the weak link. So there is no
+ * scrim click-to-close and no X.
+ *
+ * The summary is orientation, NOT a substitute for the document. It names
+ * the four clauses a partner is most likely to be surprised by later, and
+ * links out to the full text. Anything that reads like "you don't need to
+ * open the terms" would defeat the purpose of collecting the acceptance.
+ */
+export function TermsGate({ version, onAccept }) {
+  const [agreed, setAgreed] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+  const [err, setErr] = React.useState(null);
+
+  const accept = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      await onAccept();
+    } catch {
+      setErr("Không ghi nhận được. Kiểm tra kết nối rồi thử lại.");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="scrim terms-scrim">
+      <div className="modal terms bn-up">
+        <h2 className="terms-title">Điều khoản đối tác</h2>
+        <p className="terms-sub">
+          Trước khi bắt đầu nhận khách, mời anh/chị đọc và xác nhận điều khoản hợp tác.
+          Phiên bản <b>{version}</b>.
+        </p>
+
+        <ul className="terms-list">
+          <li>
+            <b>Mức phí là cam kết trả.</b> Khi khách do Bonia kết nối mở thẻ thành công,
+            anh/chị trả mức phí đã đặt cho lượt kết nối đó.
+          </li>
+          <li>
+            <b>Khách nhận một phần mức phí.</b> Tỷ lệ được công bố trên ứng dụng tại thời
+            điểm phát sinh lead và không đổi sau đó, kể cả khi Bonia điều chỉnh tỷ lệ chung.
+          </li>
+          <li>
+            <b>Tạm giữ và hoàn lại.</b> Với lead có tạm giữ, hệ thống giữ toàn bộ mức phí khi
+            giao lead; không thành công thì hoàn lại ví. Số dư âm sẽ ngừng nhận lead mới.
+          </li>
+          <li>
+            <b>Tư cách phải còn hiệu lực.</b> Email công việc hoặc văn bản uỷ quyền hết hiệu
+            lực sẽ tạm ngưng tài khoản cho đến khi cập nhật.
+          </li>
+        </ul>
+
+        <a
+          className="terms-link"
+          href="https://bonia.vn/terms-business.html"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Đọc toàn văn Điều khoản đối tác →
+        </a>
+
+        <label className="terms-check">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+          />
+          <span>
+            Tôi đã đọc và đồng ý với Điều khoản đối tác phiên bản {version}.
+          </span>
+        </label>
+
+        {err && <p className="terms-err">{err}</p>}
+
+        <button className="terms-btn" disabled={!agreed || busy} onClick={accept}>
+          {busy ? "Đang ghi nhận…" : "Đồng ý và tiếp tục"}
+        </button>
+      </div>
+    </div>
+  );
+}
