@@ -131,13 +131,13 @@ function outcomeOf(lead) {
  * A lost lead's hold is NOT refunded at close. rm-pipeline.ts deliberately
  * skips releaseHoldIfAny and returns hold_pending_user_confirm — the
  * customer gets a window to object ("tôi ĐÃ mở thẻ"), and only
- * releaseStaleLostHolds frees the money after 7 days of silence. hold_vnd
+ * releaseStaleLostHolds frees the money after 3 days of silence. hold_vnd
  * stays > 0 until then, so it is the truth for what the rep is told.
  */
 function lostHoldNote(lead) {
   const held = lead.hold_vnd || 0;
   return held > 0
-    ? `khoản tạm giữ ${vnd(held)} được hoàn vào ví sau khi khách xác nhận, chậm nhất 7 ngày`
+    ? `khoản tạm giữ ${vnd(held)} được hoàn vào ví sau khi khách xác nhận, chậm nhất 3 ngày`
     : "khoản tạm giữ đã hoàn vào số dư khả dụng";
 }
 
@@ -1193,7 +1193,7 @@ function LostModal({ lead, onClose, onDone, showToast }) {
       showToast(
         res?.hold_pending_user_confirm === false || !(lead.hold_vnd || 0)
           ? "Đã lưu trữ lead"
-          : "Đã lưu trữ lead · khoản tạm giữ được hoàn vào ví sau khi khách xác nhận, chậm nhất 7 ngày"
+          : "Đã lưu trữ lead · khoản tạm giữ được hoàn vào ví sau khi khách xác nhận, chậm nhất 3 ngày"
       );
       onDone();
     } catch {
@@ -1214,7 +1214,7 @@ function LostModal({ lead, onClose, onDone, showToast }) {
         {(lead.hold_vnd || 0) > 0 && (
           <div style={{ fontSize: 12.5, color: "var(--ink-55)", marginTop: 8, lineHeight: 1.5 }}>
             Khoản tạm giữ <b className="mono">{vnd(lead.hold_vnd)}</b> được hoàn vào ví sau khi khách xác nhận,
-            chậm nhất 7 ngày. Nếu khách báo đã mở thẻ, lead chuyển sang đối soát và khoản tạm giữ tiếp tục được giữ.
+            chậm nhất 3 ngày. Nếu khách báo đã mở thẻ, lead chuyển sang đối soát và khoản tạm giữ tiếp tục được giữ.
           </div>
         )}
         <div style={{ display: "flex", gap: 9, marginTop: 12, justifyContent: "flex-end" }}>
