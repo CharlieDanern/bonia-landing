@@ -6,12 +6,14 @@ import Overview from "./pages/Overview.jsx";
 import Cards from "./pages/Cards.jsx";
 import Registrations from "./pages/Registrations.jsx";
 import Claims from "./pages/Claims.jsx";
+import Deals from "./pages/Deals.jsx";
 import Payouts from "./pages/Payouts.jsx";
 import Closures from "./pages/Closures.jsx";
 import Rms from "./pages/Rms.jsx";
 
 const NAV = [
   { key: "overview", label: "Tổng quan" },
+  { key: "deals", label: "Giao dịch" },
   { key: "cards", label: "Duyệt thẻ" },
   { key: "regs", label: "Đăng ký" },
   { key: "claims", label: "Đối soát" },
@@ -76,6 +78,7 @@ function Shell({ onSignOut }) {
       <main className="content">
         <div className="wrap">
           {route === "overview" && <Overview nav={setRoute} showToast={showToast} />}
+          {route === "deals" && <Deals />}
           {route === "cards" && <Cards showToast={showToast} />}
           {route === "regs" && <Registrations showToast={showToast} />}
           {route === "claims" && <Claims showToast={showToast} />}
