@@ -126,6 +126,17 @@ function CardDetail({ card, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone })
   const [busy, setBusy] = useState(false);
   const [forceOpen, setForceOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
+  // Reviewer's rewrite. `null` = not editing that field; the request only
+  // carries fields actually touched, so an untouched field is never sent
+  // and can never be blanked by an empty control.
+  const [editing, setEditing] = useState(false);
+  const [ed, setEd] = useState({});
+  const [newImg, setNewImg] = useState(null); // { base64, mime, preview }
+  const set = (k, v) => setEd((p) => ({ ...p, [k]: v }));
+  const cur = (k, fallback) => (ed[k] !== undefined ? ed[k] : fallback);
+  // What the rep changed since the last approval — highlight, not noise.
+  const changed = card.changed?.fields || [];
+  const wasChanged = (f) => changed.includes(f);
 
   const matched = useMemo(
     () =>
@@ -170,6 +181,24 @@ function CardDetail({ card, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone })
           : {}),
         ...(note.trim() ? { note: note.trim() } : {}),
         ...(force ? { force: true } : {}),
+        ...(Object.keys(ed).length || newImg
+          ? {
+              edits: {
+                ...(ed.name !== undefined ? { name: ed.name } : {}),
+                ...(ed.perk !== undefined ? { perk_line: ed.perk } : {}),
+                ...(ed.details !== undefined ? { details: ed.details } : {}),
+                ...(ed.bullets !== undefined
+                  ? { eligibility_bullets: splitLines(ed.bullets) }
+                  : {}),
+                ...(ed.rewardBullets !== undefined
+                  ? { reward_bullets: splitLines(ed.rewardBullets) }
+                  : {}),
+                ...(newImg
+                  ? { image_base64: newImg.base64, image_mime: newImg.mime }
+                  : {}),
+              },
+            }
+          : {}),
       });
       setForceOpen(false);
       showToast("Đã duyệt thẻ — thẻ sẽ hiển thị cho người dùng.");
@@ -225,12 +254,56 @@ function CardDetail({ card, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone })
       <div className="bid-divider" />
 
       {/* ── 2 · Full raw content ─────────────────────────────── */}
-      <div className="mono-eyebrow">2 · Nội dung gốc đầy đủ</div>
+      <div className="rv-head">
+        <div className="mono-eyebrow">2 · Nội dung hiển thị cho khách</div>
+        <button className="btn-ghost btn-sm" onClick={() => setEditing((v) => !v)}>
+          {editing ? "Xong" : "Sửa nội dung"}
+        </button>
+      </div>
+
+      {/* What the rep changed since you last approved. Only shown when a
+          baseline exists — "no baseline" is said out loud rather than
+          rendered as "nothing changed", which would be a highlight you
+          could not trust. */}
+      {card.changed && changed.length > 0 && (
+        <div className="rv-changed">
+          <b>Đối tác đã sửa:</b>{" "}
+          {changed.map((f) => CHANGED_LABEL[f] || f).join(" · ")}
+          <div className="rv-changed-sub">
+            So với bản duyệt {card.changed.approved_at ? fmtDate(card.changed.approved_at) : ""}
+            {card.changed.approved_by ? ` bởi ${card.changed.approved_by}` : ""}
+          </div>
+        </div>
+      )}
+      {card.changed && changed.length === 0 && (
+        <div className="rv-changed neutral">Nội dung không đổi so với bản đã duyệt.</div>
+      )}
+      {!card.changed && card.status === "pending" && (
+        <div className="rv-changed neutral">
+          Chưa có bản duyệt trước để so sánh — đọc toàn bộ nội dung.
+        </div>
+      )}
+
       <div className="field-grid">
         <Field label="Ngân hàng" value={card.bank} />
-        <Field label="Tên thẻ" value={card.name} />
-        <Field label="Ưu đãi (perk)" value={card.perk} />
-        <Field label="Giá bid" value={vnd(card.bid_vnd)} mono />
+        <EditField
+          label="Tên thẻ"
+          value={cur("name", card.name)}
+          onChange={(v) => set("name", v)}
+          editing={editing}
+          changed={wasChanged("name")}
+        />
+        <EditField
+          label="Ưu đãi (perk)"
+          value={cur("perk", card.perk || "")}
+          onChange={(v) => set("perk", v)}
+          editing={editing}
+          changed={wasChanged("perk")}
+        />
+        {/* Bid is READ-ONLY here on purpose — it is the partner's own money
+            commitment and Bonia does not set it. Same rule as arbitration:
+            we decide what is presented, never what they pay. */}
+        <Field label="Giá bid (không sửa được)" value={vnd(card.bid_vnd)} mono />
         <Field
           label="Giới hạn khách đồng thời"
           value={card.max_active_leads != null ? String(card.max_active_leads) : "—"}
@@ -246,8 +319,18 @@ function CardDetail({ card, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone })
       <div className="f-label" style={{ marginTop: 12 }}>
         Chi tiết thẻ (khách đọc đầu tiên)
       </div>
-      {card.details ? (
-        <div className="tnc-box">{card.details}</div>
+      {editing ? (
+        <textarea
+          className="inp"
+          rows={6}
+          value={cur("details", card.details || "")}
+          onChange={(e) => set("details", e.target.value)}
+          placeholder="Mô tả thẻ — khách đọc phần này đầu tiên."
+        />
+      ) : card.details ? (
+        <div className={`tnc-box ${wasChanged("details") ? "is-changed" : ""}`}>
+          {card.details}
+        </div>
       ) : (
         <div className="f-val dim">—</div>
       )}
@@ -255,8 +338,16 @@ function CardDetail({ card, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone })
       <div className="f-label" style={{ marginTop: 12 }}>
         Quyền lợi (bullets)
       </div>
-      {Array.isArray(card.bullets) && card.bullets.length > 0 ? (
-        <ul className="bullet-list">
+      {editing ? (
+        <textarea
+          className="inp"
+          rows={4}
+          value={cur("bullets", (card.bullets || []).join("\n"))}
+          onChange={(e) => set("bullets", e.target.value)}
+          placeholder="Mỗi dòng một ý"
+        />
+      ) : Array.isArray(card.bullets) && card.bullets.length > 0 ? (
+        <ul className={`bullet-list ${wasChanged("bullets") ? "is-changed" : ""}`}>
           {card.bullets.map((b, i) => (
             <li key={i}>{b}</li>
           ))}
@@ -268,8 +359,16 @@ function CardDetail({ card, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone })
       <div className="f-label" style={{ marginTop: 12 }}>
         Điều kiện nhận thưởng
       </div>
-      {Array.isArray(card.reward_bullets) && card.reward_bullets.length > 0 ? (
-        <ul className="bullet-list">
+      {editing ? (
+        <textarea
+          className="inp"
+          rows={3}
+          value={cur("rewardBullets", (card.reward_bullets || []).join("\n"))}
+          onChange={(e) => set("rewardBullets", e.target.value)}
+          placeholder="Mỗi dòng một điều kiện"
+        />
+      ) : Array.isArray(card.reward_bullets) && card.reward_bullets.length > 0 ? (
+        <ul className={`bullet-list ${wasChanged("reward_bullets") ? "is-changed" : ""}`}>
           {card.reward_bullets.map((b, i) => (
             <li key={i}>{b}</li>
           ))}
@@ -288,8 +387,42 @@ function CardDetail({ card, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone })
       )}
 
       <div className="f-label" style={{ marginTop: 12 }}>
-        Ảnh thẻ ({media.length})
+        Ảnh thẻ ({media.length}){" "}
+        {wasChanged("image") && <span className="rv-tag">đối tác đã đổi ảnh</span>}
       </div>
+      {editing && (
+        <div style={{ margin: "6px 0 8px" }}>
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              // 500KB is the server's limit (decodeImage) — fail here with a
+              // clear message rather than sending a request that must 400.
+              if (f.size > 500 * 1024) {
+                showToast("Ảnh quá 500KB — chọn ảnh nhỏ hơn.");
+                e.target.value = "";
+                return;
+              }
+              const b64 = await new Promise((res) => {
+                const r = new FileReader();
+                r.onload = () => res(String(r.result).split(",")[1]);
+                r.readAsDataURL(f);
+              });
+              setNewImg({ base64: b64, mime: f.type, preview: URL.createObjectURL(f) });
+            }}
+          />
+          {newImg && (
+            <div style={{ marginTop: 8 }}>
+              <img src={newImg.preview} alt="" className="media-thumb" />
+              <button className="btn-ghost btn-sm" onClick={() => setNewImg(null)}>
+                Bỏ ảnh mới
+              </button>
+            </div>
+          )}
+        </div>
+      )}
       {media.length > 0 ? (
         <div className="media-row">
           {media.map((u, i) => (
@@ -495,6 +628,43 @@ function CardDetail({ card, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone })
           {note.trim()}
         </div>
       </ConfirmModal>
+    </div>
+  );
+}
+
+const CHANGED_LABEL = {
+  name: "tên thẻ",
+  perk: "ưu đãi",
+  bullets: "điều kiện xét duyệt",
+  reward_bullets: "điều kiện nhận thưởng",
+  details: "chi tiết",
+  image: "ảnh",
+};
+
+/** Textarea lines → bullet array; blank lines dropped, empty ⇒ null. */
+function splitLines(text) {
+  const out = String(text || "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  return out.length ? out : null;
+}
+
+/**
+ * A field that reads as text until the reviewer turns editing on, and
+ * carries a marker when the rep changed it since the last approval.
+ */
+function EditField({ label, value, onChange, editing, changed }) {
+  return (
+    <div className="f">
+      <div className="f-label">
+        {label} {changed && <span className="rv-tag">đã sửa</span>}
+      </div>
+      {editing ? (
+        <input className="inp" value={value || ""} onChange={(e) => onChange(e.target.value)} />
+      ) : (
+        <div className={`f-val ${changed ? "is-changed" : ""}`}>{value || "—"}</div>
+      )}
     </div>
   );
 }
