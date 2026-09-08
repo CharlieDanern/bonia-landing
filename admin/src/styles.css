@@ -416,3 +416,12 @@ h1.page { font-size: 25px; font-weight: 600; letter-spacing: -.02em; margin: 7px
 ul.bullet-list.is-changed { padding-left: 26px; }
 
 textarea.inp { width: 100%; font: inherit; line-height: 1.55; resize: vertical; }
+
+/* Save bar — visible whenever there are unsaved reviewer edits, at any
+   card status. Approving is a separate action further down the panel. */
+.rv-save {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 10px 0 14px; padding: 10px 12px; border-radius: 8px;
+  background: #eef3fb; border-left: 3px solid #2a5db0;
+  font-size: 13.5px; line-height: 1.45;
+}

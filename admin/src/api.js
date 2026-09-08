@@ -79,6 +79,8 @@ export const api = {
   markClosurePaid: (id, body) =>
     request(`/admin-portal/closures/${id}/paid`, { method: "POST", body }),
   cards: (status = "pending") => request(`/admin-portal/cards?status=${status}`),
+  editCard: (id, edits) =>
+    request(`/admin-portal/cards/${id}/edit`, { method: "POST", body: { edits } }),
   reviewCard: (id, body) =>
     request(`/admin-portal/cards/${id}/review`, { method: "POST", body }),
   cardTypes: (bank) =>

@@ -170,6 +170,38 @@ function CardDetail({ card, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone })
   const userReward = consumerRewardVnd(card.bid_vnd, rewardPct);
   const media = card.media_urls || [];
 
+  /** The edits payload — only fields actually touched. Never the bid. */
+  const editsPayload = () => ({
+    ...(ed.name !== undefined ? { name: ed.name } : {}),
+    ...(ed.perk !== undefined ? { perk_line: ed.perk } : {}),
+    ...(ed.details !== undefined ? { details: ed.details } : {}),
+    ...(ed.bullets !== undefined ? { eligibility_bullets: splitLines(ed.bullets) } : {}),
+    ...(ed.rewardBullets !== undefined ? { reward_bullets: splitLines(ed.rewardBullets) } : {}),
+    ...(newImg ? { image_base64: newImg.base64, image_mime: newImg.mime } : {}),
+  });
+  const hasEdits = () => Object.keys(ed).length > 0 || !!newImg;
+
+  /**
+   * Save without reviewing. This is the path that works on a card that is
+   * ALREADY LIVE — approving only applies to `pending`, so without it a
+   * published card could never be corrected.
+   */
+  const doSaveEdits = async () => {
+    setBusy(true);
+    try {
+      await api.editCard(card.id, editsPayload());
+      setEd({});
+      setNewImg(null);
+      setEditing(false);
+      showToast("Đã lưu nội dung — khách sẽ thấy bản mới.");
+      onDone();
+    } catch (ex) {
+      showToast(`Lỗi: ${ex.body?.error || ex.message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const doApprove = async (force = false) => {
     setBusy(true);
     try {
@@ -181,24 +213,7 @@ function CardDetail({ card, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone })
           : {}),
         ...(note.trim() ? { note: note.trim() } : {}),
         ...(force ? { force: true } : {}),
-        ...(Object.keys(ed).length || newImg
-          ? {
-              edits: {
-                ...(ed.name !== undefined ? { name: ed.name } : {}),
-                ...(ed.perk !== undefined ? { perk_line: ed.perk } : {}),
-                ...(ed.details !== undefined ? { details: ed.details } : {}),
-                ...(ed.bullets !== undefined
-                  ? { eligibility_bullets: splitLines(ed.bullets) }
-                  : {}),
-                ...(ed.rewardBullets !== undefined
-                  ? { reward_bullets: splitLines(ed.rewardBullets) }
-                  : {}),
-                ...(newImg
-                  ? { image_base64: newImg.base64, image_mime: newImg.mime }
-                  : {}),
-              },
-            }
-          : {}),
+        ...(hasEdits() ? { edits: editsPayload() } : {}),
       });
       setForceOpen(false);
       showToast("Đã duyệt thẻ — thẻ sẽ hiển thị cho người dùng.");
@@ -256,10 +271,34 @@ function CardDetail({ card, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone })
       {/* ── 2 · Full raw content ─────────────────────────────── */}
       <div className="rv-head">
         <div className="mono-eyebrow">2 · Nội dung hiển thị cho khách</div>
-        <button className="btn-ghost btn-sm" onClick={() => setEditing((v) => !v)}>
-          {editing ? "Xong" : "Sửa nội dung"}
+        <button
+          className="btn-ghost btn-sm"
+          onClick={() => {
+            if (editing) {
+              setEd({});
+              setNewImg(null);
+            }
+            setEditing((v) => !v);
+          }}
+        >
+          {editing ? "Huỷ sửa" : "Sửa nội dung"}
         </button>
       </div>
+
+      {/* Saving is INDEPENDENT of approving. A card that is already live can
+          only be corrected here — reviewCard() accepts `pending` only, so
+          without this bar a published card could never be fixed. */}
+      {editing && hasEdits() && (
+        <div className="rv-save">
+          <span>
+            Sẽ cập nhật: <b>{Object.keys(editsPayload()).map((k) => EDIT_LABEL[k] || k).join(", ")}</b>
+            {card.status === "approved" && " — khách thấy ngay sau khi lưu."}
+          </span>
+          <button className="btn-navy btn-sm" disabled={busy} onClick={doSaveEdits}>
+            {busy ? "Đang lưu…" : "Lưu nội dung"}
+          </button>
+        </div>
+      )}
 
       {/* What the rep changed since you last approved. Only shown when a
           baseline exists — "no baseline" is said out loud rather than
@@ -631,6 +670,15 @@ function CardDetail({ card, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone })
     </div>
   );
 }
+
+const EDIT_LABEL = {
+  name: "tên thẻ",
+  perk_line: "ưu đãi",
+  details: "chi tiết",
+  eligibility_bullets: "điều kiện xét duyệt",
+  reward_bullets: "điều kiện nhận thưởng",
+  image_base64: "ảnh",
+};
 
 const CHANGED_LABEL = {
   name: "tên thẻ",
