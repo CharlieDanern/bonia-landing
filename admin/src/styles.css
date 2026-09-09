@@ -446,3 +446,37 @@ textarea.inp { width: 100%; font: inherit; line-height: 1.55; resize: vertical; 
   padding: 2px 8px; border-radius: 999px; background: #eef3fb; color: #2a5db0;
   font-size: 11px; font-weight: 600; white-space: nowrap;
 }
+
+/* ── Deal timeline: one story, three kinds of entry ──────────────────── */
+.dl-tl { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+
+/* System events — quiet, they are punctuation between the human parts. */
+.dl-event {
+  display: flex; gap: 10px; align-items: baseline;
+  font-size: 12.5px; color: var(--ink-55);
+}
+.dl-event .mono { flex-shrink: 0; opacity: .75; }
+
+/* Chat, as chat. */
+.dl-msg { display: flex; flex-direction: column; align-items: flex-start; max-width: 78%; }
+.dl-msg.mine { align-self: flex-end; align-items: flex-end; }
+.dl-who { font-size: 11px; color: var(--ink-55); margin-bottom: 2px; }
+.dl-bubble {
+  padding: 8px 12px; border-radius: 14px; font-size: 13.5px; line-height: 1.5;
+  background: var(--surface-sunken); border: 1px solid var(--border-light);
+  white-space: pre-wrap; word-break: break-word;
+}
+.dl-msg.mine .dl-bubble { background: #eef3fb; border-color: #cddcf3; }
+.dl-leak { font-size: 11.5px; color: #8a6414; margin-top: 3px; }
+
+/* Consult transcript — indented under the call it belongs to, so it reads
+   as the contents of that call rather than more top-level events. */
+.dl-turn {
+  display: flex; gap: 8px; font-size: 13px; line-height: 1.5;
+  margin-left: 18px; padding-left: 10px; border-left: 2px solid var(--border-light);
+}
+.dl-turn-who {
+  flex-shrink: 0; font-size: 11px; font-weight: 600; color: var(--ink-55);
+  min-width: 30px; padding-top: 2px;
+}
+.dl-turn.rm .dl-turn-who { color: #2a5db0; }

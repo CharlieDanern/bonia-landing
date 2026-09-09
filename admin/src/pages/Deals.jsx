@@ -34,10 +34,18 @@ const STAGE_TONE = {
 };
 
 /** The 48h first-contact promise, rendered as urgency rather than a number. */
-function SlaCell({ hours, attempts }) {
+function SlaCell({ hours, attempts, messaged }) {
+  // A rep MESSAGE satisfies first contact exactly as a call does — the rule
+  // sweepContactDeadlines() enforces. Showing "còn Nh để gọi" on a lead the
+  // rep has already messaged nags about work that is done.
   if (attempts > 0) {
-    return <span style={{ color: "var(--ink-55)" }}>đã gọi {attempts}×</span>;
+    return (
+      <span style={{ color: "var(--ink-55)" }}>
+        đã gọi {attempts}×{messaged ? " · đã nhắn" : ""}
+      </span>
+    );
   }
+  if (messaged) return <span style={{ color: "var(--ink-55)" }}>đã nhắn tin</span>;
   if (hours == null) return <span style={{ color: "var(--ink-55)" }}>—</span>;
   if (hours < 0) {
     return <b style={{ color: "#b3261e" }}>quá hạn {Math.abs(hours)}h</b>;
@@ -125,7 +133,7 @@ export default function Deals() {
                   )}
                 </td>
                 <td>
-                  <SlaCell hours={d.contact_sla_hours_left} attempts={d.call_attempts} />
+                  <SlaCell hours={d.contact_sla_hours_left} attempts={d.call_attempts} messaged={d.rep_messaged} />
                 </td>
                 <td style={{ textAlign: "right" }} className="mono">
                   {vnd(d.fee_vnd)}
@@ -192,16 +200,35 @@ function DealTimeline({ id }) {
       )}
 
       {data.timeline.length > 0 ? (
-        <div className="timeline">
+        <div className="dl-tl">
           {data.timeline.map((e, i) => {
-            const detail = Object.entries(e.detail || {})
-              .filter(([, v]) => v !== null && typeof v !== "object")
-              .map(([k, v]) => `${k}=${v}`)
-              .join(" · ");
+            if (e.kind === "rm_msg" || e.kind === "user_msg") {
+              const mine = e.kind === "rm_msg";
+              return (
+                <div key={i} className={`dl-msg ${mine ? "mine" : ""}`}>
+                  <div className="dl-who">
+                    {mine ? data.partner : data.customer} · <span className="mono">{fmtDate(e.at)}</span>
+                  </div>
+                  <div className="dl-bubble">{e.label}</div>
+                  {e.contains_contact_info && (
+                    <div className="dl-leak">Tin nhắn có vẻ chứa số điện thoại</div>
+                  )}
+                </div>
+              );
+            }
+            if (e.kind === "turn") {
+              const caller = e.speaker !== "rm";
+              return (
+                <div key={i} className={`dl-turn ${caller ? "" : "rm"}`}>
+                  <span className="dl-turn-who">{caller ? "Khách" : "TVV"}</span>
+                  <span>{e.label}</span>
+                </div>
+              );
+            }
             return (
-              <div key={i} className="tl-event">
-                <span className="mono">{fmtDate(e.at)}</span> — {e.event}
-                {detail && <> · {detail}</>}
+              <div key={i} className="dl-event">
+                <span className="mono">{fmtDate(e.at)}</span>
+                <span>{e.label}</span>
               </div>
             );
           })}
