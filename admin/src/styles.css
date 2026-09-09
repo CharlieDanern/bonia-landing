@@ -435,7 +435,11 @@ textarea.inp { width: 100%; font: inherit; line-height: 1.55; resize: vertical; 
 .img-swap { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
 .img-swap figure { margin: 0; }
 .img-swap img {
-  display: block; width: 168px; height: 105px; object-fit: cover;
+  /* 194x90 ≈ 361:168, the app's real card art box (iOS .frame(height:168)
+     at full card width, Android .height(168.dp), both cropping to fill).
+     This was 168x105 (1.6:1), which previewed a crop the app never
+     performs — the whole point of the panel is to show the actual crop. */
+  display: block; width: 194px; height: 90px; object-fit: cover;
   border-radius: 10px; border: 1px solid var(--border); background: var(--surface-sunken);
 }
 .img-swap .next img { border-color: #2a5db0; box-shadow: 0 0 0 2px rgba(42,93,176,.18); }
