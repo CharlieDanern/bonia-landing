@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Bonia Admin — admin portal (bonia.vn/admin)",
+  "description": "Bonia Admin \u2014 admin portal (bonia.vn/admin)",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node ../scripts/assert-no-localhost.mjs ../public/admin/assets",
     "preview": "vite preview"
   },
   "dependencies": {

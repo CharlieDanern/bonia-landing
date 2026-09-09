@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Bonia Connect — RM portal (bonia.vn/app)",
+  "description": "Bonia Connect \u2014 RM portal (bonia.vn/app)",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node ../scripts/assert-no-localhost.mjs ../public/app/assets",
     "preview": "vite preview"
   },
   "dependencies": {
