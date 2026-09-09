@@ -653,11 +653,26 @@ h1.page { font-size: 25px; font-weight: 600; letter-spacing: -.02em; margin: 7px
    stepper as 10.5px text, which read as a stage name rather than a
    control. Neither commits on its own — each opens a sheet that confirms
    (won asks which card was actually opened; lost asks why). */
+.pl-action-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  flex-wrap: wrap; margin-bottom: 12px;
+}
+.pl-action-left { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.pl-fee { line-height: 1.35; }
+
+.pl-outcome-row {
+  display: flex; gap: 8px; margin-left: auto; flex-shrink: 0;
+  justify-content: flex-end;
+}
 .pl-outcome {
-  padding: 9px 14px; border-radius: 9px; font-size: 13.5px; font-weight: 600;
+  padding: 9px 13px; border-radius: 9px; font-size: 13px; font-weight: 600;
   border: 1px solid transparent; cursor: pointer; white-space: nowrap;
 }
 .pl-outcome.won { background: #E9F5EE; border-color: #BFE0CD; color: #1D6B42; }
 .pl-outcome.won:hover { background: #DDEEE4; }
-.pl-outcome.lost { background: #fff; border-color: var(--line, #E4E8F0); color: var(--ink-55, #5A6378); }
-.pl-outcome.lost:hover { border-color: #C9D0DC; color: var(--ink); }
+/* Muted rose, deliberately NOT --red (#e9455a). That token is reserved for
+   END CALL and is the only alarm-red in the product; reusing it here would
+   put a live-call colour on a bookkeeping action and blunt both. This reads
+   as negative without competing. */
+.pl-outcome.lost { background: #fff; border-color: #E8CDD2; color: #A33D4C; }
+.pl-outcome.lost:hover { background: #FDF6F7; border-color: #DDB8BF; }

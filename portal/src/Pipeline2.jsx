@@ -739,28 +739,36 @@ function DetailPane({
 
       {/* action row */}
       {!o && (
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-          <button className="pl-call" onClick={onCall}>
-            {called ? "Gọi lại qua Bonia" : "Gọi qua Bonia"}
-          </button>
-          {/* THE CLOSE CONTROLS. These used to be two text links inside the
-              stepper's third node, styled as a step LABEL — so they read as
-              the name of a stage rather than something you press, and the
-              progress dot beside them silently fired "won" if clicked.
-              Here they sit with the other verb on the screen, say what they
-              do, and each still opens its own confirming sheet. */}
-          <button className="pl-outcome won" onClick={() => onOpenOutcome("won")}>
-            Khách đã mở thẻ
-          </button>
-          <button className="pl-outcome lost" onClick={() => onOpenOutcome("lost")}>
-            Không thành công
-          </button>
-          <div style={{ flex: 1 }} />
-          <div style={{ textAlign: "right" }}>
-            <div className="bid-micro">Phí nếu duyệt · đang giữ</div>
-            <div className="mono" style={{ fontSize: 13.5, fontWeight: 600 }}>
-              {vnd(lead.fee_vnd)} · {vnd(lead.hold_vnd || 0)}
+        <div className="pl-action-row">
+          {/* Call, with its cost stacked underneath: the fee is context for
+              this lead, not an action, so it reads as a caption on the
+              button instead of a third item competing for the same row.
+              The closing controls stay right-aligned and level with the
+              button — "what you do now" left, "how this ends" right. */}
+          <div className="pl-action-left">
+            <button className="pl-call" onClick={onCall}>
+              {called ? "Gọi lại qua Bonia" : "Gọi qua Bonia"}
+            </button>
+            <div className="pl-fee">
+              <div className="bid-micro">Phí nếu duyệt · đang giữ</div>
+              <div className="mono" style={{ fontSize: 13.5, fontWeight: 600 }}>
+                {vnd(lead.fee_vnd)} · {vnd(lead.hold_vnd || 0)}
+              </div>
             </div>
+          </div>
+          {/* Grouped, and pushed right with margin-left:auto rather than a
+              spacer div. The spacer let the row wrap BETWEEN the two
+              buttons, so "Không thành công" dropped to a line on its own
+              and read as unrelated to the deal it closes. As one flex item
+              they move together — side by side when there is room, and as a
+              right-aligned pair on their own line when there is not. */}
+          <div className="pl-outcome-row">
+            <button className="pl-outcome won" onClick={() => onOpenOutcome("won")}>
+              Khách đã mở thẻ
+            </button>
+            <button className="pl-outcome lost" onClick={() => onOpenOutcome("lost")}>
+              Không thành công
+            </button>
           </div>
         </div>
       )}
