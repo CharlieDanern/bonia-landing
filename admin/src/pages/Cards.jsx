@@ -246,15 +246,20 @@ function CardDetail({ card, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone })
   return (
     <div className="detail card">
       {/* ── 1 · Consumer preview ─────────────────────────────── */}
-      <div className="mono-eyebrow">1 · Người dùng sẽ thấy</div>
+      <div className="rv-head">
+        <div className="mono-eyebrow">1 · Người dùng sẽ thấy</div>
+        {(newImg || ed.name !== undefined || ed.perk !== undefined) && (
+          <span className="rv-preview-tag">xem trước — chưa lưu</span>
+        )}
+      </div>
       <div className="preview-row">
         <div style={{ width: 340, maxWidth: "100%" }}>
           <AppMirror
             bank={card.bank}
-            name={card.name}
-            perk={card.perk}
+            name={cur("name", card.name)}
+            perk={cur("perk", card.perk)}
             rewardVnd={userReward}
-            imageUrl={media[0] || null}
+            imageUrl={newImg?.preview || media[0] || null}
             cta="Quan tâm"
           />
         </div>
@@ -276,6 +281,7 @@ function CardDetail({ card, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone })
           onClick={() => {
             if (editing) {
               setEd({});
+              if (newImg?.preview) URL.revokeObjectURL(newImg.preview);
               setNewImg(null);
             }
             setEditing((v) => !v);
@@ -449,13 +455,28 @@ function CardDetail({ card, rewardPct = DEFAULT_REWARD_PCT, showToast, onDone })
                 r.onload = () => res(String(r.result).split(",")[1]);
                 r.readAsDataURL(f);
               });
-              setNewImg({ base64: b64, mime: f.type, preview: URL.createObjectURL(f) });
+              setNewImg((prev) => {
+                if (prev?.preview) URL.revokeObjectURL(prev.preview);
+                return { base64: b64, mime: f.type, preview: URL.createObjectURL(f) };
+              });
             }}
           />
           {newImg && (
-            <div style={{ marginTop: 8 }}>
-              <img src={newImg.preview} alt="" className="media-thumb" />
-              <button className="btn-ghost btn-sm" onClick={() => setNewImg(null)}>
+            <div className="img-swap">
+              {media[0] && (
+                <figure>
+                  <img src={media[0]} alt="" />
+                  <figcaption>Ảnh hiện tại</figcaption>
+                </figure>
+              )}
+              <figure className="next">
+                <img src={newImg.preview} alt="" />
+                <figcaption>Ảnh mới — xem trước ở trên</figcaption>
+              </figure>
+              <button className="btn-ghost btn-sm" onClick={() => {
+                  if (newImg?.preview) URL.revokeObjectURL(newImg.preview);
+                  setNewImg(null);
+                }}>
                 Bỏ ảnh mới
               </button>
             </div>
