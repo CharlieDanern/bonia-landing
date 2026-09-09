@@ -147,6 +147,19 @@ function RegRow({ reg, banks = [], showToast, onDone }) {
   // an employee has a bank mailbox, a freelancer has this — so approving one
   // without opening it is approving on nothing.
   const isCtv = reg.partner_type === "freelancer";
+  /**
+   * Whose standing has to be proved by a document rather than a domain.
+   * NOT just freelancers: an "employee" on a domain BANK_DOMAINS does not
+   * know is vouched for by nothing, and used to be approvable with no
+   * evidence at all — the cheap path, while an honest CTV uploaded a
+   * contract. Mirrors approveRegistration() on the server.
+   */
+  const needsProof = isCtv || reg.domain_vouched === false;
+  // Grant of no-hold leads. Defaults to whatever the row already carries;
+  // null means "leave the partner_type default alone".
+  const [grant, setGrant] = useState(
+    reg.free_leads_grant == null ? "" : String(reg.free_leads_grant)
+  );
   const [proof, setProof] = useState(null);
   const [note, setNote] = useState(reg.approval_note || "");
   const [expiry, setExpiry] = useState(
@@ -187,7 +200,11 @@ function RegRow({ reg, banks = [], showToast, onDone }) {
   const approve = async () => {
     setBusy(true);
     try {
-      await api.approveRegistration(reg.id, bank.trim());
+      await api.approveRegistration(
+        reg.id,
+        bank.trim(),
+        grant.trim() === "" ? undefined : Number(grant)
+      );
       showToast(`Đã duyệt ${reg.email} — email thông báo sẽ được gửi.`);
       onDone();
     } catch (ex) {
@@ -218,7 +235,7 @@ function RegRow({ reg, banks = [], showToast, onDone }) {
   const expiryDate = savedReview.expiry ? new Date(savedReview.expiry) : null;
   const checks = [
     { ok: !!bank.trim(), label: "Đã chọn ngân hàng" },
-    ...(isCtv
+    ...(needsProof
       ? [
           { ok: !!reg.has_proof, label: "Có văn bản uỷ quyền" },
           { ok: !!savedReview.note.trim(), label: "Đã lưu ghi chú xét duyệt" },
@@ -380,6 +397,36 @@ function RegRow({ reg, banks = [], showToast, onDone }) {
             <option value="__other__">Khác…</option>
           </select>
         )}
+
+        {/* An "employee" address no bank domain vouches for. Said plainly,
+            because the partner-type badge above otherwise implies a
+            verification that did not happen. */}
+        {!isCtv && reg.domain_vouched === false && (
+          <div className="reg-unvouched">
+            Email <b>{reg.email}</b> không thuộc tên miền ngân hàng nào Bonia biết —
+            hồ sơ này chỉ có bạn kiểm chứng. Cần văn bản uỷ quyền như cộng tác viên.
+          </div>
+        )}
+
+        {/* No-hold allowance. Normally decided by partner type, but a bank
+            that outsources card sales (Shinhan sells entirely through a
+            third party) leaves legitimate sellers unable to hold a bank
+            mailbox — so the reviewer, who is reading the authorisation
+            anyway, can set it directly. */}
+        <label className="reg-grant">
+          <span>Số lead miễn tạm giữ</span>
+          <input
+            type="number" min="0" max="10" inputMode="numeric"
+            placeholder={isCtv ? "mặc định 0" : "mặc định 3"}
+            value={grant}
+            onChange={(e) => setGrant(e.target.value)}
+          />
+          <small>
+            {grant.trim() === ""
+              ? `Để trống = theo loại đối tác (${isCtv ? "cộng tác viên: 0" : "nhân viên: 3"}).`
+              : `Đối tác này được ${Number(grant)} lead đầu không cần tạm giữ số dư.`}
+          </small>
+        </label>
 
         {/* The gate, spelled out. This used to be a hover tooltip on a
             greyed-out button, which meant the answer to "why can't I click

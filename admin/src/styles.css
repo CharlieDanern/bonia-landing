@@ -480,3 +480,18 @@ textarea.inp { width: 100%; font: inherit; line-height: 1.55; resize: vertical; 
   min-width: 30px; padding-top: 2px;
 }
 .dl-turn.rm .dl-turn-who { color: #2a5db0; }
+
+/* Registration review: an address no bank domain vouches for. Amber, not
+   red — it is "you are the only check here", not "this is fraud". */
+.reg-unvouched {
+  margin: 8px 0 10px; padding: 9px 12px; border-radius: 8px;
+  background: #fdf6e3; border-left: 3px solid #c8912a;
+  font-size: 12.5px; line-height: 1.55;
+}
+.reg-grant { display: block; margin-bottom: 12px; font-size: 12.5px; }
+.reg-grant > span { display: block; font-weight: 600; margin-bottom: 4px; }
+.reg-grant input {
+  width: 92px; padding: 7px 9px; border-radius: 7px;
+  border: 1px solid var(--border); font: inherit;
+}
+.reg-grant small { display: block; margin-top: 4px; color: var(--ink-55); }

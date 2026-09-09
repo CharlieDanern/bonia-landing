@@ -49,10 +49,10 @@ export const api = {
   overview: () => request("/admin-portal/overview"),
   registrations: (status = "pending") =>
     request(`/admin-portal/registrations?status=${status}`),
-  approveRegistration: (id, bank) =>
+  approveRegistration: (id, bank, freeLeadsGrant) =>
     request(`/admin-portal/registrations/${id}/approve`, {
       method: "POST",
-      body: { bank },
+      body: { bank, ...(freeLeadsGrant !== undefined ? { free_leads_grant: freeLeadsGrant } : {}) },
     }),
   rejectRegistration: (id) =>
     request(`/admin-portal/registrations/${id}/reject`, { method: "POST", body: {} }),
