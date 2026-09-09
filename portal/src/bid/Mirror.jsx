@@ -221,6 +221,14 @@ export function PhonePreview({ bank, name, perk, reward, imageUrl }) {
       style={{
         width: 300,
         flex: "none",
+        // A phone is a fixed shape. Without this it is a flex ITEM in a row
+        // whose default align-items is `stretch`, so the black body grew to
+        // match the taller column beside it while the screen inside only
+        // grew to its content — leaving a slab of bezel below the screen.
+        // Set here rather than on the parent so the component holds its
+        // shape wherever it is dropped, instead of depending on every
+        // caller remembering to set align-items.
+        alignSelf: "flex-start",
         borderRadius: 46,
         background: "#0E0F13",
         padding: 10,
