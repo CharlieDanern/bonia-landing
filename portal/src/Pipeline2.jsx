@@ -720,24 +720,12 @@ function DetailPane({
             <React.Fragment key={i}>
               {i > 0 && <span className={`pl-step-track ${i <= completed ? "done" : ""}`} />}
               <div className="pl-step">
-                {i === 2 && !o ? (
-                  <button className="pl-node close" onClick={() => onOpenOutcome("won")} aria-label="Đã nhận thẻ" />
-                ) : (
-                  <span className={`pl-node ${isLostNode ? "lost" : done || (closedNode && o.kind !== "lost") ? "done" : isCurrent ? "current" : ""}`}>
-                    {(done || (closedNode && o.kind !== "lost")) ? "✓" : ""}
-                  </span>
-                )}
-                {i === 2 && !o ? (
-                  <span className="pl-step-label">
-                    <button className="pl-close-won" onClick={() => onOpenOutcome("won")}>Đã nhận thẻ</button>
-                    <span style={{ color: "var(--ink-25, #A2A9B8)" }}> / </span>
-                    <button className="pl-close-lost" onClick={() => onOpenOutcome("lost")}>Không thành công</button>
-                  </span>
-                ) : (
-                  <span className={`pl-step-label ${isLostNode ? "lost" : done || isCurrent || closedNode ? "" : "future"}`}>
-                    {isLostNode ? "Deal thất bại" : nodeLabel(i)}
-                  </span>
-                )}
+                <span className={`pl-node ${isLostNode ? "lost" : done || (closedNode && o && o.kind !== "lost") ? "done" : isCurrent ? "current" : ""}`}>
+                  {(done || (closedNode && o && o.kind !== "lost")) ? "✓" : ""}
+                </span>
+                <span className={`pl-step-label ${isLostNode ? "lost" : done || isCurrent || closedNode ? "" : "future"}`}>
+                  {isLostNode ? "Deal thất bại" : nodeLabel(i)}
+                </span>
               </div>
             </React.Fragment>
           );
@@ -754,6 +742,18 @@ function DetailPane({
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
           <button className="pl-call" onClick={onCall}>
             {called ? "Gọi lại qua Bonia" : "Gọi qua Bonia"}
+          </button>
+          {/* THE CLOSE CONTROLS. These used to be two text links inside the
+              stepper's third node, styled as a step LABEL — so they read as
+              the name of a stage rather than something you press, and the
+              progress dot beside them silently fired "won" if clicked.
+              Here they sit with the other verb on the screen, say what they
+              do, and each still opens its own confirming sheet. */}
+          <button className="pl-outcome won" onClick={() => onOpenOutcome("won")}>
+            Khách đã mở thẻ
+          </button>
+          <button className="pl-outcome lost" onClick={() => onOpenOutcome("lost")}>
+            Không thành công
           </button>
           <div style={{ flex: 1 }} />
           <div style={{ textAlign: "right" }}>
