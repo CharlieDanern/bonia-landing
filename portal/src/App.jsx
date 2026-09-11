@@ -341,6 +341,28 @@ function Portal({ onSignOut, target, onTargetApplied }) {
           }}
         />
       )}
+      {/* Funding notice / freeze. Driven by /rm/me `funding`, computed by
+          the SAME fundingState() the chat and call gates use, so this banner
+          can never promise something the server then refuses. */}
+      {me?.funding?.in_arrears && (
+        <div className={`fund-banner ${me.funding.comms_frozen ? "frozen" : ""}`}>
+          {me.funding.comms_frozen ? (
+            <>
+              <b>Tin nhắn và cuộc gọi đang tạm khoá.</b> Bạn đã có {me.funding.successes} khách mở thẻ
+              thành công và ví đang âm {(me.funding.owed_vnd || 0).toLocaleString("vi-VN")}đ. Nạp ví để mở lại ngay —
+              bạn vẫn xem được mọi thứ và vẫn ghi nhận được kết quả.
+            </>
+          ) : (
+            <>
+              <b>Cần nạp ví.</b> {me.funding.successes} khách đã mở thẻ thành công; ví đang âm{" "}
+              {(me.funding.owed_vnd || 0).toLocaleString("vi-VN")}đ.
+              {me.funding.freezes_at && (
+                <> Sau <b>{new Date(me.funding.freezes_at).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}</b>, tin nhắn và cuộc gọi sẽ tạm khoá.</>
+              )}
+            </>
+          )}
+        </div>
+      )}
       <div className="mobile-header">
         <img src={logo} alt="" />
         <span style={{ fontSize: 14, fontWeight: 600 }}>

@@ -676,3 +676,12 @@ h1.page { font-size: 25px; font-weight: 600; letter-spacing: -.02em; margin: 7px
    as negative without competing. */
 .pl-outcome.lost { background: #fff; border-color: #E8CDD2; color: #A33D4C; }
 .pl-outcome.lost:hover { background: #FDF6F7; border-color: #DDB8BF; }
+
+/* ── Funding notice / freeze banner ────────────────────────────────────
+   Amber while in notice (you have 24h), rose once frozen. Neither is --red:
+   that stays END CALL only. */
+.fund-banner {
+  margin: 0 0 12px; padding: 11px 14px; border-radius: 10px;
+  background: #fdf6e3; border-left: 3px solid #c8912a; font-size: 13.5px; line-height: 1.5;
+}
+.fund-banner.frozen { background: #FDF6F7; border-left-color: #A33D4C; }
