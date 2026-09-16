@@ -499,3 +499,56 @@ textarea.inp { width: 100%; font: inherit; line-height: 1.55; resize: vertical; 
   border: 1px solid var(--border); font: inherit;
 }
 .reg-grant small { display: block; margin-top: 4px; color: var(--ink-55); }
+
+/* ── Broadcast composer ─────────────────────────────────────────────
+   Two columns: the form, and a phone-shaped preview that has to sit
+   beside it rather than below, because the whole point is reading the
+   text as it will actually appear while still editing it. */
+.bc-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+@media (max-width: 860px) { .bc-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.bc-label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin: 16px 0 6px; }
+.bc-label:first-child { margin-top: 0; }
+.bc-input {
+  width: 100%; box-sizing: border-box; padding: 9px 11px; font: inherit; font-size: 14px;
+  border: 1px solid #d5dbe3; border-radius: 8px; background: #fff; color: #0f172a;
+}
+.bc-input:focus { outline: 2px solid #1e3a5f; outline-offset: -1px; border-color: #1e3a5f; }
+textarea.bc-input { resize: vertical; line-height: 1.45; }
+.bc-phones { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; margin-top: 8px; }
+.bc-count { font-size: 11px; color: #94a3b8; text-align: right; margin-top: 3px; font-variant-numeric: tabular-nums; }
+.bc-hint { font-size: 12px; color: #64748b; line-height: 1.5; margin-top: 6px; }
+.bc-gate { color: #92400e; }
+
+.bc-reach {
+  display: flex; align-items: baseline; gap: 8px; margin-top: 18px; padding: 12px 14px;
+  background: #f1f5f9; border-radius: 8px; font-size: 13px; color: #475569;
+}
+.bc-reach strong { font-size: 18px; color: #0f172a; font-variant-numeric: tabular-nums; }
+.bc-devices { margin-left: auto; font-size: 12px; color: #94a3b8; }
+
+.bc-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+
+/* Phone preview. Deliberately narrow — a notification that fits here but not
+   on a real lock screen is the failure this is meant to catch. */
+.bc-phone {
+  background: linear-gradient(160deg, #334155, #0f172a); border-radius: 22px; padding: 22px 12px;
+  min-height: 210px; display: flex; align-items: flex-start;
+}
+.bc-notif {
+  background: rgba(255, 255, 255, 0.93); backdrop-filter: blur(6px); border-radius: 14px;
+  padding: 10px 12px; width: 100%; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+.bc-notif-app { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: #64748b; margin-bottom: 4px; }
+.bc-notif-icon { width: 13px; height: 13px; border-radius: 3px; background: #1e3a5f; display: inline-block; }
+.bc-notif-title { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.35; overflow-wrap: anywhere; }
+.bc-notif-body { font-size: 13px; color: #334155; line-height: 1.4; margin-top: 2px; overflow-wrap: anywhere; }
+
+.bc-confirm-preview { background: #f1f5f9; border-radius: 10px; padding: 10px 12px; }
+
+.bc-h2 { font-size: 15px; font-weight: 700; color: #0f172a; margin: 30px 0 12px; }
+.bc-dry { opacity: 0.55; }
+.bc-tag {
+  margin-left: 8px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; color: #64748b; background: #e2e8f0; padding: 2px 6px; border-radius: 4px;
+}

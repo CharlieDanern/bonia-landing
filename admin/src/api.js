@@ -47,6 +47,18 @@ export const api = {
   login: (username, password) =>
     request("/admin-portal/login", { method: "POST", body: { username, password } }),
   overview: () => request("/admin-portal/overview"),
+
+  /**
+   * Announcement pushes. GET carries live audience sizes AND the history, so
+   * the composer can show "how many people would this reach" before anything
+   * is sent. POST with dry_run counts without contacting APNs or FCM.
+   */
+  broadcasts: () => request("/admin-portal/broadcasts"),
+  sendBroadcast: ({ title, body, audience, phones, dryRun }) =>
+    request("/admin-portal/broadcast", {
+      method: "POST",
+      body: { title, body, audience, phones, dry_run: !!dryRun },
+    }),
   registrations: (status = "pending") =>
     request(`/admin-portal/registrations?status=${status}`),
   approveRegistration: (id, bank, freeLeadsGrant) =>

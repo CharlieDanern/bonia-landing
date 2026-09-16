@@ -10,6 +10,7 @@ import Deals from "./pages/Deals.jsx";
 import Payouts from "./pages/Payouts.jsx";
 import Closures from "./pages/Closures.jsx";
 import Rms from "./pages/Rms.jsx";
+import Broadcast from "./pages/Broadcast.jsx";
 
 const NAV = [
   { key: "overview", label: "Tổng quan" },
@@ -20,6 +21,7 @@ const NAV = [
   { key: "payouts", label: "Chi thưởng" },
   { key: "closures", label: "Đóng TK" },
   { key: "rms", label: "Đối tác" },
+  { key: "broadcast", label: "Thông báo" },
 ];
 
 export default function App() {
@@ -85,6 +87,7 @@ function Shell({ onSignOut }) {
           {route === "payouts" && <Payouts showToast={showToast} />}
           {route === "closures" && <Closures showToast={showToast} />}
           {route === "rms" && <Rms showToast={showToast} />}
+          {route === "broadcast" && <Broadcast showToast={showToast} />}
         </div>
       </main>
       <Toast msg={toast} />
