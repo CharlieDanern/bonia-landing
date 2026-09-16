@@ -31,9 +31,81 @@ const AUDIENCE_NOTE = {
   phones: "Nhập số điện thoại dạng +84…, mỗi số một dòng. Dùng để tự gửi cho mình trước.",
 };
 
+/**
+ * Post-send results.
+ *
+ * Every number here is paired with the same measurement taken over an equally
+ * long window BEFORE the send. A campaign is only legible against its own
+ * baseline: forty people opening a tab is a triumph or a slow afternoon
+ * depending entirely on what forty usually is.
+ */
+function Results({ latest }) {
+  if (!latest || !latest.outcome) return null;
+  const o = latest.outcome;
+  const lift = o.opened_people_before > 0
+    ? Math.round((o.opened_people / o.opened_people_before) * 10) / 10
+    : null;
+  const peak = Math.max(1, ...latest.curve.map((c) => c.opens));
+
+  return (
+    <section className="bc-results">
+      <div className="bc-results-head">
+        <div>
+          <div className="eyebrow">Kết quả</div>
+          <h2 className="bc-h2" style={{ margin: "2px 0 0" }}>{latest.title}</h2>
+        </div>
+        <div className="bc-results-window">{o.window_hours} giờ kể từ khi gửi</div>
+      </div>
+
+      <div className="bc-funnel">
+        <div className="bc-step">
+          <span className="bc-step-n">{latest.sent_ok}</span>
+          <span className="bc-step-l">Nhận được</span>
+          <span className="bc-step-s">{latest.sent_failed} lỗi (đã gỡ app)</span>
+        </div>
+        <div className="bc-step">
+          <span className="bc-step-n">{o.opened_people}</span>
+          <span className="bc-step-l">Mở tab Ưu đãi</span>
+          <span className="bc-step-s">
+            {o.opened_people_before} cùng khoảng thời gian trước đó
+            {lift ? ` · gấp ${lift}×` : ""}
+          </span>
+        </div>
+        <div className="bc-step">
+          <span className="bc-step-n">{o.picked_city}</span>
+          <span className="bc-step-l">Chọn tỉnh/thành</span>
+          <span className="bc-step-s">{o.stuck_at_city} còn kẹt ở bước này</span>
+        </div>
+        <div className="bc-step bc-step-end">
+          <span className="bc-step-n">{o.intents}</span>
+          <span className="bc-step-l">Yêu cầu mở thẻ</span>
+          <span className="bc-step-s">chuyển thành lead</span>
+        </div>
+      </div>
+
+      {latest.curve.length > 0 && (
+        <div className="bc-curve">
+          {latest.curve.map((c) => (
+            <div key={c.hour} className="bc-bar-wrap" title={`${c.opens} lượt · ${c.people} người`}>
+              <div className="bc-bar" style={{ height: `${Math.round((c.opens / peak) * 100)}%` }} />
+              <div className="bc-bar-x">
+                {new Date(c.hour).toLocaleTimeString("vi-VN", { hour: "2-digit" })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="bc-hint">
+        Đếm bắt đầu từ lúc bật theo dõi (16/09). Lượt mở trước đó không có dữ liệu người dùng.
+      </div>
+    </section>
+  );
+}
+
 export default function Broadcast({ showToast }) {
   const load = useLoad(() => api.broadcasts(), []);
   const audiences = load.data?.audiences || {};
+  const latest = load.data?.latest || null;
   const history = load.data?.history || [];
 
   const [title, setTitle] = useState("");
@@ -121,6 +193,8 @@ export default function Broadcast({ showToast }) {
         sub="Gửi một thông báo đẩy tới người dùng app. Không thể thu hồi sau khi gửi."
         at={load.at}
       />
+
+      <Results latest={latest} />
 
       <div className="bc-grid">
         <section className="bc-compose">
