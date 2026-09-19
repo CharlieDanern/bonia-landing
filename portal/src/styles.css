@@ -685,3 +685,9 @@ h1.page { font-size: 25px; font-weight: 600; letter-spacing: -.02em; margin: 7px
   background: #fdf6e3; border-left: 3px solid #c8912a; font-size: 13.5px; line-height: 1.5;
 }
 .fund-banner.frozen { background: #FDF6F7; border-left-color: #A33D4C; }
+
+/* "tự động" — marks a message Bonia sent under the rep's name (the greeting
+   posted the moment a customer taps Quan tâm). Quiet on purpose: it is a
+   provenance note, not a status the rep has to act on. */
+.pl-auto-tag { margin-left: 6px; font-size: 9.5px; font-weight: 700; letter-spacing: .03em;
+  color: #5A6378; background: #EEF1F6; border-radius: 4px; padding: 1px 5px; vertical-align: 1px; }

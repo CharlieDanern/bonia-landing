@@ -866,6 +866,10 @@ function DetailPane({
               <div className={`pl-bubble ${item.from === "rm" ? "mine" : ""}`}>{item.text}</div>
               <span className="mono" style={{ fontSize: 10, color: "var(--ink-35)", margin: "2px 4px" }}>
                 {new Date(item.at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                {/* Bonia posted this under the rep's name when the customer
+                    tapped. Without the tag a rep opens a brand-new lead and
+                    finds a message they never wrote, already sent. */}
+                {item.automated && <span className="pl-auto-tag">tự động</span>}
               </span>
               {item.contains_contact_info && (
                 <div className="pl-leak">Trao đổi ngoài Bonia không được bảo mật số điện thoại và không được Bonia bảo vệ.</div>
