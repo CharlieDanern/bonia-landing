@@ -95,6 +95,9 @@ export default function Frame07GetStarted() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0 clamp(16px, 2vw, 32px)', fontSize: 'clamp(12px, min(1.6cqw, 2.6vh), 13px)', lineHeight: '1.9' }}>
               <div>
+                <a href="/" style={{ display: 'block', color: '#4A4239' }}>
+                  Trang chủ Bonia
+                </a>
                 <a href="/privacy.html" style={{ display: 'block', color: '#4A4239' }}>
                   Chính sách bảo mật
                 </a>

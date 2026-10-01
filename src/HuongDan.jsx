@@ -177,7 +177,7 @@ const HOTLINES = [
   { name: "Vietnamobile", num: "789" },
 ];
 
-export default function HuongDan() {
+export default function HuongDan({ num = "04" }) {
   const { guide } = useLang();
   const steps = guide.steps.map((s, i) => ({ ...s, img: STEP_IMGS[i] }));
   return (
@@ -188,9 +188,11 @@ export default function HuongDan() {
     >
       <header className="max-w-3xl">
         <div className="flex items-baseline gap-3 mb-6">
+          {num && (
           <span className="text-[12px] ff-mono" style={{ color: ACC }}>
-            № 04
+            № {num}
           </span>
+          )}
           <span
             className="text-[11px] uppercase tracking-[0.22em]"
             style={{ color: "#7A6F62" }}

@@ -1,0 +1,112 @@
+/* bonia.vn/retail — the consumer call-screening landing (handoff "Bonia
+   Retail", 2026-10-01). Global resets, keyframes and the few rules inline
+   styles cannot express (hover, media queries, <details> state); every
+   section styles itself inline with the handoff's values (see tokens.js). */
+html {
+  scroll-behavior: smooth;
+}
+html,
+body {
+  margin: 0;
+  background: #f2eee6;
+  color: #1f1b16;
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+a {
+  color: #7b4a2d;
+  text-decoration: none;
+}
+a:hover {
+  color: #5e3820;
+}
+:focus-visible {
+  outline: 2px solid #7b4a2d;
+  outline-offset: 3px;
+}
+
+/* Nav: the dark "Tải app" pill, and the in-page links hidden on phones. */
+.rt-pill {
+  height: 38px;
+  padding: 0 18px;
+  border-radius: 19px;
+  background: #1f1b16;
+  color: #f7f3ec;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.rt-pill:hover {
+  background: #3a2e1e;
+  color: #f7f3ec;
+}
+@media (max-width: 640px) {
+  .rt-navlinks {
+    display: none !important;
+  }
+}
+
+/* §07: native <details>; the + turns into × when open. */
+summary {
+  list-style: none;
+  cursor: pointer;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+.rt-plus {
+  transition: transform 0.25s ease;
+}
+details[open] .rt-plus {
+  transform: rotate(45deg);
+}
+
+@keyframes bnSheen {
+  0%,
+  62% {
+    transform: translateX(-40%);
+  }
+  100% {
+    transform: translateX(40%);
+  }
+}
+@keyframes bnNudge {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+@keyframes bonia-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Reduced motion: nothing moves (the orb draws one still frame and the
+   scroll reveal is skipped in JS). */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

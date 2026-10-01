@@ -1,0 +1,84 @@
+/* bonia.vn/reception — Bonia Tiếp tân landing (design handoff v4, 2026-09-28).
+   Global resets and keyframes only; every section styles itself inline, as the
+   handoff's values are authoritative (see tokens.js). */
+body {
+  margin: 0;
+  background: #f2eee6;
+  font-family: Inter, system-ui, sans-serif;
+  color: #1f1b16;
+  -webkit-font-smoothing: antialiased;
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+a {
+  color: #7b4a2d;
+  text-decoration: none;
+}
+a:hover {
+  color: #5e3820;
+}
+button {
+  font: inherit;
+}
+@keyframes bonia-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* handoff v5 update: the call tiles' sheen and the hero link's nudge */
+@keyframes bnSheen {
+  0%,
+  62% {
+    transform: translateX(-40%);
+  }
+  100% {
+    transform: translateX(40%);
+  }
+}
+@keyframes bnNudge {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+@keyframes bonia-caret {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+/* handoff v5: one focus ring for every control */
+:focus-visible {
+  outline: 2px solid #7b4a2d;
+  outline-offset: 2px;
+}

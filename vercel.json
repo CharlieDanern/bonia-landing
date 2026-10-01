@@ -1,12 +1,18 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "redirects": [
+    { "source": "/reception/", "destination": "/reception", "permanent": true },
+    { "source": "/retail/", "destination": "/retail", "permanent": true },
+    { "source": "/huong-dan/", "destination": "/huong-dan", "permanent": true },
     { "source": "/app/:path(.*)?", "has": [{ "type": "host", "value": "bonia.net" }], "destination": "https://bonia.vn/app/:path", "permanent": true },
     { "source": "/admin/:path(.*)?", "has": [{ "type": "host", "value": "bonia.net" }], "destination": "https://bonia.vn/admin/:path", "permanent": true }
   ],
   "rewrites": [
     { "source": "/app/:path*", "destination": "/app/index.html" },
     { "source": "/admin/:path*", "destination": "/admin/index.html" },
-    { "source": "/business", "destination": "/business.html" }
+    { "source": "/business", "destination": "/business.html" },
+    { "source": "/reception", "destination": "/reception.html" },
+    { "source": "/retail", "destination": "/retail.html" },
+    { "source": "/huong-dan", "destination": "/huong-dan.html" }
   ]
 }

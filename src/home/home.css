@@ -1,0 +1,347 @@
+/* bonia.vn/ — the product chooser (design handoff "Bonia Home", 2026-10-01).
+   Every value is the prototype's (Bonia Home.dc.html); the class names group
+   them so the card's hover and focus states can live in CSS. */
+
+html,
+body {
+  margin: 0;
+  background: #f2eee6;
+  color: #1f1b16;
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+a {
+  color: #7b4a2d;
+  text-decoration: none;
+}
+a:hover {
+  color: #5e3820;
+}
+:focus-visible {
+  outline: 2px solid #7b4a2d;
+  outline-offset: 3px;
+}
+
+@keyframes bnSheen {
+  0%,
+  62% {
+    transform: translateX(-40%);
+  }
+  100% {
+    transform: translateX(40%);
+  }
+}
+@keyframes bonia-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* One screen: nav, the chooser centred in what is left, footer. On a short
+   or narrow screen it grows and the page scrolls; the orb stays centred on
+   the whole block. */
+.hm {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #f2eee6;
+}
+
+/* The orb at its native 960 px, centred 43 px above the middle because it
+   draws its sphere R·0.14 above the canvas centre; the mask fades it toward
+   the centre so it stays behind the headline. */
+.hm-orb {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 960px;
+  height: 960px;
+  margin: -437px 0 0 -480px;
+  opacity: 0.55;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(
+    closest-side at 50% 50%,
+    rgba(0, 0, 0, 0.18) 0%,
+    rgba(0, 0, 0, 0.3) 34%,
+    rgba(0, 0, 0, 0.75) 62%,
+    #000 90%
+  );
+  mask-image: radial-gradient(
+    closest-side at 50% 50%,
+    rgba(0, 0, 0, 0.18) 0%,
+    rgba(0, 0, 0, 0.3) 34%,
+    rgba(0, 0, 0, 0.75) 62%,
+    #000 90%
+  );
+}
+.hm-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.hm-glow-floor {
+  background: radial-gradient(
+    125% 95% at 50% 112%,
+    rgba(251, 234, 207, 0.74) 0%,
+    rgba(245, 240, 230, 0.46) 46%,
+    rgba(239, 234, 223, 0.38) 100%
+  );
+}
+.hm-glow-centre {
+  background: radial-gradient(
+    closest-side at 50% 42%,
+    rgba(250, 243, 230, 0.62) 20%,
+    rgba(250, 243, 230, 0.26) 46%,
+    rgba(244, 236, 222, 0) 78%
+  );
+}
+
+/* Nav: logo + "CHỌN SẢN PHẨM", part of the screen (not sticky). */
+.hm-head {
+  position: relative;
+  z-index: 2;
+  height: 64px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 clamp(16px, 4vw, 48px);
+}
+.hm-logo {
+  display: flex;
+  align-items: center;
+}
+.hm-logo img {
+  height: 26px;
+  width: auto;
+  display: block;
+}
+.hm-pick {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6e6255;
+}
+
+.hm-main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(36px, 6vh, 64px);
+  padding: clamp(24px, 5vh, 56px) clamp(16px, 4vw, 48px) clamp(32px, 6vh, 64px);
+}
+.hm-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  text-align: center;
+  max-width: 980px;
+}
+.hm-eyebrow {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #7a6f62;
+}
+.hm-h1 {
+  margin: 0;
+  font-family: "Source Serif 4", Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(34px, 5.6vw, 74px);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+/* Gradient text: background-clip:text paints only inside the box, so the
+   italic line is widened (its last glyph overhangs) and the second line is
+   deepened for the descenders of "g"/"y", each with a matching negative
+   margin so the layout stays as designed. */
+.hm-h1-ink,
+.hm-h1-clay {
+  display: block;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hm-h1-ink {
+  font-style: italic;
+  padding: 0 0.08em;
+  margin: 0 -0.08em;
+  background-image: linear-gradient(180deg, #2b2419 0%, #70614d 100%);
+}
+.hm-h1-clay {
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+  background-image: linear-gradient(180deg, #b8753a 0%, #7b4a2d 100%);
+}
+.hm-sub {
+  margin: 0;
+  font-size: clamp(15px, 1.4vw, 17px);
+  line-height: 1.55;
+  color: #4a4239;
+  text-wrap: pretty;
+}
+
+/* The three cards: across while each can be 232 px wide, stacked below. */
+.hm-cards {
+  width: 100%;
+  max-width: 1160px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 232px), 1fr));
+  gap: clamp(12px, 1.6vw, 20px);
+}
+.hm-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate; /* Safari: keep the moving sheen clipped to the radius */
+  min-height: clamp(200px, 27vh, 256px);
+  border-radius: 20px;
+  padding: clamp(16px, 1.8vw, 22px) clamp(16px, 1.8vw, 22px) clamp(14px, 1.6vw, 20px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(16px, 2.4vh, 24px);
+  color: #231f1a;
+  box-shadow: 0 24px 42px -26px rgba(52, 38, 20, 0.42), inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+  /* backwards, not both: a held end state would override the hover lift */
+  animation: bonia-in 0.6s ease backwards;
+}
+.hm-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0 0 1.5px #7b4a2d, 0 30px 50px -26px rgba(52, 38, 20, 0.55);
+  color: #231f1a;
+}
+.hm-card-tex {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(114deg, rgba(35, 31, 26, 0.035) 0 1px, transparent 1px 5px);
+  pointer-events: none;
+}
+.hm-card-sheen {
+  position: absolute;
+  inset: -60%;
+  background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.55) 50%, transparent 58%);
+  animation: bnSheen 8s ease-in-out infinite;
+  pointer-events: none;
+}
+.hm-card-top {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.hm-card-who {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #5e5448;
+}
+.hm-card-num {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: #6e6255;
+}
+.hm-card-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.hm-card-title {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(26px, 2.4vw, 32px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.hm-card-line {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: #4a4239;
+  text-wrap: pretty;
+}
+.hm-card-foot {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(35, 31, 26, 0.12);
+}
+.hm-card-url {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: #5e5448;
+}
+.hm-card-go {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  color: #7b4a2d;
+}
+
+.hm-foot {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 20px;
+  padding: 16px clamp(16px, 4vw, 48px) 20px;
+  border-top: 1px solid rgba(217, 208, 191, 0.7);
+  font-size: 12px;
+  color: #6e6255;
+}
+.hm-foot-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.hm-foot-links a,
+.hm-foot-links a:hover {
+  color: #6e6255;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
