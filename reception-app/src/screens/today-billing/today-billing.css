@@ -1,0 +1,36 @@
+/* Hôm nay / Thanh toán hover states (frames draw resting states only). */
+.tb-row:hover {
+  background: rgba(31, 27, 22, 0.03);
+}
+.tb-row-card:hover,
+.tb-conflict:hover {
+  border-color: var(--bn-urgent) !important;
+}
+.tb-notice {
+  text-align: left;
+  border-radius: 6px;
+}
+.tb-notice:hover > span:first-child {
+  text-decoration: underline;
+  text-decoration-color: var(--bn-hairline);
+  text-underline-offset: 3px;
+}
+.tb-pulse {
+  animation: tt-pulse 1.6s ease-in-out infinite;
+}
+
+/* Phone stats: two columns, hairline between rows. */
+.tb-stats-m {
+  grid-template-columns: 1fr 1fr;
+}
+.tb-stats-m > div:nth-child(n + 3) {
+  border-top: 1px solid var(--bn-skeleton-2);
+}
+.tb-stats-m > div:last-child {
+  grid-column: 1 / -1;
+}
+
+/* Frame buttons are flex spans with normal line-height (shared .tt-btn uses 1). */
+.tb-scope .tt-btn:not(.tt-btn--link) {
+  line-height: normal;
+}

@@ -1,8 +1,12 @@
-// The five main tabs (sidebar on desktop, bottom tab bar below 768px).
+import { HOTEL } from "../../data/hotel.js";
+import { sectorBy } from "../../data/sectors.js";
+
+// The five main tabs (sidebar on desktop, bottom tab bar below 768px). The
+// calendar tab is named by the hotel's sector (Lịch phòng / Lịch bàn / Lịch hẹn).
 export const NAV_ITEMS = [
   { key: "hom-nay", label: "Hôm nay", to: "/hom-nay" },
   { key: "yeu-cau", label: "Yêu cầu", to: "/yeu-cau" },
-  { key: "lich-phong", label: "Lịch phòng", to: "/lich" },
+  { key: "lich-phong", label: sectorBy(HOTEL.sector).words.calendar, to: "/lich" },
   { key: "cuoc-goi", label: "Cuộc gọi", to: "/cuoc-goi" },
   { key: "cai-dat", label: "Cài đặt", to: "/cai-dat" },
 ];

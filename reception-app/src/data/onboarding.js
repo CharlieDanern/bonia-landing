@@ -160,3 +160,130 @@ export const TEST_CALL = {
 
 // 3.2 C: what is still missing on a first day.
 export const MISSING = ["giá qua đêm", "ngày lễ", "giường phụ", "cọc khi đặt qua điện thoại", "ai trực đêm", "ai sửa chữa"];
+
+// ── Interactive onboarding (login-onboarding screens) ─────────────────────
+// Everything below drives the live demo; the frame-exact values above stay
+// the source for the drawn states.
+
+// 3.1 E: sources are read one after another (seconds since "Tìm"). `count`
+// is how many facts each adds; together they make the 41 of 3.1 F. The
+// drawn frame is t = 9.6: three read, Agoda missing, Facebook at 4/6 → 37.
+export const SEARCH_TIMELINE = [
+  { id: "web", start: 0, end: 2, count: 9 },
+  { id: "maps", start: 2, end: 4, count: 10 },
+  { id: "booking", start: 4, end: 6.5, count: 14 },
+  { id: "agoda", start: 6.5, end: 7.5, count: 0 },
+  { id: "facebook", start: 7.5, end: 10.5, count: 6 },
+  { id: "traveloka", start: 10.5, end: 12.5, count: 2 },
+];
+export const SEARCH_FRAME_T = 9.6;
+
+// §01 rows hidden behind "+ 12 thông tin khác…".
+export const REVIEW_01_MORE = [
+  { id: "ten-khac", label: "Tên khác", value: "Sân Nhài Hotel", source: "GOOGLE MAPS" },
+  { id: "duong-vao", label: "Đường vào", value: "Hẻm xe hơi từ Võ Hữu Lân, cổng sơn trắng", source: "GOOGLE MAPS" },
+  { id: "gui-xe", label: "Gửi xe", value: "Xe máy miễn phí trong hẻm · ô tô gửi bãi đầu hẻm", source: "BOOKING.COM" },
+  { id: "tien-ich", label: "Tiện ích", value: "23 tiện ích: wifi, máy lạnh, tủ lạnh nhỏ, ấm đun nước…", source: "BOOKING.COM" },
+  { id: "giay-to", label: "Giấy tờ", value: "CCCD hoặc hộ chiếu khi nhận phòng", source: "BOOKING.COM" },
+  { id: "thanh-toan", label: "Thanh toán", value: "Tiền mặt, chuyển khoản, thẻ", source: "BOOKING.COM" },
+  { id: "dien-thoai", label: "Điện thoại", value: "0900 000 300", mono: true, source: "GOOGLE MAPS" },
+  { id: "gan-day", label: "Gần đây", value: "Hồ Con Rùa 5 phút đi bộ", source: "GOOGLE MAPS" },
+  { id: "ngon-ngu", label: "Lễ tân nói", value: "Tiếng Việt, tiếng Anh", source: "TRANG WEB" },
+  { id: "thu-cung", label: "Thú cưng", value: "Không nhận thú cưng", source: "BOOKING.COM" },
+  { id: "hut-thuoc", label: "Hút thuốc", value: "Không hút thuốc trong phòng", source: "BOOKING.COM" },
+  { id: "thang-may", label: "Thang máy", value: "Có thang máy", source: "BOOKING.COM" },
+];
+
+// What Bonia says about a room once its price is confirmed (3.1 H box).
+export const ROOM_SAY = {
+  "tieu-chuan": "không cửa sổ, giường 1m6",
+  superior: "có cửa sổ, giường 1m6",
+  "superior-2": "có cửa sổ, 2 giường 1m2",
+  deluxe: "ban công hướng phố, giường 1m8, có bồn tắm",
+  "gia-dinh": "2 giường 1m6",
+};
+
+// §02 questions, asked one at a time ("CẦN BẠN ĐIỀN · 1/4").
+export const REVIEW_02_ASK = [
+  { id: "theo-gio", text: "Bạn có nhận khách theo giờ không?", short: "theo giờ", options: ["Có · 2 giờ đầu + mỗi giờ sau", "Không nhận theo giờ"] },
+  { id: "qua-dem", text: "Bạn có bán qua đêm không?", short: "giá qua đêm", options: ["Có · nhận sau 21:00", "Không bán qua đêm"] },
+  { id: "ngay-le", text: "Ngày lễ tính giá thế nào?", short: "ngày lễ", options: ["Như cuối tuần", "Báo giá riêng từng dịp", "Không đổi giá"] },
+  { id: "giuong-phu", text: "Có giường phụ không?", short: "giường phụ", options: ["Có · tính thêm", "Không có giường phụ"] },
+];
+
+// §03–§05 (not drawn in this round: same row / question pattern as §01).
+export const REVIEW_SECTIONS = {
+  "03": {
+    lead: "Bonia chỉ ghi yêu cầu. Khách sạn xác nhận từng đặt phòng.",
+    rows: [
+      { id: "huy", label: "Hủy phòng", value: "Miễn phí trước 24 giờ", source: "BOOKING.COM" },
+      { id: "tre-em", label: "Trẻ em", value: "Dưới 6 tuổi ngủ chung miễn phí", source: "BOOKING.COM" },
+      { id: "nhan-som", label: "Nhận sớm, trả trễ", value: "Tùy phòng trống, hỏi lễ tân", source: "TRANG WEB" },
+      { id: "dat-truoc", label: "Đặt trước", value: "Nhận đặt trước tới 3 tháng", source: "BOOKING.COM" },
+    ],
+    locked: "Tự đặt phòng — Cần kết nối phần mềm quản lý khách sạn (sắp có)",
+    questions: [
+      {
+        id: "coc",
+        text: "Khách đặt qua điện thoại có cần cọc không?",
+        options: ["Cọc 1 đêm", "Cọc 50%", "Không cần cọc"],
+      },
+    ],
+    say: "“Dạ em ghi lại yêu cầu đặt phòng của anh chị, lễ tân sẽ gọi lại để xác nhận ạ. Hủy miễn phí trước 24 giờ ạ.”",
+  },
+  "04": {
+    rows: [
+      { id: "wifi", label: "Wifi", value: "Miễn phí trong phòng", source: "BOOKING.COM" },
+      { id: "hanh-ly", label: "Giữ hành lý", value: "Miễn phí trong ngày trả phòng", source: "BOOKING.COM" },
+      { id: "giat-ui", label: "Giặt ủi", value: "Có, tính theo ký", source: "BOOKING.COM" },
+      { id: "xe-may", label: "Thuê xe máy", value: "Có, hỏi lễ tân", source: "GOOGLE MAPS" },
+      { id: "san-bay", label: "Đưa đón sân bay", value: "Có, tính phí, báo trước 1 ngày", source: "BOOKING.COM" },
+    ],
+    questions: [],
+    say: "“Dạ khách sạn có giữ hành lý miễn phí trong ngày trả phòng, anh chị cứ gửi ở quầy lễ tân ạ.”",
+  },
+  "05": {
+    rows: [
+      { id: "le-tan-05", label: "Lễ tân", value: "Trực 24/7", source: "FACEBOOK" },
+      { id: "khan-cap", label: "Khẩn cấp", value: "7 tình huống có sẵn: cháy, cấp cứu, mất an ninh…", source: null },
+    ],
+    questions: [
+      { id: "truc-dem", text: "Ai trực đêm?", options: ["Lễ tân trực quầy", "Chủ khách sạn", "Bảo vệ"] },
+      { id: "sua-chua", text: "Ai sửa chữa khi hỏng đồ trong phòng?", options: ["Kỹ thuật của khách sạn", "Lễ tân gọi thợ ngoài", "Chủ khách sạn"] },
+    ],
+    say: "“Dạ em báo ngay cho người trực đêm của khách sạn ạ. Anh chị chờ em một chút nha.”",
+  },
+};
+
+// 3.1 J: forwarding code per "Bonia nghe khi nào" (GSM codes, Bonia's number).
+export const FORWARD_PREFIX = ["**61*", "**67*", "**004*", "**21*"];
+export const FORWARD_TARGET = "0900000399";
+
+// 3.1 K–M: the simulated test call. Times are call seconds; the call clock
+// runs CALL_SPEED× real time so the whole 1:12 call plays in ~30 s. Bubbles
+// stream word by word over `dur`. The drawn frame 3.1 L is t = 38.
+export const CALL_SPEED = 2.5;
+export const CALL_RING_SECONDS = 5; // real seconds on 3.1 K before Bonia picks up
+export const CALL_FRAME_T = 38;
+export const CALL_END = 72;
+export const CALL_SCRIPT = [
+  { at: 1, dur: 2, who: "bonia", text: "Dạ khách sạn Sân Nhài xin nghe ạ." },
+  { at: 5, dur: 4, who: "guest", text: "Alo em ơi, tối nay còn phòng đôi có cửa sổ không em?" },
+  {
+    at: 11,
+    dur: 7,
+    who: "bonia",
+    text: "Dạ tối nay bên em còn phòng Superior có cửa sổ, giường 1m6, giá 550 nghìn một đêm ạ. Anh chị đi mấy người ạ?",
+  },
+  { at: 22, dur: 4, who: "guest", text: "Hai người lớn thôi. Giữ cho chị một phòng nha." },
+  { at: 30, dur: 3, who: "bonia", text: "Dạ vâng, cho em xin tên người đặt ạ?" },
+  { at: 41, dur: 3, who: "guest", text: "Chị tên Diệp, gọi số này luôn nha em." },
+  { at: 47, dur: 6, who: "bonia", text: "Dạ em ghi lại yêu cầu rồi ạ. Lễ tân sẽ gọi lại cho chị để xác nhận phòng ạ." },
+  { at: 58, dur: 2, who: "guest", text: "Ừ, cảm ơn em." },
+  { at: 62, dur: 2, who: "bonia", text: "Dạ em cảm ơn chị ạ." },
+];
+// When each draft field fills in (call seconds).
+export const CALL_DRAFT_TIMES = { type: 11, "Loại phòng": 11, Ngày: 11, Người: 22, Tên: 30, name: 41 };
+
+// 3.0 H suggestions.
+export const DEVICE_SUGGESTIONS = ["Máy tính quầy", "iPhone quầy", "Máy chị Diệp"];

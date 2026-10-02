@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import { Redirect, Route, Switch } from "wouter";
-import { Login, Onboarding } from "./screens/login-onboarding/index.jsx";
+import { markNewAccount, sectorBy } from "./data/sectors.js";
+import { ChooseSector, Login, Onboarding } from "./screens/login-onboarding/index.jsx";
 import { Today, Billing, Paused } from "./screens/today-billing/index.jsx";
 import { Requests } from "./screens/requests/index.jsx";
 import { Calendar, Calls } from "./screens/calendar-calls/index.jsx";
@@ -17,10 +18,24 @@ function SettingsRoute({ section }) {
   return <SettingsA section={section} />;
 }
 
+/**
+ * A salesperson's link (brief §3.1): /start/VNPT-HCM-0123?nganh=luu-tru starts a
+ * new account credited to that code; a ready sector in the link skips the
+ * sector choice. Then the normal login.
+ */
+function StartLink({ code }) {
+  const nganh = new URLSearchParams(window.location.search).get("nganh");
+  const sector = nganh && sectorBy(nganh).key === nganh && sectorBy(nganh).ready ? nganh : null;
+  markNewAccount({ code, sector });
+  return <Redirect to="/dang-nhap" replace />;
+}
+
 export default function App() {
   return (
     <Switch>
       <Route path="/dang-nhap" component={Login} />
+      <Route path="/start/:code">{(p) => <StartLink code={p.code} />}</Route>
+      <Route path="/chon-linh-vuc" component={ChooseSector} />
       <Route path="/bat-dau/:step?">{(p) => <Onboarding step={p.step} />}</Route>
       <Route path="/hom-nay" component={Today} />
       <Route path="/thanh-toan" component={Billing} />

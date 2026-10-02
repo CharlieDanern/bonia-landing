@@ -84,3 +84,9 @@ export const SELL_MODES = [
   { id: "qua-dem", label: "Qua đêm" },
   { id: "theo-gio", label: "Theo giờ" },
 ];
+
+// Cell sheet title (3.4 B: "Deluxe ban công"); others use the short name.
+export const SHEET_NAMES = { deluxe: "Deluxe ban công" };
+
+// "Đóng loại phòng này hôm đó": reason shown as the cell tag ("SỬA PHÒNG").
+export const CLOSE_REASONS = ["Sửa phòng", "Giữ cho đoàn", "Khác"];

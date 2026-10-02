@@ -7,7 +7,8 @@ import { useIsMobile } from "../../lib/hooks.js";
 // TT Onboarding Bar, exact: 72px, #F7F3EC, bottom hairline, padding 0 40.
 // Steps: done = clay dot ✓ · current = white pill + clay outline dot · future muted.
 // Done steps link back; "Lưu, làm tiếp sau" leaves to Hôm nay (state kept).
-export function OnboardingBar({ step = 1, onSaveLater, saveLaterTo = "/hom-nay" }) {
+// saveLater false: nothing to save yet (the sector choice, before step 1).
+export function OnboardingBar({ step = 1, onSaveLater, saveLaterTo = "/hom-nay", saveLater = true }) {
   const mobile = useIsMobile();
   return (
     <header
@@ -93,9 +94,11 @@ export function OnboardingBar({ step = 1, onSaveLater, saveLaterTo = "/hom-nay" 
         })}
       </ol>
       <div style={{ width: mobile ? "auto" : 220, display: "flex", justifyContent: "flex-end" }}>
-        <Link href={saveLaterTo} onClick={onSaveLater} style={{ fontSize: 13, color: "var(--bn-clay)", fontWeight: 500, whiteSpace: "nowrap" }}>
-          Lưu, làm tiếp sau
-        </Link>
+        {saveLater && (
+          <Link href={saveLaterTo} onClick={onSaveLater} style={{ fontSize: 13, color: "var(--bn-clay)", fontWeight: 500, whiteSpace: "nowrap" }}>
+            Lưu, làm tiếp sau
+          </Link>
+        )}
       </div>
     </header>
   );

@@ -27,6 +27,7 @@ export const HOTEL = {
   cancelForwardCode: "##61#",
   listenWhen: "khi lễ tân không bắt máy",
   referral: { via: "VNPT", code: "HCM-0123" },
+  sector: "luu-tru", // src/data/sectors.js: sets the app's words (Lịch phòng…)
   supportPhone: "1900 000 300",
   supportHours: "08:00–22:00",
 };
@@ -89,3 +90,10 @@ export const DEVICE_NAME_SUGGESTIONS = ["Máy tính quầy", "iPhone quầy", "M
 
 // "Bonia đã biết 28/30 điều khách hay hỏi" (3.6 A; 3.2 C shows 24/30).
 export const KNOWLEDGE = { known: 28, total: 30 };
+
+// 3.2 C first day: "Bonia đã biết 24/30 điều khách hay hỏi" + what's missing.
+export const FIRST_DAY_KNOWLEDGE = {
+  known: 24,
+  total: 30,
+  missing: ["giá qua đêm", "ngày lễ", "giường phụ", "cọc khi đặt qua điện thoại", "ai trực đêm", "ai sửa chữa"],
+};
