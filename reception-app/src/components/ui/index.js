@@ -1,0 +1,38 @@
+// Shared UI. Every row of the README "Shared components" table lives here;
+// the dev gallery (/reception/app/_gallery) shows each one with its states.
+import "./ui.css";
+
+export { Button, Spinner } from "./Button.jsx";
+export { TextInput } from "./TextInput.jsx";
+export { OtpInput } from "./OtpInput.jsx";
+export { StatusPill, PillRow } from "./StatusPill.jsx";
+export { MessageFlag } from "./MessageFlag.jsx";
+export { SourceChip } from "./SourceChip.jsx";
+export { AiReviewRow } from "./AiReviewRow.jsx";
+export { ConflictRow } from "./ConflictRow.jsx";
+export { NeedFill } from "./NeedFill.jsx";
+export { PriceConfirmRow } from "./PriceConfirmRow.jsx";
+export { BoniaSays } from "./BoniaSays.jsx";
+export { Toggle, ToggleRow } from "./Toggle.jsx";
+export { PermissionChips, PermissionChip, PERMISSIONS } from "./PermissionChips.jsx";
+export { LockedOption } from "./LockedOption.jsx";
+export { SettingsCard, SettingsMark } from "./SettingsCard.jsx";
+export { SaveBar, unsavedLabel } from "./SaveBar.jsx";
+export { SideSheet } from "./SideSheet.jsx";
+export { Dialog } from "./Dialog.jsx";
+export { CloseButton } from "./CloseButton.jsx";
+export { StatusBlock } from "./StatusBlock.jsx";
+export { CalendarCell, CalendarDayHeader } from "./CalendarCell.jsx";
+export { ChatBubble, TypingBubble, Transcript } from "./ChatBubble.jsx";
+export { RecordingPlayer } from "./RecordingPlayer.jsx";
+export { EmergencyRow } from "./EmergencyRow.jsx";
+export { InviteCard } from "./InviteCard.jsx";
+export { VietQrBlock } from "./VietQrBlock.jsx";
+export { QrCode } from "./QrCode.jsx";
+export { ActivityRow, ActivityList } from "./ActivityRow.jsx";
+export { StepPills } from "./StepPills.jsx";
+export { Tag, LockTag, Label } from "./Tag.jsx";
+export { Chip, Segmented } from "./Chip.jsx";
+export { RadioCard, Radio } from "./RadioCard.jsx";
+export { Skeleton, SkeletonRow, SkeletonBar } from "./Skeleton.jsx";
+export { Banner } from "./Banner.jsx";

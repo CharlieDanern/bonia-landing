@@ -1,0 +1,68 @@
+/* Bonia Tiếp tân · App tokens (brief §2). Light theme only. */
+:root {
+  /* Surfaces */
+  --bn-cream: #F2EEE6;        /* app background */
+  --bn-cream-2: #F7F3EC;      /* sidebar, quiet panels, locked rows */
+  --bn-cream-3: #FAF7F1;      /* "Bonia sẽ nói" / note boxes */
+  --bn-white: #FFFFFF;        /* cards, detail panes, inputs */
+  --bn-skeleton: #EBE5D9;     /* loading blocks */
+  --bn-skeleton-2: #E4DCCB;   /* loading bars, progress track */
+
+  /* Ink */
+  --bn-ink: #1F1B16;
+  --bn-ink-2: #4A4239;
+  --bn-muted: #6E6255;        /* 5.12:1 on cream — lightest allowed text */
+
+  /* Lines */
+  --bn-hairline: #D9D0BF;
+  --bn-hairline-2: #EFE9DD;
+  --bn-hairline-3: #F3EEE5;   /* row separators inside cards */
+  --bn-dashed: #C9BCA5;       /* unconfirmed AI info, placeholders */
+
+  /* Action — the only action colour */
+  --bn-clay: #7B4A2D;         /* primary button, active tab, toggle on, links */
+  --bn-clay-hover: #5E3820;
+
+  /* Urgent (always paired with text: “Gấp”, “Quá hạn”) */
+  --bn-urgent: #A0412D;
+  --bn-urgent-bg: #F6E7E1;
+  --bn-urgent-line: #EBCFC4;
+  --bn-urgent-wash: #FBF8F2;  /* conflict / cần bạn điền box fill */
+
+  /* Status */
+  --bn-ok: #4A6B3A;           /* “✓”, “Đang nghe máy”, “Đang nhận báo” */
+  --bn-processing-bg: #EFE9DD;/* Chờ cọc · Đã giao · Đang tìm · Tìm thấy */
+  --bn-guest-bubble: #EFE4D6;
+  --bn-guest-bubble-line: #E4D5C1;
+  --bn-scrim: rgba(31,27,22,0.42);
+  --bn-scrim-side: rgba(31,27,22,0.32);
+
+  /* Type */
+  --bn-serif: 'Source Serif 4', Georgia, serif;     /* page + section titles only, 300–500 */
+  --bn-mono: 'JetBrains Mono', ui-monospace, monospace; /* uppercase labels, numbers */
+  --bn-sans: Inter, system-ui, sans-serif;          /* everything else */
+  --bn-track-label: 0.2em;    /* mono labels 0.18–0.22em */
+
+  /* Radius */
+  --bn-r-chip-sm: 4px;        /* source chip, KHÓA tag */
+  --bn-r-input: 10px;
+  --bn-r-card: 12px;
+  --bn-r-card-lg: 14px;
+  --bn-r-dialog: 20px;
+  --bn-r-pill: 999px;
+
+  /* Layout */
+  --bn-sidebar-w: 224px;
+  --bn-settings-nav-w: 248px;
+  --bn-list-pane-w: 456px;
+  --bn-preview-col-w: 280px;
+  --bn-touch: 44px;
+}
+
+/* App additions: colours the frames use that the token sheet leaves out. */
+:root {
+  --bn-canvas: #E3DCCF;       /* phone-page backdrop (Trang việc) */
+  --bn-skeleton-3: #DDD5C6;   /* skeleton text bars on --bn-skeleton */
+  --bn-typing-mid: #9A8E80;   /* middle typing dot */
+  --bn-tab-h: 64px;           /* mobile bottom tab bar */
+}

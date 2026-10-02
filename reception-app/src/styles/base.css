@@ -1,0 +1,149 @@
+/* Reset + page defaults. Mirrors the .dc.html helmet: cream page, Inter,
+   antialiased, no line-height override (frames use the browser default). */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bn-cream);
+  color: var(--bn-ink);
+  font-family: var(--bn-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  height: 100%;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--bn-clay);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--bn-clay-hover);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+  margin: 0;
+}
+
+img {
+  display: block;
+}
+
+:focus-visible {
+  outline: 2px solid var(--bn-clay);
+  outline-offset: 2px;
+}
+
+/* Type helpers used across screens. */
+.tt-serif {
+  font-family: var(--bn-serif);
+}
+.tt-mono {
+  font-family: var(--bn-mono);
+}
+.tt-eyebrow {
+  font-family: var(--bn-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--bn-muted);
+}
+.tt-label {
+  font-family: var(--bn-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--bn-muted);
+}
+.tt-page-title {
+  margin: 0;
+  font-family: var(--bn-serif);
+  font-weight: 400;
+  font-size: 40px;
+  letter-spacing: -0.02em;
+}
+
+.tt-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes tt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes tt-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes tt-typing {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-3px);
+  }
+}
+@keyframes tt-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

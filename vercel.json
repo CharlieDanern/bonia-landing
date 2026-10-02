@@ -10,6 +10,7 @@
   "rewrites": [
     { "source": "/app/:path*", "destination": "/app/index.html" },
     { "source": "/admin/:path*", "destination": "/admin/index.html" },
+    { "source": "/reception/app/:path*", "destination": "/reception/app/index.html" },
     { "source": "/business", "destination": "/business.html" },
     { "source": "/reception", "destination": "/reception.html" },
     { "source": "/retail", "destination": "/retail.html" },
