@@ -41,16 +41,17 @@ export function RequestCard({ r, flash = false, selected = false, actions = true
       onKeyDown={onOpen ? (e) => { if (e.key === "Enter") onOpen(); } : undefined}
       style={{ padding: phone ? "11px 13px" : "10px 12px", borderRadius: 10, background: bg, border: `1px solid ${border}`, display: "flex", flexDirection: "column", gap: 5, cursor: onOpen ? "pointer" : "default", color: "#1F1B16", transition: "background-color 1.2s ease, border-color 200ms ease", flex: "none" }}
     >
+      {/* line 1: name + number · time; line 2: the tags (founder 2026-10-04) */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-          {r.urgent && <UrgentPill />}
-          <span style={{ fontSize: d.fs.title, fontWeight: 600, lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{titleOf(r)}</span>
+        <span style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
+          <span style={{ fontSize: d.fs.title, fontWeight: 600, lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{titleOf(r)}</span>
+          {titleOf(r) !== number && (tel ? <a href={telOf(number)} onClick={(e) => e.stopPropagation()} style={{ ...numStyle, flex: "none" }}>{number}</a> : <span style={{ ...numStyle, flex: "none" }}>{number}</span>)}
         </span>
         <span style={{ fontFamily: MONO, fontSize: d.fs.tiny, color: "#6E6255", flex: "none" }}>{r.at}</span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", minHeight: inline ? 24 : undefined }}>
+        {r.urgent && <UrgentPill />}
         <TypePill>{r.type}</TypePill>
-        {tel ? <a href={telOf(number)} onClick={(e) => e.stopPropagation()} style={numStyle}>{number}</a> : <span style={numStyle}>{number}</span>}
         {inline && (
           <span className="tt-card-actions" style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
             <button type="button" className="b-ghost" onClick={stop(onCopy)} style={{ height: 24, padding: "0 10px", borderRadius: 12, fontSize: 11, whiteSpace: "nowrap" }}>{copied ? "Đã chép" : "Sao chép"}</button>
