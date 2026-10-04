@@ -145,7 +145,7 @@ function DeskLive({ m, detShown, detail, cardProps, openId, setOpenId }) {
   const rightEdge = count || detShown ? SIDE + CARD_W + GAP : SIDE + RIGHT_W + GAP;
   const room = Math.max(160, width - leftEdge - rightEdge);
   // idle: small, as in handoff 13 direction D (founder 2026-10-04); a call grows it
-  const scale = count ? Math.min(1, room / ORB) : 0.45;
+  const scale = count ? Math.min(0.82, room / ORB) : 0.38;
   const slots = [0, 1].map((i) => {
     const v = m.vms.find((x) => x.slot === i);
     const two = m.vms.length === 2;
@@ -247,11 +247,11 @@ function PhoneLive({ m, detShown, detail, cardProps, setOpenId }) {
       </div>
       <div style={{ position: "absolute", left: 0, right: 0, top: "calc(var(--tt-top) + 48px)", bottom: "calc(57px + var(--tt-bot))", overflow: "auto" }}>
         <div style={{ maxWidth: 640, margin: "0 auto" }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", height: count ? 230 : 160, transition: `height 700ms ${EASE}` }}>
-            <div style={{ transform: count ? "scale(1)" : "scale(0.66)", transformOrigin: "50% 0", transition: `transform 700ms ${EASE}` }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", height: count ? 200 : 140, transition: `height 700ms ${EASE}` }}>
+            <div style={{ transform: count ? "scale(0.86)" : "scale(0.56)", transformOrigin: "50% 0", transition: `transform 700ms ${EASE}` }}>
               <Orb size={210} mood={m.mood} tone={m.tone} pickup={app.pickups} reduce={reduce} lively={m.live.length > 0} />
             </div>
-            {!count && !app.offline && <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.18em", color: "#6E6255", marginTop: -56 }}>ĐANG TRỰC MÁY · {m.today.length} CUỘC HÔM NAY</span>}
+            {!count && !app.offline && <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.18em", color: "#6E6255", marginTop: -84 }}>ĐANG TRỰC MÁY · {m.today.length} CUỘC HÔM NAY</span>}
           </div>
           <div style={{ padding: "0 16px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
             <ColumnHead title="Cần xử lý" n={m.open.length} color="#7B4A2D" />
