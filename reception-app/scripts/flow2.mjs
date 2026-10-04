@@ -9,7 +9,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, ".qa", "flow");
 mkdirSync(OUT, { recursive: true });
 const base = process.argv[2] || "http://localhost:5180";
-const b = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true, args: ["--hide-scrollbars"] });
+const b = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true, args: ["--hide-scrollbars", "--mute-audio"] });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const log = [];
 const btn = (p, t) => p.evaluate((t) => { const el = [...document.querySelectorAll("button,a")].find((e) => e.getBoundingClientRect().width > 0 && e.textContent.trim().startsWith(t)); if (el) el.click(); return !!el; }, t).then((ok) => { if (!ok) log.push(`miss ${t}`); });
@@ -25,7 +25,7 @@ for (const dev of ["dk", "ph"]) {
     if (phone) {
       const clip = await p.evaluate(() => { const r = document.querySelector(".tt-phone").getBoundingClientRect(); return { x: r.x, y: r.y + window.scrollY, width: r.width, height: r.height }; });
       await p.screenshot({ path: join(OUT, `${dev}_${name}.png`), clip });
-    } else await p.screenshot({ path: join(OUT, `${dev}_${name}.png`), clip: { x: 0, y: 52, width: 1440, height: 900 } });
+    } else await p.screenshot({ path: join(OUT, `${dev}_${name}.png`) });
   };
   await p.goto(`${base}/reception/app/cai-dat`, { waitUntil: "networkidle0" });
   await p.evaluate(() => localStorage.removeItem("tt3.settings"));
@@ -44,21 +44,26 @@ for (const dev of ["dk", "ph"]) {
   await shot("set_next");
   await btn(p, "Lưu");
   await sleep(600);
-  await p.evaluate(() => { const el = [...document.querySelectorAll("button")].find((e) => e.textContent.trim().startsWith("Tài khoản")); el && el.click(); });
+  await p.evaluate(() => { history.pushState({}, "", "/reception/app/tai-khoan"); dispatchEvent(new PopStateEvent("popstate")); });
   await sleep(1200);
   await shot("set_account");
   // Thử Bonia: ask about parking, fix the answer, call again
   await p.evaluate(() => { history.pushState({}, "", "/reception/app/thu-bonia"); dispatchEvent(new PopStateEvent("popstate")); });
   await sleep(600);
-  await btn(p, "Hỏi chỗ đậu ô tô");
-  await sleep(9000);
+  await btn(p, "Giọng 3");
+  await btn(p, "▶ Bắt đầu gọi thử");
+  await sleep(3500);
+  await p.type('input[placeholder="Gõ câu của khách…"]', "Em ơi khách sạn có chỗ đậu ô tô không em?");
+  await p.keyboard.press("Enter");
+  await sleep(6000);
   await shot("try_live");
   await btn(p, "Kết thúc cuộc gọi");
   await sleep(900);
   await shot("try_done");
   await p.evaluate(() => { const els = [...document.querySelectorAll("button")].filter((e) => e.textContent.trim() === "Sửa" && e.getBoundingClientRect().width > 0); els[els.length - 1]?.click(); });
   await sleep(400);
-  await p.type("textarea", "Dạ ô tô vào tới cửa ạ, bên em không thu phí gửi ô tô cho khách ở.");
+  await p.evaluate(() => { const ts = [...document.querySelectorAll("textarea")]; ts[ts.length - 1].focus(); });
+  await p.keyboard.type("Dạ ô tô vào tới cửa ạ, bên em không thu phí gửi ô tô cho khách ở.");
   await btn(p, "Lưu");
   await sleep(600);
   await shot("try_fixed");
@@ -69,6 +74,7 @@ for (const dev of ["dk", "ph"]) {
   await sleep(8000);
   await shot("try_again");
   log.push(`${dev} extra: ${await p.evaluate(() => JSON.parse(localStorage.getItem("tt3.settings")).f.extra)}`);
+  log.push(`${dev} voice saved: ${await p.evaluate(() => { const s = JSON.parse(localStorage.getItem("tt3.settings")); return s.f.voice + " / saved " + JSON.parse(s.saved).f.voice; })}`);
   await ctx.close();
 }
 await b.close();

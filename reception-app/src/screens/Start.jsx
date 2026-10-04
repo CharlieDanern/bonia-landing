@@ -73,12 +73,12 @@ export function Start({ step: slug = "" }) {
 
   // Headings as in the frames: login/code/nocode sit at 1.15 (login also -0.01em), the rest at 1.2.
   const tight = ["login", "code", "nocode"].includes(step);
-  const h1 = { margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 28 : 34, lineHeight: tight ? 1.15 : 1.2, letterSpacing: step === "login" ? "-0.01em" : undefined };
-  const primary = (h = 52, fs = 15) => ({ height: h, borderRadius: h / 2, fontSize: fs, textAlign: "center", width: "100%", display: "flex", alignItems: "center", justifyContent: "center" });
+  const h1 = { margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 24 : 28, lineHeight: tight ? 1.15 : 1.2, letterSpacing: step === "login" ? "-0.01em" : undefined };
+  const primary = (h = 44, fs = 14) => ({ height: h, borderRadius: h / 2, fontSize: fs, textAlign: "center", width: "100%", display: "flex", alignItems: "center", justifyContent: "center" });
   const steps = (list) => (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {list.map((t, i) => (
-        <div key={t} style={{ display: "grid", gridTemplateColumns: "28px 1fr", gap: 10, fontSize: 15, lineHeight: 1.5 }}>
+        <div key={t} style={{ display: "grid", gridTemplateColumns: "24px 1fr", gap: 8, fontSize: 13.5, lineHeight: 1.5 }}>
           <span style={{ fontFamily: MONO, color: "#7B4A2D" }}>{i + 1}</span>
           <span>{t}</span>
         </div>
@@ -92,10 +92,10 @@ export function Start({ step: slug = "" }) {
       <>
         <h1 style={h1}>Đăng nhập</h1>
         <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <span style={{ fontSize: 14, color: "#4A4239" }}>Số điện thoại đã cài Bonia</span>
-          <input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="tel" autoComplete="tel" style={{ height: 56, border: "1px solid #D9D0BF", borderRadius: 12, padding: "0 16px", fontFamily: MONO, fontSize: 20, background: "#fff", color: "#1F1B16" }} />
+          <span style={{ fontSize: 13, color: "#4A4239" }}>Số điện thoại đã cài Bonia</span>
+          <input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="tel" autoComplete="tel" style={{ height: 46, border: "1px solid #D9D0BF", borderRadius: 10, padding: "0 14px", fontFamily: MONO, fontSize: 17, background: "#fff", color: "#1F1B16" }} />
         </label>
-        <button type="button" className="b-primary" onClick={() => { session("tt3.phone", tel); go(tel.replace(/\s/g, "") === "0900000999" ? "noacct" : "code"); }} style={primary(54, 16)}>Gửi mã tới ứng dụng Bonia</button>
+        <button type="button" className="b-primary" onClick={() => { session("tt3.phone", tel); go(tel.replace(/\s/g, "") === "0900000999" ? "noacct" : "code"); }} style={primary(46, 14.5)}>Gửi mã tới ứng dụng Bonia</button>
         <span style={{ fontSize: 13, color: "#6E6255", textAlign: "center" }}>Chưa có ứng dụng Bonia? <Link href={PATH.noacct}>Cài ứng dụng</Link></span>
       </>
     );
@@ -103,7 +103,7 @@ export function Start({ step: slug = "" }) {
     body = (
       <>
         <h1 style={h1}>Nhập mã</h1>
-        <span style={{ fontSize: 15, lineHeight: 1.55, color: "#4A4239" }}>Mã đã gửi tới ứng dụng Bonia trên số <span style={{ fontFamily: MONO, color: "#1F1B16" }}>{tel}</span>.</span>
+        <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239" }}>Mã đã gửi tới ứng dụng Bonia trên số <span style={{ fontFamily: MONO, color: "#1F1B16" }}>{tel}</span>.</span>
         {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
         <input
           value={code}
@@ -117,7 +117,7 @@ export function Start({ step: slug = "" }) {
           autoComplete="one-time-code"
           maxLength={6}
           placeholder="••••••"
-          style={{ height: 68, border: "2px solid #7B4A2D", borderRadius: 12, padding: "0 16px", fontFamily: MONO, fontSize: 30, letterSpacing: "0.5em", textAlign: "center", background: "#fff", color: "#1F1B16" }}
+          style={{ height: 56, border: "2px solid #7B4A2D", borderRadius: 10, padding: "0 14px", fontFamily: MONO, fontSize: 24, letterSpacing: "0.5em", textAlign: "center", background: "#fff", color: "#1F1B16" }}
         />
         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 14 }}>
           <button type="button" onClick={() => go("nocode")} style={{ minHeight: 44, color: "#7B4A2D", fontSize: 14 }}>Không nhận được mã?</button>
@@ -144,7 +144,7 @@ export function Start({ step: slug = "" }) {
     body = (
       <>
         <h1 style={h1}>Số này chưa dùng Bonia.</h1>
-        <span style={{ fontSize: 15, lineHeight: 1.55, color: "#4A4239" }}>Cài ứng dụng Bonia trên điện thoại này trước.</span>
+        <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239" }}>Cài ứng dụng Bonia trên điện thoại này trước.</span>
         <StoreQR />
         <button type="button" className="b-primary" onClick={() => go("login")} style={primary()}>Tôi đã cài xong</button>
       </>
@@ -171,9 +171,9 @@ export function Start({ step: slug = "" }) {
               role="radio"
               aria-checked={s.ready}
               disabled={!s.ready}
-              style={{ minHeight: 76, padding: "14px 16px", border: s.ready ? "2px solid #7B4A2D" : "1px solid #E4DCCB", borderRadius: 14, background: s.ready ? "#FBF5EC" : "#F7F3EC", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", gap: 4, cursor: s.ready ? "pointer" : "default", textAlign: "left" }}
+              style={{ minHeight: 64, padding: "12px 14px", border: s.ready ? "2px solid #7B4A2D" : "1px solid #E4DCCB", borderRadius: 12, background: s.ready ? "#FBF5EC" : "#F7F3EC", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", gap: 4, cursor: s.ready ? "pointer" : "default", textAlign: "left" }}
             >
-              <span style={{ fontSize: 16, fontWeight: 600, color: s.ready ? "#1F1B16" : "#6E6255" }}>{s.label}</span>
+              <span style={{ fontSize: 14.5, fontWeight: 600, color: s.ready ? "#1F1B16" : "#6E6255" }}>{s.label}</span>
               <span style={{ fontSize: 12.5, color: "#6E6255" }}>{s.desc}</span>
             </button>
           ))}
@@ -184,8 +184,8 @@ export function Start({ step: slug = "" }) {
   } else if (step === "ask") {
     const field = (l, v) => (
       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <span style={{ fontSize: 14, color: "#4A4239" }}>{l}</span>
-        <input defaultValue={v} style={{ height: 52, border: "1px solid #D9D0BF", borderRadius: 12, padding: "0 14px", fontSize: 16, background: "#fff" }} />
+        <span style={{ fontSize: 13, color: "#4A4239" }}>{l}</span>
+        <input defaultValue={v} style={{ height: 44, border: "1px solid #D9D0BF", borderRadius: 10, padding: "0 12px", fontSize: 14.5, background: "#fff" }} />
       </label>
     );
     body = (
@@ -194,8 +194,8 @@ export function Start({ step: slug = "" }) {
         {field("Tên khách sạn", "Khách sạn Sân Nhài")}
         {field("Khu vực", "Phường Xuân Hòa, TP.HCM")}
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <button type="button" className="b-primary" onClick={() => go("searching")} style={primary(54, 16)}>Có, tìm giúp tôi</button>
-          <button type="button" className="b-ghost" onClick={() => go("hub")} style={primary(52, 15)}>Tôi tự điền</button>
+          <button type="button" className="b-primary" onClick={() => go("searching")} style={primary(46, 14.5)}>Có, tìm giúp tôi</button>
+          <button type="button" className="b-ghost" onClick={() => go("hub")} style={primary(44, 14)}>Tôi tự điền</button>
         </div>
       </>
     );
@@ -204,7 +204,7 @@ export function Start({ step: slug = "" }) {
     body = (
       <>
         <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
-          <span style={{ fontFamily: SERIF, fontSize: phone ? 96 : 120, lineHeight: 1, color: "#7B4A2D" }}>{found}</span>
+          <span style={{ fontFamily: SERIF, fontSize: phone ? 72 : 88, lineHeight: 1, color: "#7B4A2D" }}>{found}</span>
           <span style={{ fontSize: 15, color: "#4A4239" }}>thông tin tìm được</span>
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>
@@ -212,14 +212,14 @@ export function Start({ step: slug = "" }) {
             const done = srcN > i;
             const cur = srcN === i;
             return (
-              <div key={l} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, minHeight: 48, borderTop: "1px solid #E4DCCB", opacity: done || cur ? 1 : 0.45, transition: "opacity 400ms ease" }}>
-                <span style={{ fontSize: 15 }}>{l}</span>
+              <div key={l} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, minHeight: 40, borderTop: "1px solid #E4DCCB", opacity: done || cur ? 1 : 0.45, transition: "opacity 400ms ease" }}>
+                <span style={{ fontSize: 13.5 }}>{l}</span>
                 <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.12em", color: done ? (n ? "#4A6B3A" : "#6E6255") : cur ? "#7B4A2D" : "#6E6255", whiteSpace: "nowrap" }}>{done ? s : cur ? "ĐANG ĐỌC…" : "CHỜ"}</span>
               </div>
             );
           })}
         </div>
-        {srcN > SOURCES.length && <button type="button" className="b-primary" onClick={() => go("hub")} style={primary(54, 16)}>Xem lại thông tin</button>}
+        {srcN > SOURCES.length && <button type="button" className="b-primary" onClick={() => go("hub")} style={primary(46, 14.5)}>Xem lại thông tin</button>}
       </>
     );
   } else if (step === "hub") {
@@ -237,12 +237,12 @@ export function Start({ step: slug = "" }) {
               key={h.l}
               href={h.href}
               onClick={() => h.mark && session("tt3.setup", { ...progress, [h.mark]: true })}
-              style={{ display: "grid", gridTemplateColumns: "32px minmax(0,1fr) auto", gap: 12, alignItems: "center", minHeight: 68, padding: "12px 14px", borderRadius: 14, border: "1px solid #D9D0BF", background: "#fff", color: "#1F1B16" }}
+              style={{ display: "grid", gridTemplateColumns: "28px minmax(0,1fr) auto", gap: 12, alignItems: "center", minHeight: 56, padding: "10px 12px", borderRadius: 12, border: "1px solid #D9D0BF", background: "#fff", color: "#1F1B16" }}
             >
               <span style={{ width: 28, height: 28, borderRadius: 14, border: `1px solid ${h.done ? "#4A6B3A" : "#7B4A2D"}`, background: h.done ? "#EEF0E6" : "#fff", color: h.done ? "#4A6B3A" : "#7B4A2D", fontFamily: MONO, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>{h.done ? "✓" : i + 1}</span>
               <span style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <span style={{ fontSize: 15.5, fontWeight: 600 }}>{h.l}</span>
-                <span style={{ fontSize: 13, color: h.done ? "#4A6B3A" : "#6E6255" }}>{h.sub}</span>
+                <span style={{ fontSize: 14, fontWeight: 600 }}>{h.l}</span>
+                <span style={{ fontSize: 12, color: h.done ? "#4A6B3A" : "#6E6255" }}>{h.sub}</span>
               </span>
               <span style={{ color: "#7B4A2D", fontSize: 16 }}>→</span>
             </Link>
@@ -254,9 +254,9 @@ export function Start({ step: slug = "" }) {
     body = (
       <>
         <div style={{ display: "flex", justifyContent: "center" }}><Orb size={180} mood="idle" tone="warm" /></div>
-        <span style={{ fontSize: phone ? 16 : 17, lineHeight: 1.55, textWrap: "pretty" }}>Từ giờ, khi bạn không bắt máy, Bonia nghe máy cho <b style={{ fontWeight: 600 }}>{app.settings.f.name}</b> và nói:</span>
-        <div style={{ padding: "16px 18px", borderRadius: 14, background: "#FAF7F1", border: "1px solid #EFE9DD", fontFamily: SERIF, fontStyle: "italic", fontSize: 21, lineHeight: 1.45 }}>“{app.settings.f.greeting}”</div>
-        <button type="button" className="b-primary" onClick={() => go("live")} style={primary(56, 16.5)}>Bắt đầu nghe máy</button>
+        <span style={{ fontSize: phone ? 14.5 : 15, lineHeight: 1.55, textWrap: "pretty" }}>Từ giờ, khi bạn không bắt máy, Bonia nghe máy cho <b style={{ fontWeight: 600 }}>{app.settings.f.name}</b> và nói:</span>
+        <div style={{ padding: "16px 18px", borderRadius: 14, background: "#FAF7F1", border: "1px solid #EFE9DD", fontFamily: SERIF, fontStyle: "italic", fontSize: 18, lineHeight: 1.45 }}>“{app.settings.f.greeting}”</div>
+        <button type="button" className="b-primary" onClick={() => go("live")} style={primary(46, 14.5)}>Bắt đầu nghe máy</button>
         <button type="button" onClick={() => go("hub")} style={{ height: 44, fontSize: 14, color: "#4A4239", textAlign: "center" }}>Chưa, để sau</button>
       </>
     );
@@ -265,7 +265,7 @@ export function Start({ step: slug = "" }) {
       <>
         <div style={{ display: "flex", justifyContent: "center" }}><Orb size={200} mood="bonia" tone="green" lively pickup={1} /></div>
         <h1 style={{ ...h1, textAlign: "center" }}>Bonia đang nghe máy cho {app.settings.f.name}</h1>
-        <Link href="/" className="b-primary" style={primary(54, 16)}>Vào Trực tiếp</Link>
+        <Link href="/" className="b-primary" style={primary(46, 14.5)}>Vào Trực tiếp</Link>
       </>
     );
   }
@@ -280,7 +280,7 @@ export function Start({ step: slug = "" }) {
         {ref?.code && <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.12em", padding: "4px 8px", border: "1px solid #D9D0BF", borderRadius: 10, color: "#4A4239", whiteSpace: "nowrap" }}>{ref.via} · {ref.code}</span>}
       </div>
       <div style={{ position: "absolute", left: 0, right: 0, top: phone ? "calc(var(--tt-top) + 56px)" : 68, bottom: 0, overflow: "auto", display: "flex", justifyContent: "center", alignItems: phone ? "flex-start" : "center", padding: phone ? "8px 20px 32px" : "24px 40px 60px" }}>
-        <div style={{ width: "100%", maxWidth: phone ? 520 : 520, display: "flex", flexDirection: "column", gap: 18, padding: phone ? 0 : "36px 40px", background: phone ? "transparent" : "#FFFFFF", border: phone ? 0 : "1px solid #D9D0BF", borderRadius: 20, margin: phone ? 0 : "auto 0" }}>
+        <div style={{ width: "100%", maxWidth: phone ? 520 : 480, display: "flex", flexDirection: "column", gap: 14, padding: phone ? 0 : "28px 32px", background: phone ? "transparent" : "#FFFFFF", border: phone ? 0 : "1px solid #D9D0BF", borderRadius: 20, margin: phone ? 0 : "auto 0" }}>
           {body}
         </div>
       </div>

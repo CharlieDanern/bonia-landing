@@ -1,49 +1,23 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useSearch } from "wouter";
-import { QrGrid } from "../components/StoreQR.jsx";
-import { ACCOUNT, BILLING_INFO, DEVICES, INVOICE, PAY_HISTORY, PLAN, USAGE } from "../data/account.js";
 import { CARDS, FIELDS, SECTIONS, VOICE_COUNT, pendingList } from "../data/settings.js";
-import { decimal, groupVnd, vnd } from "../lib/format.js";
-import { vietQrPayload } from "../lib/vietqr.js";
 import { DeskHeader, PhoneTabs, Switch, useLayout } from "../layout.jsx";
-import { copyToClipboard, useApp } from "../state.jsx";
+import { useApp } from "../state.jsx";
+import { EASE, MONO, SERIF, dims } from "../ui.js";
+import { playVoice } from "../voice.js";
 
-// Cài đặt (handoff 13): one scrolling page, five sections. Values Bonia found
-// on the internet start unconfirmed (dashed); typing or picking confirms them.
-// Review mode (after the AI search, or while anything is left to check) adds
-// the "Còn N mục cần xem lại · Tới mục tiếp theo" bar.
+// Cài đặt (handoff 13): one scrolling page, four sections (Tài khoản &
+// thanh toán has its own page since 2026-10-04). Values Bonia found on the
+// internet start unconfirmed (dashed); typing or picking confirms them. Review
+// mode (after the AI search, or while anything is left to check) adds the
+// "Còn N mục cần xem lại · Tới mục tiếp theo" bar.
 
-const MONO = "'JetBrains Mono', monospace";
-const SERIF = "'Source Serif 4', Georgia, serif";
 const fmt = (n) => (n === "" || n == null ? "" : String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "."));
-const VCB_BIN = "970436"; // Vietcombank
-
-/** Voice preview: a recorded sample per voice when present, else the browser's voice. */
-function playVoice(i, text, onEnd) {
-  const audio = new Audio(`${import.meta.env.BASE_URL}voices/giong-${i}.mp3`);
-  audio.onended = onEnd;
-  audio.play().catch(() => {
-    const ss = window.speechSynthesis;
-    if (!ss) return onEnd();
-    ss.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    const v = ss.getVoices().find((x) => x.lang?.toLowerCase().startsWith("vi"));
-    if (v) u.voice = v;
-    u.lang = "vi-VN";
-    u.onend = onEnd;
-    u.onerror = onEnd;
-    ss.speak(u);
-    return undefined;
-  });
-  return () => {
-    audio.pause();
-    window.speechSynthesis?.cancel();
-  };
-}
 
 export function Settings() {
   const app = useApp();
   const { phone } = useLayout();
+  const d = dims(phone);
   const [, navigate] = useLocation();
   const search = useSearch();
   const { f, ok, rooms } = app.settings;
@@ -52,8 +26,6 @@ export function Settings() {
   const [openRoom, setOpenRoom] = useState(2);
   const [playing, setPlaying] = useState(null);
   const stopPlay = useRef(null);
-  const [payCopied, setPayCopied] = useState(false);
-  const [devs, setDevs] = useState(DEVICES);
   const fromSetup = new URLSearchParams(search).has("xem-lai");
 
   const pend = pendingList(app.settings);
@@ -67,13 +39,14 @@ export function Settings() {
       if (!sc) return;
       const el = (fk && sc.querySelector(`[data-f="${fk}"]`)) || sc.querySelector(`[data-sec="${sec}"]`);
       if (!el) return;
-      const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - (phone ? 120 : 24);
+      const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - (phone ? 110 : 20);
       sc.scrollTo({ top, behavior: "smooth" });
     }, 40);
   };
 
   useEffect(() => {
-    if (window.location.hash === "#s5") setTimeout(() => jump("s5"), 300);
+    const h = window.location.hash.replace("#", "");
+    if (SECTIONS.some(([k]) => k === h)) setTimeout(() => jump(h), 300);
     return () => stopPlay.current?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -86,7 +59,7 @@ export function Settings() {
       const el = sc.querySelector(`[data-sec="${k}"]`);
       if (el && el.getBoundingClientRect().top - sc.getBoundingClientRect().top < 140) a = k;
     });
-    if (sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4) a = "s5";
+    if (sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4) a = SECTIONS[SECTIONS.length - 1][0];
     if (a !== active) setActive(a);
   };
 
@@ -102,41 +75,42 @@ export function Settings() {
     return c;
   })();
 
-  const rowCols = phone ? "minmax(0,1fr)" : "160px minmax(0,1fr)";
-  const topH = phone ? "var(--tt-top)" : "64px";
-  const revH = review ? (phone ? 56 : 52) : 0;
+  const rowCols = phone ? "minmax(0,1fr)" : "150px minmax(0,1fr)";
+  const topH = phone ? "var(--tt-top)" : "56px";
+  const revH = review ? (phone ? 50 : 44) : 0;
+  const input = { height: d.input, minWidth: 0, border: "1px solid #D9D0BF", borderRadius: 8, padding: "0 10px", fontSize: d.fs.body, background: "#fff", color: "#1F1B16" };
+  const smallBtn = { height: d.btnSm, padding: "0 12px", borderRadius: d.btnSm / 2, fontSize: d.fs.small, whiteSpace: "nowrap" };
 
   // ── one field row ────────────────────────────────────────────────────
   const row = (k) => {
-    const d = FIELDS[k];
+    const def = FIELDS[k];
     const v = f[k];
-    const conflictOpen = d.k === "conflict" && v == null;
-    const kind = d.k === "conflict" ? (conflictOpen ? "conflict" : "mono") : d.k;
-    const needFill = v == null && d.k === "chips";
+    const conflictOpen = def.k === "conflict" && v == null;
+    const kind = def.k === "conflict" ? (conflictOpen ? "conflict" : "mono") : def.k;
+    const needFill = v == null && def.k === "chips";
     const warn = needFill || conflictOpen;
     const set = (val) => app.setF(k, val, true);
-    const input = { height: 44, minWidth: 0, border: "1px solid #D9D0BF", borderRadius: 10, padding: "0 12px", fontSize: 14.5, background: "#fff", color: "#1F1B16" };
     return (
-      <div data-f={k} style={{ display: "grid", gridTemplateColumns: rowCols, gap: phone ? 6 : 14, alignItems: "center", padding: "8px 10px", borderRadius: 10, border: `1px ${warn || !ok[k] ? "dashed" : "solid"} ${warn ? "#A0412D" : ok[k] ? "#EFE9DD" : "#C9BCA5"}`, background: warn ? "#FBF8F2" : "#fff" }}>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <span style={{ fontSize: 13.5, color: "#4A4239", lineHeight: 1.4 }}>{d.l}</span>
-          {needFill && <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.12em", padding: "3px 6px", borderRadius: 4, background: "#F6E7E1", color: "#A0412D" }}>CẦN BẠN ĐIỀN</span>}
+      <div data-f={k} style={{ display: "grid", gridTemplateColumns: rowCols, gap: phone ? 5 : 12, alignItems: "center", padding: "6px 8px", borderRadius: 8, border: `1px ${warn || !ok[k] ? "dashed" : "solid"} ${warn ? "#A0412D" : ok[k] ? "#EFE9DD" : "#C9BCA5"}`, background: warn ? "#FBF8F2" : "#fff" }}>
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+          <span style={{ fontSize: d.fs.small, color: "#4A4239", lineHeight: 1.4 }}>{def.l}</span>
+          {needFill && <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: "0.12em", padding: "2px 5px", borderRadius: 4, background: "#F6E7E1", color: "#A0412D" }}>CẦN BẠN ĐIỀN</span>}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5, minWidth: 0 }}>
           {kind === "text" && <input value={v ?? ""} onChange={(e) => set(e.target.value)} style={{ ...input, width: "100%" }} />}
-          {kind === "mono" && <input value={v ?? ""} onChange={(e) => set(e.target.value)} style={{ ...input, width: 170, maxWidth: "100%", fontFamily: MONO }} />}
-          {kind === "area" && <textarea value={v ?? ""} onChange={(e) => set(e.target.value)} rows={5} placeholder="Ví dụ: chợ Bến Thành đi bộ 10 phút · có két sắt ở quầy · không có bãi giữ xe buýt" style={{ width: "100%", minHeight: 120, resize: "vertical", border: "1px solid #D9D0BF", borderRadius: 10, padding: "10px 12px", fontSize: 14.5, lineHeight: 1.5, background: "#fff", color: "#1F1B16" }} />}
-          {(d.k === "chips" || d.k === "multi") && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {d.o.map((o) => {
-                const multi = d.k === "multi";
+          {kind === "mono" && <input value={v ?? ""} onChange={(e) => set(e.target.value)} style={{ ...input, width: 150, maxWidth: "100%", fontFamily: MONO }} />}
+          {kind === "area" && <textarea value={v ?? ""} onChange={(e) => set(e.target.value)} rows={4} placeholder="Ví dụ: chợ Bến Thành đi bộ 10 phút · có két sắt ở quầy · không có bãi giữ xe buýt" style={{ width: "100%", minHeight: 90, resize: "vertical", border: "1px solid #D9D0BF", borderRadius: 8, padding: "8px 10px", fontSize: d.fs.body, lineHeight: 1.5, background: "#fff", color: "#1F1B16" }} />}
+          {(def.k === "chips" || def.k === "multi") && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+              {def.o.map((o) => {
+                const multi = def.k === "multi";
                 const on = multi ? v.includes(o) : v === o;
                 const go = () => (multi ? set(on ? v.filter((x) => x !== o) : [...v, o]) : set(o));
                 const st = multi
                   ? { bg: on ? "#7B4A2D" : "#fff", b: on ? "#7B4A2D" : "#D9D0BF", c: on ? "#fff" : "#6E6255" }
                   : { bg: on ? "#FBF5EC" : "#fff", b: on ? "#7B4A2D" : "#D9D0BF", c: on ? "#7B4A2D" : "#1F1B16" };
                 return (
-                  <button key={o} type="button" onClick={go} style={{ minHeight: 40, padding: "0 13px", borderRadius: 20, border: `1px solid ${st.b}`, background: st.bg, color: st.c, fontSize: 13.5, whiteSpace: "nowrap" }}>
+                  <button key={o} type="button" onClick={go} style={{ height: d.chip, padding: "0 11px", borderRadius: d.chip / 2, border: `1px solid ${st.b}`, background: st.bg, color: st.c, fontSize: d.fs.small, whiteSpace: "nowrap" }}>
                     {multi && on ? "✓ " : ""}{o}
                   </button>
                 );
@@ -144,34 +118,34 @@ export function Settings() {
             </div>
           )}
           {conflictOpen && (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {d.o.map(([val, src]) => (
-                <button key={val} type="button" className="h-clayline" onClick={() => app.setF("checkin", val, true)} style={{ minHeight: 44, padding: "6px 14px", border: "1px solid #D9D0BF", borderRadius: 10, background: "#fff", display: "flex", alignItems: "baseline", gap: 8 }}>
-                  <span style={{ fontFamily: MONO, fontSize: 16, color: "#1F1B16" }}>{val}</span>
-                  <span style={{ fontSize: 12.5, color: "#6E6255" }}>· {src}</span>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {def.o.map(([val, src]) => (
+                <button key={val} type="button" className="h-clayline" onClick={() => app.setF("checkin", val, true)} style={{ height: d.input, padding: "0 12px", border: "1px solid #D9D0BF", borderRadius: 8, background: "#fff", display: "flex", alignItems: "center", gap: 7 }}>
+                  <span style={{ fontFamily: MONO, fontSize: 13.5, color: "#1F1B16" }}>{val}</span>
+                  <span style={{ fontSize: d.fs.tiny, color: "#6E6255" }}>· {src}</span>
                 </button>
               ))}
             </div>
           )}
-          {d.k === "toggle" && (
-            <button type="button" onClick={() => set(!v)} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#1F1B16", textAlign: "left", minHeight: 44 }}>
+          {def.k === "toggle" && (
+            <button type="button" onClick={() => set(!v)} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: d.fs.body, color: "#1F1B16", textAlign: "left", minHeight: d.row }}>
               <Switch on={!!v} />
-              {d.t}
+              {def.t}
             </button>
           )}
-          {d.k === "voice" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {def.k === "voice" && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {Array.from({ length: VOICE_COUNT }, (_, j) => j + 1).map((i) => {
                 const on = v === i;
                 return (
-                  <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, minHeight: 48, padding: "4px 6px 4px 12px", borderRadius: 10, border: `1px solid ${on ? "#7B4A2D" : "#EFE9DD"}`, background: on ? "#FBF5EC" : "#fff" }}>
-                    <button type="button" onClick={() => set(i)} style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, fontSize: 14.5, color: "#1F1B16", textAlign: "left", minHeight: 40 }}>
-                      <span style={{ width: 18, height: 18, borderRadius: 9, border: on ? "5px solid #7B4A2D" : "1.5px solid #C9BCA5", flex: "none" }} />
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, height: d.chip + 4, padding: "0 3px 0 10px", borderRadius: (d.chip + 4) / 2, border: `1px solid ${on ? "#7B4A2D" : "#E4DCCB"}`, background: on ? "#FBF5EC" : "#fff" }}>
+                    <button type="button" onClick={() => set(i)} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: d.fs.small, color: "#1F1B16", height: "100%" }}>
+                      <span style={{ width: 13, height: 13, borderRadius: 7, border: on ? "4px solid #7B4A2D" : "1.5px solid #C9BCA5", flex: "none" }} />
                       Giọng {i}
                     </button>
                     <button
                       type="button"
-                      className="b-ghost"
+                      aria-label={`Nghe thử giọng ${i}`}
                       onClick={() => {
                         stopPlay.current?.();
                         if (playing === i) return setPlaying(null);
@@ -179,19 +153,20 @@ export function Settings() {
                         stopPlay.current = playVoice(i, f.greeting || "Dạ xin nghe ạ.", () => setPlaying(null));
                         return undefined;
                       }}
-                      style={{ height: 36, padding: "0 12px", borderRadius: 18, fontSize: 13, whiteSpace: "nowrap" }}
+                      className="h-line"
+                      style={{ width: d.chip - 4, height: d.chip - 4, borderRadius: (d.chip - 4) / 2, fontSize: 10, color: "#7B4A2D" }}
                     >
-                      {playing === i ? "■ Đang phát" : "▶ Nghe thử"}
+                      {playing === i ? "■" : "▶"}
                     </button>
                   </div>
                 );
               })}
             </div>
           )}
-          {d.note && (
-            <span style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 12.5, color: "#6E6255" }}>
-              <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.12em", border: "1px solid #6E6255", borderRadius: 4, padding: "2px 5px" }}>KHÓA</span>
-              {d.note}
+          {def.note && (
+            <span style={{ display: "flex", gap: 7, alignItems: "center", fontSize: d.fs.tiny, color: "#6E6255" }}>
+              <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: "0.12em", border: "1px solid #6E6255", borderRadius: 4, padding: "1px 4px" }}>KHÓA</span>
+              {def.note}
             </span>
           )}
         </div>
@@ -203,10 +178,10 @@ export function Settings() {
     CARDS[sec].map(([title, keys]) => {
       const p = keys.filter((k) => !ok[k] && f[k] != null);
       return (
-        <div key={title} style={{ background: "#fff", border: "1px solid #D9D0BF", borderRadius: 14, padding: "12px 14px 14px", display: "flex", flexDirection: "column", gap: 6 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "2px 2px 4px", minHeight: 34 }}>
-            <span style={{ fontSize: 14.5, fontWeight: 600 }}>{title}</span>
-            {p.length > 0 && <button type="button" className="b-ghost" onClick={() => app.confirmKeys(p)} style={{ height: 36, padding: "0 14px", borderRadius: 18, fontSize: 13, whiteSpace: "nowrap" }}>Đúng hết · {p.length}</button>}
+        <div key={title} style={{ background: "#fff", border: "1px solid #E4DCCB", borderRadius: 12, padding: "10px 12px 12px", display: "flex", flexDirection: "column", gap: 5 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "0 2px 3px", minHeight: 28 }}>
+            <span style={{ fontSize: d.fs.title, fontWeight: 600 }}>{title}</span>
+            {p.length > 0 && <button type="button" className="b-ghost" onClick={() => app.confirmKeys(p)} style={smallBtn}>Đúng hết · {p.length}</button>}
           </div>
           {keys.map((k) => <React.Fragment key={k}>{row(k)}</React.Fragment>)}
         </div>
@@ -215,13 +190,13 @@ export function Settings() {
 
   // ── rooms (§02) ──────────────────────────────────────────────────────
   const roomsView = () => (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 14px", background: "#fff", border: "1px solid #D9D0BF", borderRadius: 12 }}>
-        <button type="button" onClick={() => app.setF("quote", !f.quote, false)} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#1F1B16", textAlign: "left", minHeight: 44 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "6px 12px", background: "#fff", border: "1px solid #E4DCCB", borderRadius: 10 }}>
+        <button type="button" onClick={() => app.setF("quote", !f.quote, false)} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: d.fs.body, color: "#1F1B16", textAlign: "left", minHeight: d.row }}>
           <Switch on={!!f.quote} />
           Bonia được báo giá khi khách gọi
         </button>
-        <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.14em", color: "#6E6255", whiteSpace: "nowrap" }}>{rooms.reduce((a, r) => a + (Number(r.count) || 0), 0)} PHÒNG · {rooms.length} LOẠI</span>
+        <span style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.14em", color: "#6E6255", whiteSpace: "nowrap" }}>{rooms.reduce((a, r) => a + (Number(r.count) || 0), 0)} PHÒNG · {rooms.length} LOẠI</span>
       </div>
       {rooms.map((r, i) => {
         const open = openRoom === i;
@@ -238,40 +213,40 @@ export function Settings() {
         if (r.dOn) parts.push(`Theo ngày ${fmt(r.wd)}–${fmt(r.we)}đ`);
         const facts = [["Tên loại phòng", "name", txt], ["Số phòng", "count", num], ["Diện tích (m²)", "size", num], ["Giường", "bed", txt], ["Tối đa (người)", "max", num], ["Hướng nhìn", "view", txt]];
         return (
-          <div key={i} data-f={`room:${i}`} style={{ background: "#fff", border: `1px ${r.ok ? "solid" : "dashed"} ${r.ok ? "#D9D0BF" : "#C9BCA5"}`, borderRadius: 12, overflow: "hidden" }}>
-            <button type="button" onClick={() => setOpenRoom(open ? null : i)} style={{ width: "100%", display: "flex", flexDirection: "column", gap: 4, padding: "12px 14px", textAlign: "left", minHeight: 56 }}>
+          <div key={i} data-f={`room:${i}`} style={{ background: "#fff", border: `1px ${r.ok ? "solid" : "dashed"} ${r.ok ? "#E4DCCB" : "#C9BCA5"}`, borderRadius: 10, overflow: "hidden" }}>
+            <button type="button" onClick={() => setOpenRoom(open ? null : i)} style={{ width: "100%", display: "flex", flexDirection: "column", gap: 3, padding: "9px 12px", textAlign: "left" }}>
               <span style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", width: "100%" }}>
-                <span style={{ fontSize: 15, fontWeight: 600, color: "#1F1B16" }}>{r.name}</span>
-                <span style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.1em", padding: "4px 8px", borderRadius: 10, whiteSpace: "nowrap", border: `1px solid ${r.ok ? "#D9D0BF" : "#7B4A2D"}`, color: r.ok ? "#4A6B3A" : "#7B4A2D" }}>{r.ok ? "✓" : "XEM LẠI GIÁ"}</span>
+                <span style={{ fontSize: d.fs.title, fontWeight: 600, color: "#1F1B16" }}>{r.name}</span>
+                <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: "0.1em", padding: "2px 7px", borderRadius: 9, whiteSpace: "nowrap", border: `1px solid ${r.ok ? "#D9D0BF" : "#7B4A2D"}`, color: r.ok ? "#4A6B3A" : "#7B4A2D" }}>{r.ok ? "✓" : "XEM LẠI GIÁ"}</span>
               </span>
-              <span style={{ fontSize: 12.5, color: "#4A4239", lineHeight: 1.4 }}>{r.count} phòng · {r.size} m² · {r.bed} · tối đa {r.max} người</span>
-              <span style={{ fontFamily: MONO, fontSize: 12, color: "#1F1B16", lineHeight: 1.5 }}>{parts.join(" · ")}</span>
+              <span style={{ fontSize: d.fs.small, color: "#4A4239", lineHeight: 1.4 }}>{r.count} phòng · {r.size} m² · {r.bed} · tối đa {r.max} người</span>
+              <span style={{ fontFamily: MONO, fontSize: 11, color: "#1F1B16", lineHeight: 1.5 }}>{parts.join(" · ")}</span>
             </button>
             {open && (
-              <div style={{ padding: "12px 14px 14px", display: "flex", flexDirection: "column", gap: 14, borderTop: "1px solid #EFE9DD" }}>
-                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr 1fr" : "repeat(auto-fill,minmax(140px,1fr))", gap: 8 }}>
+              <div style={{ padding: "10px 12px 12px", display: "flex", flexDirection: "column", gap: 10, borderTop: "1px solid #EFE9DD" }}>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr 1fr" : "repeat(auto-fill,minmax(130px,1fr))", gap: 7 }}>
                   {facts.map(([l, k, fn]) => (
-                    <label key={k} style={{ display: "flex", flexDirection: "column", gap: 5, minWidth: 0 }}>
-                      <span style={{ fontSize: 12, color: "#6E6255" }}>{l}</span>
-                      <input value={r[k]} onChange={fn(k)} style={{ height: 44, width: "100%", minWidth: 0, border: "1px solid #D9D0BF", borderRadius: 10, padding: "0 12px", fontSize: 14.5, background: "#fff", color: "#1F1B16" }} />
+                    <label key={k} style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+                      <span style={{ fontSize: d.fs.tiny, color: "#6E6255" }}>{l}</span>
+                      <input value={r[k]} onChange={fn(k)} style={{ ...input, width: "100%" }} />
                     </label>
                   ))}
                 </div>
                 {modes.map((m) => (
-                  <div key={m.l} style={{ display: "flex", flexDirection: "column", gap: 8, padding: "10px 12px", borderRadius: 10, background: m.on ? "#FFFFFF" : "#FAF7F1", border: "1px solid #EFE9DD" }}>
-                    <button type="button" onClick={() => app.setRoom(i, { [m.key]: !m.on })} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14.5, fontWeight: 600, color: m.on ? "#1F1B16" : "#6E6255", minHeight: 36, width: "max-content" }}>
+                  <div key={m.l} style={{ display: "flex", flexDirection: "column", gap: 7, padding: "8px 10px", borderRadius: 8, background: m.on ? "#FFFFFF" : "#FAF7F1", border: "1px solid #EFE9DD" }}>
+                    <button type="button" onClick={() => app.setRoom(i, { [m.key]: !m.on })} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: d.fs.body, fontWeight: 600, color: m.on ? "#1F1B16" : "#6E6255", minHeight: 26, width: "max-content" }}>
                       <Switch on={m.on} />
                       {m.l}
-                      <span style={{ fontWeight: 400, fontSize: 13, color: "#6E6255" }}>{m.on ? "" : "· tắt"}</span>
+                      <span style={{ fontWeight: 400, fontSize: d.fs.small, color: "#6E6255" }}>{m.on ? "" : "· tắt"}</span>
                     </button>
                     {m.on && (
-                      <div style={{ display: "grid", gridTemplateColumns: m.cols, gap: 8 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: m.cols, gap: 7 }}>
                         {m.inputs.map(([l, k, suf, fn]) => (
-                          <label key={k} style={{ display: "flex", flexDirection: "column", gap: 5, minWidth: 0 }}>
-                            <span style={{ fontSize: 12, color: "#6E6255" }}>{l}</span>
+                          <label key={k} style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+                            <span style={{ fontSize: d.fs.tiny, color: "#6E6255" }}>{l}</span>
                             <span style={{ position: "relative", display: "block" }}>
-                              <input value={suf ? fmt(r[k]) : r[k]} onChange={fn(k)} inputMode={suf ? "numeric" : "text"} style={{ height: 44, width: "100%", minWidth: 0, border: "1px solid #D9D0BF", borderRadius: 10, padding: "0 28px 0 12px", fontFamily: MONO, fontSize: 14.5, background: "#fff", textAlign: "right", color: "#1F1B16" }} />
-                              <span style={{ position: "absolute", right: 11, top: 13, fontSize: 13, color: "#6E6255" }}>{suf}</span>
+                              <input value={suf ? fmt(r[k]) : r[k]} onChange={fn(k)} inputMode={suf ? "numeric" : "text"} style={{ ...input, width: "100%", padding: "0 24px 0 10px", fontFamily: MONO, textAlign: "right" }} />
+                              <span style={{ position: "absolute", right: 9, top: "50%", transform: "translateY(-50%)", fontSize: d.fs.small, color: "#6E6255" }}>{suf}</span>
                             </span>
                           </label>
                         ))}
@@ -281,7 +256,7 @@ export function Settings() {
                 ))}
                 {!r.ok && (
                   <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <button type="button" className="b-primary" onClick={() => app.setRoom(i, { ok: true })} style={{ height: 44, padding: "0 18px", borderRadius: 22, fontSize: 14 }}>Đúng giá này</button>
+                    <button type="button" className="b-primary" onClick={() => app.setRoom(i, { ok: true })} style={{ ...smallBtn, height: d.btn, padding: "0 16px", borderRadius: d.btn / 2 }}>Đúng giá này</button>
                   </div>
                 )}
               </div>
@@ -289,118 +264,18 @@ export function Settings() {
           </div>
         );
       })}
-      <button type="button" style={{ height: 48, border: "1px dashed #C9BCA5", borderRadius: 12, fontSize: 14, color: "#4A4239", textAlign: "center" }}>+ Thêm loại phòng</button>
-    </div>
-  );
-
-  // ── account (§05) ────────────────────────────────────────────────────
-  const card = { background: "#fff", border: "1px solid #D9D0BF", borderRadius: 14, padding: "14px 16px", display: "flex", flexDirection: "column" };
-  const accountView = () => (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ ...card, gap: 10 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "baseline" }}>
-          <span style={{ fontSize: 14.5, fontWeight: 600 }}>{PLAN.name}</span>
-          <span style={{ fontFamily: MONO, fontSize: 15 }}>{groupVnd(PLAN.price)}đ/tháng</span>
-        </div>
-        <span style={{ fontSize: 13.5, color: "#4A4239", lineHeight: 1.5 }}>Chưa gồm VAT · gồm {PLAN.minutes} phút · phút vượt {groupVnd(PLAN.overPerMin)}đ/phút, tính theo giây</span>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingTop: 4 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5 }}>
-            <span>{USAGE.month}</span>
-            <span style={{ fontFamily: MONO }}>{decimal(USAGE.used)} / {PLAN.minutes} phút</span>
-          </div>
-          <div style={{ height: 6, borderRadius: 3, background: "#E4DCCB", overflow: "hidden" }}>
-            <div style={{ width: `${Math.min(100, (USAGE.used / PLAN.minutes) * 100)}%`, height: "100%", background: "#7B4A2D" }} />
-          </div>
-        </div>
-      </div>
-      <div style={{ ...card, gap: 12, borderColor: INVOICE.paid ? "#D9D0BF" : "#EBCFC4" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-          <span style={{ fontSize: 14.5, fontWeight: 600 }}>Hóa đơn {INVOICE.month.toLowerCase()}</span>
-          <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.12em", padding: "4px 8px", borderRadius: 10, background: INVOICE.paid ? "#EEF0E6" : "#F6E7E1", color: INVOICE.paid ? "#4A6B3A" : "#A0412D" }}>{INVOICE.paid ? "ĐÃ THANH TOÁN" : "CHƯA THANH TOÁN"}</span>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", gap: "4px 16px", fontSize: 13.5 }}>
-          {INVOICE.lines.map(([l, v]) => (
-            <React.Fragment key={l}>
-              <span style={{ color: "#6E6255" }}>{l}</span>
-              <span style={{ fontFamily: MONO, textAlign: "right" }}>{vnd(v)}</span>
-            </React.Fragment>
-          ))}
-          <span style={{ fontWeight: 600, paddingTop: 4 }}>Tổng</span>
-          <span style={{ fontFamily: MONO, textAlign: "right", fontWeight: 600, paddingTop: 4 }}>{vnd(INVOICE.total)}</span>
-        </div>
-        {!INVOICE.paid && (
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start", padding: 12, borderRadius: 12, background: "#FAF7F1" }}>
-            <QrGrid text={vietQrPayload({ bin: VCB_BIN, account: INVOICE.account, amount: INVOICE.total, content: INVOICE.content })} size={168} pad={10} />
-            <div style={{ flex: 1, minWidth: 180, display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", gap: "6px 12px", fontSize: 13.5, alignContent: "start" }}>
-              <span style={{ color: "#6E6255" }}>Ngân hàng</span><span>{INVOICE.bank}</span>
-              <span style={{ color: "#6E6255" }}>Số tài khoản</span><span style={{ fontFamily: MONO }}>{INVOICE.account}</span>
-              <span style={{ color: "#6E6255" }}>Chủ tài khoản</span><span>{INVOICE.holder}</span>
-              <span style={{ color: "#6E6255" }}>Nội dung</span><span style={{ fontFamily: MONO }}>{INVOICE.content}</span>
-              <span />
-              <button type="button" className="b-ghost" onClick={() => { copyToClipboard(INVOICE.content); setPayCopied(true); setTimeout(() => setPayCopied(false), 1600); }} style={{ height: 40, width: "max-content", padding: "0 16px", borderRadius: 20, fontSize: 13.5, marginTop: 4 }}>{payCopied ? "Đã chép" : "Sao chép nội dung"}</button>
-            </div>
-          </div>
-        )}
-      </div>
-      <div style={{ ...card, gap: 8 }}>
-        <span style={{ fontSize: 14.5, fontWeight: 600 }}>Thông tin xuất hóa đơn</span>
-        <div style={{ display: "grid", gridTemplateColumns: rowCols, gap: "6px 14px", fontSize: 13.5, alignItems: "center" }}>
-          {[["Tên đơn vị", BILLING_INFO.company, false], ["Mã số thuế", BILLING_INFO.taxId, true], ["Email nhận hóa đơn", BILLING_INFO.email, false]].map(([l, v, mono]) => (
-            <React.Fragment key={l}>
-              <span style={{ color: "#6E6255" }}>{l}</span>
-              <input defaultValue={v} style={{ height: 44, border: "1px solid #D9D0BF", borderRadius: 10, padding: "0 12px", fontSize: 14, background: "#fff", minWidth: 0, fontFamily: mono ? MONO : undefined }} />
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-      <div style={{ ...card, gap: 4 }}>
-        <span style={{ fontSize: 14.5, fontWeight: 600, paddingBottom: 4 }}>Lịch sử thanh toán</span>
-        {PAY_HISTORY.map((p) => (
-          <div key={p.m} style={{ display: "flex", justifyContent: "space-between", gap: 10, minHeight: 44, alignItems: "center", borderTop: "1px solid #EFE9DD", fontSize: 13.5 }}>
-            <span>{p.m}</span>
-            <span style={{ fontFamily: MONO }}>{vnd(p.v)}</span>
-            <span style={{ color: p.paid ? "#4A6B3A" : "#A0412D", whiteSpace: "nowrap" }}>{p.s}</span>
-          </div>
-        ))}
-      </div>
-      <div style={{ ...card, gap: 6 }}>
-        <span style={{ fontSize: 14.5, fontWeight: 600, paddingBottom: 4 }}>Tài khoản</span>
-        <div style={{ display: "grid", gridTemplateColumns: rowCols, gap: "8px 14px", fontSize: 13.5, alignItems: "center" }}>
-          <span style={{ color: "#6E6255" }}>Số đăng nhập</span><span style={{ fontFamily: MONO, fontSize: 14.5 }}>{ACCOUNT.login}</span>
-          <span style={{ color: "#6E6255" }}>Lĩnh vực</span><span>{ACCOUNT.sector} · <span style={{ color: "#6E6255" }}>liên hệ hỗ trợ để đổi</span></span>
-          <span style={{ color: "#6E6255" }}>Mã giới thiệu</span><span>Đăng ký qua: {ACCOUNT.referral.via} · <span style={{ fontFamily: MONO }}>{ACCOUNT.referral.code}</span></span>
-        </div>
-        <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.18em", color: "#6E6255", paddingTop: 10 }}>MÁY ĐANG ĐĂNG NHẬP</span>
-        {devs.map((d) => {
-          const isThis = d.phone === phone;
-          return (
-            <div key={d.n} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, minHeight: 52, borderTop: "1px solid #EFE9DD" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <span style={{ fontSize: 14, fontWeight: 500 }}>{d.n}</span>
-                <span style={{ fontSize: 12, color: "#6E6255" }}>{isThis ? "Đang dùng" : d.s}</span>
-              </div>
-              {isThis ? (
-                <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.12em", color: "#4A6B3A" }}>MÁY NÀY</span>
-              ) : (
-                <button type="button" className="b-ghost" onClick={() => setDevs((ds) => ds.filter((x) => x !== d))} style={{ height: 40, padding: "0 14px", borderRadius: 20, fontSize: 13, whiteSpace: "nowrap" }}>Đăng xuất</button>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      <button type="button" style={{ height: d.btn + 4, border: "1px dashed #C9BCA5", borderRadius: 10, fontSize: d.fs.body, color: "#4A4239", textAlign: "center" }}>+ Thêm loại phòng</button>
     </div>
   );
 
   // ── page ─────────────────────────────────────────────────────────────
   const index = SECTIONS.map(([k, num, l]) => {
     const c = pend.filter((p) => p[0] === k).length;
-    const acc = k === "s5";
-    const unpaid = acc && !INVOICE.paid;
     return {
       k, num, l,
-      mark: unpaid ? `Chưa thanh toán ${INVOICE.month.toLowerCase()}` : c ? `${c} cần xem lại` : "✓ Đã xong",
-      mc: unpaid ? "#A0412D" : c ? "#7B4A2D" : "#4A6B3A",
-      badge: unpaid ? "!" : c ? String(c) : acc ? "" : "✓",
+      mark: c ? `${c} cần xem lại` : "✓ Đã xong",
+      mc: c ? "#7B4A2D" : "#4A6B3A",
+      badge: c ? String(c) : "✓",
       go: () => { setActive(k); jump(k); },
     };
   });
@@ -416,66 +291,65 @@ export function Settings() {
     <div style={{ position: "absolute", inset: 0, background: "#F2EEE6", overflow: "hidden" }}>
       {!phone && <DeskHeader active={2} solid />}
       {review && (
-        <div style={{ position: "absolute", left: 0, right: 0, top: topH, height: revH, zIndex: 3, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: `0 ${phone ? 16 : 40}px`, background: pendN ? "#FBF5EC" : "#EEF0E6", borderBottom: "1px solid #D9D0BF" }}>
-          <span style={{ fontSize: phone ? 14.5 : 15, fontWeight: 600, color: pendN ? "#7B4A2D" : "#4A6B3A" }}>{pendN ? `Còn ${pendN} mục cần xem lại` : "Đã xem lại hết"}</span>
-          <button type="button" className="b-primary" onClick={revGo} style={{ height: 40, padding: "0 16px", borderRadius: 20, fontSize: 14, whiteSpace: "nowrap" }}>{pendN ? (phone ? "Mục tiếp" : "Tới mục tiếp theo") : "Thử Bonia →"}</button>
+        <div style={{ position: "absolute", left: 0, right: 0, top: topH, height: revH, zIndex: 3, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: `0 ${phone ? 16 : 48}px`, background: pendN ? "#FBF5EC" : "#EEF0E6", borderBottom: "1px solid #D9D0BF" }}>
+          <span style={{ fontSize: d.fs.body, fontWeight: 600, color: pendN ? "#7B4A2D" : "#4A6B3A" }}>{pendN ? `Còn ${pendN} mục cần xem lại` : "Đã xem lại hết"}</span>
+          <button type="button" className="b-primary" onClick={revGo} style={{ ...smallBtn, height: d.btnSm + 2, padding: "0 14px" }}>{pendN ? (phone ? "Mục tiếp" : "Tới mục tiếp theo") : "Thử Bonia →"}</button>
         </div>
       )}
       <div ref={scRef} onScroll={onScroll} style={{ position: "absolute", left: 0, right: 0, top: `calc(${topH} + ${revH}px)`, bottom: phone ? "calc(57px + var(--tt-bot))" : 0, overflow: "auto" }}>
         {phone && (
-          <div style={{ position: "sticky", top: 0, zIndex: 2, background: "#F2EEE6", padding: "6px 16px 10px", display: "flex", flexDirection: "column", gap: 8, borderBottom: "1px solid #E4DCCB" }}>
-            <span style={{ fontFamily: SERIF, fontSize: 26 }}>Cài đặt</span>
-            <div className="tt-scroll-x" style={{ display: "flex", gap: 6, margin: "0 -16px", padding: "0 16px" }}>
+          <div style={{ position: "sticky", top: 0, zIndex: 2, background: "#F2EEE6", padding: "6px 16px 8px", display: "flex", flexDirection: "column", gap: 6, borderBottom: "1px solid #E4DCCB" }}>
+            <span style={{ fontFamily: SERIF, fontSize: d.fs.h1 }}>Cài đặt</span>
+            <div className="tt-scroll-x" style={{ display: "flex", gap: 5, margin: "0 -16px", padding: "0 16px" }}>
               {index.map((it) => {
                 const on = active === it.k;
                 return (
-                  <button key={it.k} type="button" onClick={it.go} style={{ height: 40, padding: "0 13px", borderRadius: 20, border: `1px solid ${on ? "#1F1B16" : "#D9D0BF"}`, background: on ? "#1F1B16" : "#fff", color: on ? "#F7F3EC" : "#1F1B16", fontSize: 13.5, whiteSpace: "nowrap", flex: "none" }}>
+                  <button key={it.k} type="button" onClick={it.go} style={{ height: d.chip, padding: "0 11px", borderRadius: d.chip / 2, border: `1px solid ${on ? "#1F1B16" : "#D9D0BF"}`, background: on ? "#1F1B16" : "#fff", color: on ? "#F7F3EC" : "#1F1B16", fontSize: d.fs.small, whiteSpace: "nowrap", flex: "none" }}>
                     {it.l}
-                    <span style={{ fontFamily: MONO, fontSize: 11, marginLeft: 5, color: it.mc }}>{it.badge}</span>
+                    <span style={{ fontFamily: MONO, fontSize: 10, marginLeft: 5, color: on ? "#F7F3EC" : it.mc }}>{it.badge}</span>
                   </button>
                 );
               })}
             </div>
           </div>
         )}
-        <div style={{ maxWidth: 1180, margin: "0 auto", padding: phone ? "14px 16px 120px" : "28px 40px 120px", display: "grid", gridTemplateColumns: phone ? "minmax(0,1fr)" : "210px minmax(0,1fr)", gap: 44, alignItems: "start" }}>
+        <div style={{ maxWidth: 1080, margin: "0 auto", padding: phone ? "12px 16px 110px" : "24px 48px 110px", display: "grid", gridTemplateColumns: phone ? "minmax(0,1fr)" : "190px minmax(0,1fr)", gap: 40, alignItems: "start" }}>
           {!phone && (
-            <aside style={{ position: "sticky", top: 24, display: "flex", flexDirection: "column", gap: 2 }}>
+            <aside style={{ position: "sticky", top: 20, display: "flex", flexDirection: "column", gap: 2 }}>
               {index.map((it) => {
                 const on = active === it.k;
                 return (
-                  <button key={it.k} type="button" onClick={it.go} className="h-white" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3, padding: "10px 12px", borderRadius: 10, background: on ? "#FFFFFF" : "transparent", textAlign: "left" }}>
-                    <span style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
-                      <span style={{ fontFamily: MONO, fontSize: 10, color: "#6E6255", width: 18 }}>{it.num}</span>
-                      <span style={{ fontSize: 14.5, fontWeight: on ? 600 : 400 }}>{it.l}</span>
+                  <button key={it.k} type="button" onClick={it.go} className="h-white" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2, padding: "8px 10px", borderRadius: 8, background: on ? "#FFFFFF" : "transparent", textAlign: "left" }}>
+                    <span style={{ display: "flex", gap: 9, alignItems: "baseline" }}>
+                      <span style={{ fontFamily: MONO, fontSize: 9.5, color: "#6E6255", width: 16 }}>{it.num}</span>
+                      <span style={{ fontSize: d.fs.title, fontWeight: on ? 600 : 400 }}>{it.l}</span>
                     </span>
-                    <span style={{ paddingLeft: 28, fontSize: 11.5, color: it.mc }}>{it.mark}</span>
+                    <span style={{ paddingLeft: 25, fontSize: d.fs.tiny, color: it.mc }}>{it.mark}</span>
                   </button>
                 );
               })}
             </aside>
           )}
-          <main style={{ display: "flex", flexDirection: "column", gap: 36, minWidth: 0 }}>
+          <main style={{ display: "flex", flexDirection: "column", gap: 30, minWidth: 0 }}>
             {SECTIONS.map(([k, num, title]) => (
-              <section key={k} data-sec={k} id={k} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-                  <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.2em", color: "#6E6255" }}>{num}</span>
-                  <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: 24 }}>{title}</h2>
+              <section key={k} data-sec={k} id={k} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                  <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.2em", color: "#6E6255" }}>{num}</span>
+                  <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: 20 }}>{title}</h2>
                 </div>
                 {k === "s2" && roomsView()}
                 {CARDS[k] && cards(k)}
-                {k === "s5" && accountView()}
               </section>
             ))}
           </main>
         </div>
       </div>
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: phone ? "calc(57px + var(--tt-bot))" : 0, zIndex: 4, display: "flex", justifyContent: "center", padding: `10px ${phone ? 16 : 40}px`, background: "#fff", borderTop: "1px solid #D9D0BF", transform: dirtyN ? "translateY(0)" : "translateY(120%)", opacity: dirtyN ? 1 : 0, pointerEvents: dirtyN ? "auto" : "none", transition: "transform 280ms cubic-bezier(.2,.8,.2,1), opacity 200ms ease" }}>
-        <div style={{ width: "100%", maxWidth: 1100, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 13.5 }}>{dirtyN} thay đổi chưa lưu</span>
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: phone ? "calc(57px + var(--tt-bot))" : 0, zIndex: 4, display: "flex", justifyContent: "center", padding: `8px ${phone ? 16 : 48}px`, background: "#fff", borderTop: "1px solid #D9D0BF", transform: dirtyN ? "translateY(0)" : "translateY(120%)", opacity: dirtyN ? 1 : 0, pointerEvents: dirtyN ? "auto" : "none", transition: `transform 280ms ${EASE}, opacity 200ms ease` }}>
+        <div style={{ width: "100%", maxWidth: 1080, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: d.fs.body }}>{dirtyN} thay đổi chưa lưu</span>
           <div style={{ display: "flex", gap: 6 }}>
-            <button type="button" className="b-ghost" onClick={app.discard} style={{ height: 44, padding: "0 14px", borderRadius: 22, fontSize: 13.5, whiteSpace: "nowrap" }}>Bỏ thay đổi</button>
-            <button type="button" className="b-primary" onClick={app.save} style={{ height: 44, padding: "0 22px", borderRadius: 22, fontSize: 14 }}>Lưu</button>
+            <button type="button" className="b-ghost" onClick={app.discard} style={{ ...smallBtn, height: d.btn, borderRadius: d.btn / 2 }}>Bỏ thay đổi</button>
+            <button type="button" className="b-primary" onClick={app.save} style={{ ...smallBtn, height: d.btn, padding: "0 20px", borderRadius: d.btn / 2 }}>Lưu</button>
           </div>
         </div>
       </div>

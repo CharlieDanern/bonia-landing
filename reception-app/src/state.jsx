@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { REQUESTS, SCRIPTS, copyText } from "./data/sample.js";
 import { defaultSettings } from "./data/settings.js";
+import { INVOICE } from "./data/account.js";
 
 // One store for the whole app (sample data until the backend is wired):
 // requests (Trực tiếp + Lịch sử share them), the scripted live calls of the
@@ -51,15 +52,16 @@ function requestFromCall(c, now) {
   const sc = SCRIPTS[c.kind];
   const el = elapsed(c, c.endAt);
   const s = Math.round((c.endAt - c.start) / 1000);
-  let fields = sc.fields.filter((f) => el >= f[1]).map((f) => [f[0], f[2]]).filter((f) => !(f[0] === "Tên" || f[0] === "Phòng"));
-  if (c.handedAt) fields = [...fields, ["Ghi chú", "Lễ tân đã nghe máy"]];
+  const heard = sc.summary.filter((x) => el >= x[0]).pop();
+  let summary = heard ? heard[1] : "";
+  if (c.handedAt) summary = summary ? `${summary} Lễ tân đã nghe máy.` : "Lễ tân đã nghe máy ngay từ đầu.";
   return {
     id: c.id,
     name: sc.name && el >= sc.nameAt ? sc.name : null,
     room: sc.room && el >= sc.roomAt ? sc.room : null,
     number: sc.number, type: sc.type, urgent: sc.urgent, day: 0, at: hm(),
     len: `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`,
-    fields, said: c.handedAt && el < sc.notifyAt ? "" : sc.said, status: "open", addedAt: now,
+    summary, status: "open", addedAt: now,
     transcript: sc.lines.filter((l) => l[0] <= el).map((l) => [l[1], l[2]]),
   };
 }
@@ -197,6 +199,19 @@ export function AppStateProvider({ children }) {
       const D = defaultSettings();
       setSettings({ ...D, saved: JSON.stringify(D) });
     },
+    /** Thử Bonia's quick settings: change and save at once (no unsaved-changes bar). */
+    applyNow: (k, v) => setSettings((s) => {
+      let saved = s.saved;
+      try {
+        const sv = JSON.parse(saved);
+        sv.f = { ...sv.f, [k]: v };
+        sv.ok = { ...sv.ok, [k]: true };
+        saved = JSON.stringify(sv);
+      } catch {
+        // no saved snapshot yet
+      }
+      return { ...s, f: { ...s.f, [k]: v }, ok: { ...s.ok, [k]: true }, saved };
+    }),
     /** A Thử Bonia correction: appended to "Thông tin khác" and saved at once. */
     appendExtra: (line) => setSettings((s) => {
       const ex = (s.f.extra || "").trim();
@@ -214,7 +229,7 @@ export function AppStateProvider({ children }) {
   }), []);
 
   const value = {
-    reqs, calls, now, pickups, offline, focus, copied, settings,
+    reqs, calls, now, pickups, offline, focus, copied, settings, unpaid: !INVOICE.paid,
     startCall, listen, later, markDone, copy, resetDemo, toggleOffline, setFocus,
     elapsed, ...settingsApi,
   };

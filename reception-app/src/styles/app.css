@@ -49,28 +49,30 @@ input:focus, textarea:focus { outline: none; border-color: #7B4A2D !important; b
 
 /* ── desktop header ────────────────────────────────────────────────── */
 .tt-head {
-  position: absolute; left: 0; top: 0; right: 0; height: 64px; z-index: 3;
-  display: flex; align-items: center; justify-content: space-between; padding: 0 40px;
+  position: absolute; left: 0; top: 0; right: 0; height: 56px; z-index: 3;
+  display: flex; align-items: center; justify-content: space-between; padding: 0 48px;
   border-bottom: 1px solid rgba(217, 208, 191, 0.7);
 }
 .tt-head.solid { background: #F2EEE6; border-bottom-color: #D9D0BF; }
 .tt-head-brand { display: flex; align-items: center; gap: 10px; width: 340px; }
-.tt-head-brand img { height: 22px; width: auto; }
-.tt-head-name { font-size: 14px; font-weight: 600; margin-left: 8px; white-space: nowrap; }
+.tt-head-brand img { height: 20px; width: auto; }
+.tt-head-name { font-size: 13px; font-weight: 600; margin-left: 6px; white-space: nowrap; }
 .tt-head-nav { display: flex; gap: 4px; }
-.tt-head-nav a { height: 38px; padding: 0 16px; border-radius: 19px; display: flex; align-items: center; font-size: 14px; white-space: nowrap; color: #1F1B16; }
+.tt-head-nav a { height: 32px; padding: 0 14px; border-radius: 16px; display: flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; color: #1F1B16; }
 .tt-head-nav a:hover { background: rgba(255, 255, 255, 0.6); color: #1F1B16; }
 .tt-head-nav a.on { background: #1F1B16; color: #F7F3EC; font-weight: 600; }
-.tt-head-right { width: 340px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4A4239; }
-.tt-mono-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.22em; color: #6E6255; }
+.tt-head-right { width: 340px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #6E6255; }
+.tt-mono-label { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; color: #6E6255; }
+.tt-dot { width: 6px; height: 6px; border-radius: 3px; background: #A0412D; display: inline-block; flex: none; }
 
 /* ── phone tab bar ─────────────────────────────────────────────────── */
 .tt-tabs {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; height: calc(57px + var(--tt-bot));
   padding-bottom: var(--tt-bot); border-top: 1px solid #D9D0BF; background: rgba(247, 243, 236, 0.97);
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
 }
-.tt-tabs a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 12px; color: #4A4239; }
+.tt-tabs a { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 11px; color: #4A4239; white-space: nowrap; }
+.tt-tabs a .tt-dot { position: absolute; top: 9px; right: calc(50% - 26px); }
 .tt-tabs a.on { color: #7B4A2D; font-weight: 600; }
 .tt-tabs .bar { width: 22px; height: 3px; border-radius: 2px; background: transparent; }
 .tt-tabs a.on .bar { background: #7B4A2D; }
@@ -88,3 +90,10 @@ input:focus, textarea:focus { outline: none; border-color: #7B4A2D !important; b
 .h-clayline:hover { border-color: #7B4A2D !important; }
 .tt-scroll-x { overflow-x: auto; scrollbar-width: none; }
 .tt-scroll-x::-webkit-scrollbar { display: none; }
+
+/* Trực tiếp on desktop: a card's actions sit beside the number and show on
+   hover / focus / when open, so the desk stays calm and nothing jumps. */
+.tt-card.hov .tt-card-actions { visibility: hidden; }
+.tt-card.hov:hover .tt-card-actions,
+.tt-card.hov:focus-within .tt-card-actions,
+.tt-card.hov.sel .tt-card-actions { visibility: visible; }

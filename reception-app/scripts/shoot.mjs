@@ -46,7 +46,7 @@ const CASES = [
   ...START.map((label, i) => [`start-${i}`, "Bonia Bat Dau v3", [["button", label]], START_PATH[i]]),
 ];
 
-const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ["--hide-scrollbars"] });
+const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ["--hide-scrollbars", "--mute-audio"] });
 
 async function clickButton(page, text) {
   await page.evaluate((t) => {

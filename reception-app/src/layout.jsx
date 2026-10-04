@@ -121,9 +121,11 @@ function DemoStrip() {
   );
 }
 
-export const TABS = [["Trực tiếp", "/"], ["Lịch sử", "/lich-su"], ["Cài đặt", "/cai-dat"], ["Thử Bonia", "/thu-bonia"]];
+export const TABS = [["Trực tiếp", "/"], ["Lịch sử", "/lich-su"], ["Cài đặt", "/cai-dat"], ["Thử Bonia", "/thu-bonia"], ["Tài khoản", "/tai-khoan"]];
+const ACCOUNT_TAB = 4;
 
 export function DeskHeader({ active, right = null, solid = false }) {
+  const { unpaid } = useApp();
   return (
     <header className={`tt-head${solid ? " solid" : ""}`}>
       <div className="tt-head-brand">
@@ -133,7 +135,10 @@ export function DeskHeader({ active, right = null, solid = false }) {
       </div>
       <nav className="tt-head-nav">
         {TABS.map(([l, href], i) => (
-          <Link key={href} href={href} className={i === active ? "on" : ""}>{l}</Link>
+          <Link key={href} href={href} className={i === active ? "on" : ""}>
+            {l}
+            {i === ACCOUNT_TAB && unpaid && <span className="tt-dot" aria-label="Chưa thanh toán" />}
+          </Link>
         ))}
       </nav>
       <div className="tt-head-right">{right}</div>
@@ -142,12 +147,14 @@ export function DeskHeader({ active, right = null, solid = false }) {
 }
 
 export function PhoneTabs({ active }) {
+  const { unpaid } = useApp();
   return (
     <nav className="tt-tabs">
       {TABS.map(([l, href], i) => (
         <Link key={href} href={href} className={i === active ? "on" : ""}>
           <span className="bar" />
           {l}
+          {i === ACCOUNT_TAB && unpaid && <span className="tt-dot" aria-label="Chưa thanh toán" />}
         </Link>
       ))}
     </nav>

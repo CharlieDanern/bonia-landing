@@ -11,7 +11,7 @@ const OUT = join(ROOT, ".qa", "flow");
 mkdirSync(OUT, { recursive: true });
 const base = process.argv[2] || "http://localhost:5180";
 const only = process.argv[3] || "";
-const b = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true, args: ["--hide-scrollbars"] });
+const b = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true, args: ["--hide-scrollbars", "--mute-audio"] });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const errors = [];
 
@@ -38,7 +38,7 @@ async function shot(p, dev, name) {
     const clip = await p.evaluate(() => { const r = document.querySelector(".tt-phone").getBoundingClientRect(); return { x: r.x, y: r.y + window.scrollY, width: r.width, height: r.height }; });
     await p.screenshot({ path: join(OUT, `${dev}_${name}.png`), clip });
   } else {
-    await p.screenshot({ path: join(OUT, `${dev}_${name}.png`), clip: { x: 0, y: 52, width: 1440, height: 900 } });
+    await p.screenshot({ path: join(OUT, `${dev}_${name}.png`) });
   }
 }
 

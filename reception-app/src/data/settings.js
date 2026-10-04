@@ -29,14 +29,15 @@ export const FIELDS = {
   extra: { l: "Điều khác Bonia nên biết", k: "area" },
 };
 
-/** Section → cards → field keys. §02 (rooms) and §05 (account) have their own layout. */
+/** Section → cards → field keys. §02 (rooms) has its own layout. */
 export const CARDS = {
   s1: [["Thông tin cơ bản", ["name", "type", "phone", "address", "directions"]], ["Nhận & trả phòng", ["checkin", "checkout", "rec24", "early"]], ["Chính sách", ["children", "pets", "smoking", "deposit", "cancel"]], ["Tiện nghi", ["amen"]]],
   s3: [["Lời chào", ["greeting", "closing"]], ["Giọng", ["voice", "english"]]],
   s4: [["Thông tin khác", ["extra"]]],
 };
 
-export const SECTIONS = [["s1", "01", "Khách sạn"], ["s2", "02", "Phòng & giá"], ["s3", "03", "Cách nghe máy"], ["s4", "04", "Thông tin khác"], ["s5", "05", "Tài khoản & thanh toán"]];
+// Tài khoản & thanh toán has its own page (/tai-khoan) since 2026-10-04.
+export const SECTIONS = [["s1", "01", "Khách sạn"], ["s2", "02", "Phòng & giá"], ["s3", "03", "Cách nghe máy"], ["s4", "04", "Thông tin khác"]];
 
 /** Bonia's voices, shown as Giọng 1…5 (the engine's own names stay hidden). */
 export const VOICE_COUNT = 5;
