@@ -1,61 +1,36 @@
-import React, { Suspense, lazy } from "react";
+import React from "react";
 import { Redirect, Route, Switch } from "wouter";
-import { markNewAccount, sectorBy } from "./data/sectors.js";
-import { ChooseSector, Login, Onboarding } from "./screens/login-onboarding/index.jsx";
-import { Today, Billing, Paused } from "./screens/today-billing/index.jsx";
-import { Requests } from "./screens/requests/index.jsx";
-import { Calendar, Calls } from "./screens/calendar-calls/index.jsx";
-import { SettingsA } from "./screens/settings-a/index.jsx";
-import { SettingsB, Account, Help, TaskPage } from "./screens/settings-b/index.jsx";
+import { AppFrame } from "./layout.jsx";
+import { StoreRedirect } from "./components/StoreQR.jsx";
+import { History } from "./screens/History.jsx";
+import { Live } from "./screens/Live.jsx";
+import { Settings } from "./screens/Settings.jsx";
+import { Start, StartLink } from "./screens/Start.jsx";
+import { TryBonia } from "./screens/TryBonia.jsx";
 
-// Dev-only component gallery; never part of the production bundle.
-const Gallery = import.meta.env.DEV ? lazy(() => import("./gallery/Gallery.jsx")) : null;
-
-/** §01–§05 belong to settings-a, §06–§11 to settings-b. */
-function SettingsRoute({ section }) {
-  const n = Number(section);
-  if (section && n >= 6 && n <= 11) return <SettingsB section={section} />;
-  return <SettingsA section={section} />;
-}
-
-/**
- * A salesperson's link (brief §3.1): /start/VNPT-HCM-0123?nganh=luu-tru starts a
- * new account credited to that code; a ready sector in the link skips the
- * sector choice. Then the normal login.
- */
-function StartLink({ code }) {
-  const nganh = new URLSearchParams(window.location.search).get("nganh");
-  const sector = nganh && sectorBy(nganh).key === nganh && sectorBy(nganh).ready ? nganh : null;
-  markNewAccount({ code, sector });
-  return <Redirect to="/dang-nhap" replace />;
-}
-
+// Bonia Tiếp tân v3 (Claude Design handoff 13). Four tabs: Trực tiếp ·
+// Lịch sử · Cài đặt · Thử Bonia, plus the Bắt đầu flow. Sample data only.
 export default function App() {
   return (
     <Switch>
-      <Route path="/dang-nhap" component={Login} />
-      <Route path="/start/:code">{(p) => <StartLink code={p.code} />}</Route>
-      <Route path="/chon-linh-vuc" component={ChooseSector} />
-      <Route path="/bat-dau/:step?">{(p) => <Onboarding step={p.step} />}</Route>
-      <Route path="/hom-nay" component={Today} />
-      <Route path="/thanh-toan" component={Billing} />
-      <Route path="/tam-dung" component={Paused} />
-      <Route path="/yeu-cau/:id?">{(p) => <Requests id={p.id} />}</Route>
-      <Route path="/lich" component={Calendar} />
-      <Route path="/cuoc-goi/:id?">{(p) => <Calls id={p.id} />}</Route>
-      <Route path="/cai-dat/:section?">{(p) => <SettingsRoute section={p.section} />}</Route>
-      <Route path="/tai-khoan" component={Account} />
-      <Route path="/tro-giup" component={Help} />
-      <Route path="/viec" component={TaskPage} />
-      {Gallery && (
-        <Route path="/_gallery">
-          <Suspense fallback={null}>
-            <Gallery />
-          </Suspense>
-        </Route>
-      )}
+      <Route path="/tai" component={StoreRedirect} />
       <Route>
-        <Redirect to="/hom-nay" replace />
+        <AppFrame>
+          <Switch>
+            <Route path="/" component={Live} />
+            <Route path="/lich-su" component={History} />
+            <Route path="/cai-dat" component={Settings} />
+            <Route path="/thu-bonia" component={TryBonia} />
+            <Route path="/bat-dau/:step?">{(p) => <Start step={p.step || ""} />}</Route>
+            <Route path="/start/:code">{(p) => <StartLink code={p.code} />}</Route>
+            <Route path="/dang-nhap">
+              <Redirect to="/bat-dau" replace />
+            </Route>
+            <Route>
+              <Redirect to="/" replace />
+            </Route>
+          </Switch>
+        </AppFrame>
       </Route>
     </Switch>
   );

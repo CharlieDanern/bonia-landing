@@ -1,0 +1,90 @@
+/* Bonia Tiếp tân v3 shell (handoff 13). Screens draw with inline styles taken
+   from the .dc.html frames; this file holds what inline styles can't: the
+   page/viewport, insets, hovers, focus, the demo strip and the tab bars. */
+
+html, body, #root { height: 100%; }
+body { overflow: hidden; }
+
+button:focus-visible, a:focus-visible { outline: 2px solid #7B4A2D; outline-offset: 2px; }
+input:focus, textarea:focus { outline: none; border-color: #7B4A2D !important; box-shadow: 0 0 0 1px #7B4A2D; }
+
+/* ── page + viewport ───────────────────────────────────────────────── */
+.tt-page { height: 100dvh; display: flex; flex-direction: column; background: #F2EEE6; }
+.tt-page-frame { background: #E3DCCF; overflow: auto; align-items: center; }
+.tt-vp {
+  position: relative; flex: 1; min-height: 0; width: 100%; overflow: hidden;
+  --tt-top: env(safe-area-inset-top, 0px);
+  --tt-bot: env(safe-area-inset-bottom, 0px);
+}
+.tt-vp-frame { height: 100%; --tt-top: 47px; --tt-bot: 26px; }
+.tt-phone {
+  position: relative; flex: none; height: 844px; margin: 20px 0 32px; border-radius: 46px; overflow: hidden;
+  box-shadow: 0 0 0 1px #CFC5B2, 0 0 0 9px #1F1B16; background: #F2EEE6;
+}
+.tt-status {
+  position: absolute; left: 0; right: 0; top: 0; height: 47px; z-index: 9; pointer-events: none;
+  display: flex; justify-content: space-between; align-items: flex-end; padding: 0 30px 8px; font-size: 15px; font-weight: 600;
+}
+.tt-status-r { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; }
+
+/* ── demo strip ────────────────────────────────────────────────────── */
+.tt-demo {
+  flex: none; width: 100%; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 8px 12px;
+  background: #fff; border-bottom: 1px solid #D9D0BF; z-index: 20;
+}
+.tt-page-frame .tt-demo { max-width: 1440px; margin-top: 16px; border: 1px solid #D9D0BF; border-radius: 14px; width: calc(100% - 32px); }
+.tt-demo-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; color: #6E6255; padding: 0 6px; }
+.tt-demo-seg { display: flex; background: #F7F3EC; border: 1px solid #D9D0BF; border-radius: 10px; padding: 3px; gap: 2px; }
+.tt-demo-seg button { height: 32px; padding: 0 12px; border-radius: 8px; font-size: 13px; white-space: nowrap; color: #1F1B16; }
+.tt-demo-seg button.on { background: #1F1B16; color: #F7F3EC; font-weight: 600; }
+.tt-demo-sep { width: 1px; height: 24px; background: #D9D0BF; margin: 0 4px; }
+.tt-demo-btn { height: 36px; padding: 0 14px; border: 1px solid #D9D0BF !important; border-radius: 18px; background: #fff !important; font-size: 13.5px; white-space: nowrap; color: #1F1B16; }
+.tt-demo-btn:hover { background: #F7F3EC !important; }
+.tt-demo-btn.primary { background: #7B4A2D !important; border-color: #7B4A2D !important; color: #fff; font-weight: 500; }
+.tt-demo-btn.primary:hover { background: #5E3820 !important; }
+.tt-demo-btn.urgent { border-color: #EBCFC4 !important; background: #FBF8F2 !important; color: #A0412D; }
+.tt-demo-btn.urgent:hover { background: #F6E7E1 !important; }
+.tt-demo-btn.muted { color: #4A4239; }
+.tt-demo-toggle { height: 34px; padding: 0 4px 0 10px; font-size: 13px; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+
+/* ── desktop header ────────────────────────────────────────────────── */
+.tt-head {
+  position: absolute; left: 0; top: 0; right: 0; height: 64px; z-index: 3;
+  display: flex; align-items: center; justify-content: space-between; padding: 0 40px;
+  border-bottom: 1px solid rgba(217, 208, 191, 0.7);
+}
+.tt-head.solid { background: #F2EEE6; border-bottom-color: #D9D0BF; }
+.tt-head-brand { display: flex; align-items: center; gap: 10px; width: 340px; }
+.tt-head-brand img { height: 22px; width: auto; }
+.tt-head-name { font-size: 14px; font-weight: 600; margin-left: 8px; white-space: nowrap; }
+.tt-head-nav { display: flex; gap: 4px; }
+.tt-head-nav a { height: 38px; padding: 0 16px; border-radius: 19px; display: flex; align-items: center; font-size: 14px; white-space: nowrap; color: #1F1B16; }
+.tt-head-nav a:hover { background: rgba(255, 255, 255, 0.6); color: #1F1B16; }
+.tt-head-nav a.on { background: #1F1B16; color: #F7F3EC; font-weight: 600; }
+.tt-head-right { width: 340px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4A4239; }
+.tt-mono-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.22em; color: #6E6255; }
+
+/* ── phone tab bar ─────────────────────────────────────────────────── */
+.tt-tabs {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; height: calc(57px + var(--tt-bot));
+  padding-bottom: var(--tt-bot); border-top: 1px solid #D9D0BF; background: rgba(247, 243, 236, 0.97);
+  display: grid; grid-template-columns: repeat(4, 1fr);
+}
+.tt-tabs a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 12px; color: #4A4239; }
+.tt-tabs a.on { color: #7B4A2D; font-weight: 600; }
+.tt-tabs .bar { width: 22px; height: 3px; border-radius: 2px; background: transparent; }
+.tt-tabs a.on .bar { background: #7B4A2D; }
+
+/* ── controls ──────────────────────────────────────────────────────── */
+.tt-switch { width: 34px; height: 20px; border-radius: 10px; position: relative; display: inline-block; flex: none; transition: background-color 160ms ease; }
+.tt-switch > span { position: absolute; top: 3px; width: 14px; height: 14px; border-radius: 7px; background: #fff; transition: left 160ms ease; }
+.b-primary { background: #7B4A2D; color: #fff; font-weight: 500; }
+.b-primary:hover { background: #5E3820; color: #fff; }
+.b-ghost { background: #fff; border: 1px solid #D9D0BF; color: #1F1B16; }
+.b-ghost:hover { background: #F7F3EC; }
+.h-white:hover { background: #FFFFFF !important; }
+.h-cream:hover { background: #F7F3EC !important; }
+.h-line:hover { background: #EFE9DD !important; }
+.h-clayline:hover { border-color: #7B4A2D !important; }
+.tt-scroll-x { overflow-x: auto; scrollbar-width: none; }
+.tt-scroll-x::-webkit-scrollbar { display: none; }

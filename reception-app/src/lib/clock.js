@@ -5,6 +5,7 @@
 export const DEMO_DATE = "2026-10-08"; // today, ISO
 export const DEMO_TIME = "14:20";
 export const DEMO_LABEL = "Thứ Năm 8/10 · 14:20";
+export const DEMO_LABEL_SHORT = "THỨ NĂM 8/10"; // Trực tiếp header: demo date, real clock
 
 const START_MIN = 14 * 60 + 20;
 const loadedAt = Date.now();
