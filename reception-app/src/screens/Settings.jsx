@@ -138,6 +138,14 @@ function Control({ def, value, onChange, d, input, greeting }) {
     case "hours":
       return <Hours value={value} onChange={onChange} d={d} input={input} />;
     case "toggle":
+      // nobody knows yet (the AI found nothing): ask, so "không" is the owner's answer and never a default
+      if (value == null) return (
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 5, minHeight: d.row }}>
+          <span style={{ fontSize: d.fs.body, color: "#1F1B16", marginRight: 4 }}>{def.on}?</span>
+          <Chip d={d} on={false} onClick={() => onChange(true)}>Có</Chip>
+          <Chip d={d} on={false} onClick={() => onChange(false)}>Không</Chip>
+        </div>
+      );
       return (
         <button type="button" onClick={() => onChange(!value)} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: d.fs.body, color: "#1F1B16", textAlign: "left", minHeight: d.row }}>
           <Switch on={!!value} />
