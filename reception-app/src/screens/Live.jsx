@@ -5,6 +5,7 @@ import { RequestCard, RequestDetail } from "../components/Request.jsx";
 import { LiveCallCard, callVm } from "../components/LiveCall.jsx";
 import { title as titleOf } from "../data/sample.js";
 import { PLAN, USAGE } from "../data/account.js";
+import { flat } from "../data/settings.js";
 import { BONIA_MARK } from "../lib/assets.js";
 import { DEMO_LABEL_SHORT } from "../lib/clock.js";
 import { decimal } from "../lib/format.js";
@@ -239,7 +240,7 @@ function PhoneLive({ m, detShown, detail, cardProps, setOpenId }) {
       <div style={{ position: "absolute", left: 0, right: 0, top: "var(--tt-top)", height: 48, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 18px", zIndex: 2 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <img src={BONIA_MARK} alt="Bonia" style={{ height: 17, width: "auto" }} />
-          <span style={{ fontSize: 14, fontWeight: 600 }}>Sân Nhài</span>
+          <span style={{ fontSize: 14, fontWeight: 600 }}>{(flat(app.settings).name || "").replace(/^Khách sạn\s+/i, "")}</span>
         </div>
         {app.offline && (
           <Link href="/tai-khoan" style={{ height: 30, padding: "0 12px", borderRadius: 15, background: "#F6E7E1", color: "#A0412D", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center" }}>Offline · Thanh toán</Link>

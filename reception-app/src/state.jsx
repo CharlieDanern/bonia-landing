@@ -223,6 +223,15 @@ export function AppStateProvider({ children }) {
       },
       /** Thử Bonia's quick settings: change and save at once. */
       applyNow: (k, v) => applySaved((vs) => ({ ...vs, [k]: { v, st: "ok", src: owner } })),
+      /** Demo: load a profile from the AI import ({ profile } or { values, rooms }); unknown keys keep the defaults. */
+      loadProfile: (data) => {
+        const prof = data && data.profile ? data.profile : data;
+        if (!prof || !prof.values || !prof.rooms) return false;
+        const D = defaultSettings();
+        const next = { values: { ...D.values, ...prof.values }, rooms: prof.rooms };
+        setSettings({ ...next, saved: snapshot(next) });
+        return true;
+      },
       /** A Thử Bonia correction: [guest line, what Bonia should say], saved at once. */
       addFix: (q, a) => applySaved((vs) => ({ ...vs, fixes: { v: [...((vs.fixes && vs.fixes.v) || []), [q, a]], st: "ok", src: { t: "test" } } })),
     };

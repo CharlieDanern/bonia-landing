@@ -140,7 +140,7 @@ export const SYSTEM_RULES = [
 ];
 
 /** Where a value came from. */
-export const SOURCE_LABEL = { site: "trang web", booking: "Booking.com", agoda: "Agoda", tripcom: "Trip.com", airbnb: "Airbnb", tripadvisor: "TripAdvisor", owner: "chủ nhập", test: "Thử Bonia" };
+export const SOURCE_LABEL = { site: "trang web", booking: "Booking.com", agoda: "Agoda", tripcom: "Trip.com", airbnb: "Airbnb", tripadvisor: "TripAdvisor", gmaps: "Google Maps", facebook: "Facebook", other: "nguồn khác", owner: "chủ nhập", test: "Thử Bonia" };
 
 /**
  * A stored value: { v, st, src, alts }
@@ -151,4 +151,5 @@ export const SOURCE_LABEL = { site: "trang web", booking: "Booking.com", agoda: 
  */
 export const hotelValue = (v, st = "ok", src = null, alts = null) => ({ v, st, ...(src ? { src } : {}), ...(alts ? { alts } : {}) });
 
-export const isEmpty = (v) => v == null || v === "" || (Array.isArray(v) && v.length === 0);
+export const isEmpty = (v) =>
+  v == null || v === "" || (Array.isArray(v) && v.length === 0) || (typeof v === "object" && !Array.isArray(v) && "allDay" in v && !v.allDay && !v.from && !v.to);

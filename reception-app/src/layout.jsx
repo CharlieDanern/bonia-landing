@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from "r
 import { Link } from "wouter";
 import { BONIA_MARK } from "./lib/assets.js";
 import { useApp } from "./state.jsx";
+import { flat } from "./data/settings.js";
 
 // Phone first (brief v3 §2): below 1024 px the app uses the phone layout
 // (bottom tabs, sheets from below); from 1024 px the desktop layout of
@@ -112,6 +113,25 @@ function DemoStrip() {
       <button type="button" className="tt-demo-btn" onClick={() => { app.startCall("booking"); app.later(() => app.startCall("urgent"), 12000); }}>Hai cuộc gọi cùng lúc</button>
       <button type="button" className="tt-demo-btn" onClick={app.toggleOffline}>{app.offline ? "Bỏ Offline" : "Offline"}</button>
       <button type="button" className="tt-demo-btn muted" onClick={app.resetDemo}>Đặt lại</button>
+      <label className="tt-demo-btn muted" style={{ display: "inline-flex", alignItems: "center", cursor: "pointer" }} title="Nạp hồ sơ từ tệp kết quả tìm bằng AI (scripts/hotel-import.ts)">
+        Nạp hồ sơ…
+        <input
+          type="file"
+          accept="application/json,.json"
+          style={{ display: "none" }}
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (!file) return;
+            try {
+              if (!app.loadProfile(JSON.parse(await file.text()))) window.alert("Tệp không đúng dạng hồ sơ.");
+            } catch {
+              window.alert("Không đọc được tệp.");
+            }
+          }}
+        />
+      </label>
+      <button type="button" className="tt-demo-btn muted" onClick={app.resetAll}>Hồ sơ mẫu</button>
       <span style={{ flex: 1 }} />
       <button type="button" className="tt-demo-toggle" onClick={() => setReduce(!reduce)}>
         Giảm chuyển động
@@ -125,13 +145,14 @@ export const TABS = [["Trực tiếp", "/"], ["Lịch sử", "/lich-su"], ["Cài
 const ACCOUNT_TAB = 4;
 
 export function DeskHeader({ active, right = null, solid = false }) {
-  const { unpaid } = useApp();
+  const { unpaid, settings } = useApp();
+  const name = flat(settings).name || "Khách sạn";
   return (
     <header className={`tt-head${solid ? " solid" : ""}`}>
       <div className="tt-head-brand">
         <img src={BONIA_MARK} alt="Bonia" />
         <span className="tt-mono-label">TIẾP TÂN</span>
-        <span className="tt-head-name">Khách sạn Sân Nhài</span>
+        <span className="tt-head-name">{name}</span>
       </div>
       <nav className="tt-head-nav">
         {TABS.map(([l, href], i) => (
