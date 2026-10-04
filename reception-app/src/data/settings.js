@@ -1,78 +1,129 @@
-// Cài đặt (handoff 13, "Bonia Cai Dat v3"): what Bonia knows about the hotel.
-// f = field values, ok = confirmed by the owner (AI-found values start
-// unconfirmed: dashed border), rooms = room types with their three ways of
-// selling (Theo giờ · Qua đêm · Theo ngày), each switched on or off.
+// Cài đặt: the hotel profile in the schema of data/hotelSchema.js.
+//   values  { fieldKey: { v, st, src, alts } }   (see hotelValue)
+//   rooms   [{ ...ROOM_FIELDS values, daily, overnight, hourly, monthly, st, src }]
+// Sample: Khách sạn Sân Nhài (fictional), with a few values the "AI" found and
+// the owner hasn't confirmed yet, so the review mode shows.
 
-export const AMENITIES = ["Wi-Fi miễn phí", "Máy lạnh", "Lễ tân 24 giờ", "Thang máy", "Gửi xe máy miễn phí", "Bãi ô tô gần", "Bữa sáng", "Đưa đón sân bay", "Giặt ủi", "Gửi hành lý", "Hồ bơi", "Phòng gym"];
+import { FIELDS, SECTIONS, hotelValue as V, isEmpty } from "./hotelSchema.js";
 
-/** Field kinds: text · mono · area · chips (one) · multi · toggle · conflict · voice. */
-export const FIELDS = {
-  name: { l: "Tên khách sạn", k: "text" },
-  type: { l: "Loại chỗ nghỉ", k: "chips", o: ["Khách sạn", "Nhà nghỉ", "Homestay", "Căn hộ dịch vụ"] },
-  phone: { l: "Số điện thoại lễ tân", k: "mono" },
-  address: { l: "Địa chỉ", k: "text" },
-  directions: { l: "Đường vào", k: "text" },
-  checkin: { l: "Nhận phòng từ", k: "conflict", o: [["13:00", "trang web"], ["14:00", "Booking.com"]] },
-  checkout: { l: "Trả phòng trước", k: "mono" },
-  rec24: { l: "Lễ tân", k: "toggle", t: "Có người ở quầy 24 giờ" },
-  early: { l: "Nhận sớm, trả trễ", k: "chips", o: ["Hỏi lễ tân rồi báo lại", "Không nhận"], note: "Bonia không tự hứa nhận sớm, trả trễ" },
-  children: { l: "Trẻ em", k: "text" },
-  pets: { l: "Thú cưng", k: "chips", o: ["Không nhận", "Nhận, có phụ phí", "Nhận miễn phí"] },
-  smoking: { l: "Hút thuốc", k: "chips", o: ["Không hút thuốc trong phòng", "Có phòng hút thuốc"] },
-  deposit: { l: "Đặt cọc", k: "text", note: "Bonia không đọc số tài khoản, không nói đã nhận tiền" },
-  cancel: { l: "Huỷ phòng", k: "text" },
-  amen: { l: "Có ở khách sạn", k: "multi", o: AMENITIES },
-  greeting: { l: "Khi nhấc máy", k: "text" },
-  closing: { l: "Khi kết thúc", k: "text" },
-  voice: { l: "Giọng", k: "voice" },
-  english: { l: "Tiếng Anh", k: "toggle", t: "Khách nói tiếng Anh thì Bonia trả lời bằng tiếng Anh" },
-  extra: { l: "Điều khác Bonia nên biết", k: "area" },
-};
+export { FIELDS, SECTIONS };
+export const VOICE_COUNT = 5; // Giọng 1…5 (the engine's own names stay hidden)
 
-/** Section → cards → field keys. §02 (rooms) has its own layout. */
-export const CARDS = {
-  s1: [["Thông tin cơ bản", ["name", "type", "phone", "address", "directions"]], ["Nhận & trả phòng", ["checkin", "checkout", "rec24", "early"]], ["Chính sách", ["children", "pets", "smoking", "deposit", "cancel"]], ["Tiện nghi", ["amen"]]],
-  s3: [["Lời chào", ["greeting", "closing"]], ["Giọng", ["voice", "english"]]],
-  s4: [["Thông tin khác", ["extra"]]],
-};
+const site = { t: "site", url: "https://sannhai.example" };
+const booking = { t: "booking", url: "https://www.booking.com/hotel/vn/san-nhai.html" };
+const gmaps = { t: "site" };
+const N = (v, src = site) => V(v, "new", src);
 
-// Tài khoản & thanh toán has its own page (/tai-khoan) since 2026-10-04.
-export const SECTIONS = [["s1", "01", "Khách sạn"], ["s2", "02", "Phòng & giá"], ["s3", "03", "Cách nghe máy"], ["s4", "04", "Thông tin khác"]];
-
-/** Bonia's voices, shown as Giọng 1…5 (the engine's own names stay hidden). */
-export const VOICE_COUNT = 5;
-
-const room = (name, count, size, bed, max, view, hOn, h2, hn, nOn, night, nFrom, nTo, dOn, wd, we, ok) =>
-  ({ name, count, size, bed, max, view, hOn, h2, hn, nOn, night, nFrom, nTo, dOn, wd, we, ok });
+const room = (o) => ({
+  aliases: [], count: "", bed: "", maxAdults: "", maxChildren: "", size: "", view: "", bath: "Riêng", floor: "", extras: [], extraBed: "",
+  daily: { on: true, wd: "", we: "" }, overnight: { on: false, price: "", from: "22:00", to: "12:00" }, hourly: { on: false, h2: "", hn: "" }, monthly: { on: false, price: "" },
+  st: "ok", ...o,
+});
 
 export function defaultSettings() {
-  const f = {
-    name: "Khách sạn Sân Nhài", type: "Khách sạn", phone: "0900 000 300",
-    address: "27 đường Sân Nhài, phường Xuân Hòa, TP.HCM",
-    directions: "Hẻm ô tô vào tới cửa. Ô tô gửi ở bãi đầu hẻm, 40.000đ một lượt.",
-    checkin: null, checkout: "12:00", rec24: true, early: "Hỏi lễ tân rồi báo lại",
-    children: "Bé dưới 6 tuổi ngủ chung miễn phí", pets: null, smoking: "Không hút thuốc trong phòng",
-    deposit: "Cọc 30% khi đặt, chuyển khoản", cancel: "Huỷ miễn phí trước 24 giờ",
-    amen: ["Wi-Fi miễn phí", "Máy lạnh", "Lễ tân 24 giờ", "Thang máy", "Gửi xe máy miễn phí", "Bãi ô tô gần", "Đưa đón sân bay", "Giặt ủi", "Gửi hành lý"],
-    quote: true,
-    greeting: "Dạ khách sạn Sân Nhài xin nghe ạ.", closing: "Dạ em cảm ơn mình, chúc mình một ngày vui ạ.",
-    voice: 1, english: true, extra: "",
+  const values = {
+    // 01
+    name: V("Khách sạn Sân Nhài"),
+    aliases: V(["Sân Nhài", "khách sạn hồ Con Rùa"]),
+    type: V("Khách sạn mini"),
+    languages: V(["Tiếng Việt", "Tiếng Anh"]),
+    hotline: V("0900 000 300"),
+    legal: V("Công ty TNHH Sân Nhài · 0300 000 300"),
+    deskHours: V({ allDay: true, from: "", to: "" }),
+    afterHours: N("Sau 0:30 kéo nửa cửa cuốn; khách tới khuya bấm chuông hoặc gọi hotline, lễ tân đêm ra mở."),
+    // 02
+    address: N("27 đường Sân Nhài, phường Xuân Hòa, TP.HCM", booking),
+    addressOld: V("Phường 6, Quận 3"),
+    landmark: N("Gần Hồ Con Rùa, đối diện quán cà phê Sân Vườn", gmaps),
+    directions: N("Hẻm ô tô vào tới cửa"),
+    parking: V("Xe máy gửi miễn phí trong sảnh. Ô tô gửi bãi đầu hẻm, 40.000đ một lượt."),
+    sights: N([["Hồ Con Rùa", "500 m"], ["Bảo tàng Chứng tích Chiến tranh", "1 km"], ["Dinh Độc Lập", "1,5 km"], ["Nhà thờ Tân Định", "1,8 km"]], booking),
+    transport: V([["Sân bay Tân Sơn Nhất", "6 km, khoảng 25 phút"], ["Ga Sài Gòn", "2,5 km"]]),
+    howToGet: V("Taxi, Grab, Xanh SM tới thẳng cửa."),
+    nearby: V([["Cơm tấm, phở, bánh mì", "đầu hẻm"], ["Cửa hàng tiện lợi 24h", "50 m"], ["Nhà thuốc, ATM", "100 m"]]),
+    // 03
+    checkin: V(null, "conflict", null, [{ v: "13:00", src: site }, { v: "14:00", src: booking }]),
+    checkout: V("12:00"),
+    earlyLate: V("50.000đ/giờ; nhận trước 07:00 hoặc trả sau 16:00 tính thêm một đêm. Khách sạn xác nhận."),
+    idDocs: V(["CCCD", "VNeID", "Hộ chiếu"]),
+    minAge: V("Từ 18 tuổi; trẻ dưới 18 đi cùng bố mẹ hoặc người giám hộ."),
+    checkinDeposit: V(""),
+    luggage: V(true),
+    // 04
+    roomAmenities: V(["Máy lạnh", "Wifi", "Nước nóng", "TV", "Tủ lạnh", "Ấm siêu tốc", "Nước suối"]),
+    priceBasis: V("Theo phòng"),
+    priceTax: N("Giá đã gồm thuế, phí", booking),
+    priceIncludes: V([]),
+    weekendNights: V(["Thứ Sáu", "Thứ Bảy"]),
+    extraPerson: V([["Bé dưới 6 tuổi ngủ chung", "Miễn phí, 1 bé/phòng"], ["Trẻ 6–11 tuổi", "100.000đ/đêm"], ["Từ 12 tuổi", "Tính như người lớn"], ["Giường phụ (chỉ Deluxe)", "150.000đ/đêm"]]),
+    minNights: V("Tết: tối thiểu 2 đêm"),
+    holidays: V([["30/4–1/5, 2/9", "Tăng 25%"], ["Tết, mùng 1–5", "Tăng 50%, trả trước, không hoàn"]]),
+    promos: V([]),
+    // 05
+    children: N("Bé dưới 6 tuổi ngủ chung miễn phí"),
+    pets: V(null, "new"),
+    smoking: V("Không hút trong phòng"),
+    houseRules: V("Giữ yên lặng sau 22:00. Không tổ chức tiệc trong phòng."),
+    deposit: N("Cọc 1 đêm khi đặt qua điện thoại, chuyển khoản trong 24 giờ; khách sạn nhắn thông tin chuyển khoản từ số của khách sạn."),
+    changeDate: V("Đổi ngày miễn phí nếu báo trước 24 giờ, tùy phòng trống."),
+    cancel: N("Hủy miễn phí trước 24 giờ, hoàn cọc qua chuyển khoản trong 3 ngày. Không đến thì mất cọc. Lễ Tết không hoàn."),
+    payment: V(["Tiền mặt", "Chuyển khoản"]),
+    vat: V(true),
+    // 06
+    amenities: N(["Thang máy", "Giặt ủi", "Đưa đón sân bay", "Thuê xe máy"], booking),
+    wifi: V("Miễn phí, mọi phòng và sảnh"),
+    housekeeping: V("Dọn phòng mỗi ngày 9:00–15:00, hoặc khi khách yêu cầu"),
+    breakfast: V("Không gồm trong giá; quán cà phê đối diện, khoảng 60.000đ"),
+    dining: V(""),
+    activities: V([]),
+    services: V([["Đưa đón sân bay, xe 4 chỗ", "380.000đ; 22:00–05:00 thêm 150.000đ"], ["Thuê xe máy", "120.000đ/ngày xe số, 180.000đ tay ga"], ["Giặt ủi", "35.000đ/kg, tối thiểu 2 kg"]]),
+    dayVisit: V(""),
+    groups: V("Đoàn từ 10 người: chủ gọi lại báo giá"),
+    // 07
+    askFor: V(["Tên", "Ngày nhận phòng", "Số đêm", "Số người lớn", "Trẻ em và tuổi", "Giờ tới"]),
+    groupSize: V("10"),
+    channels: V([["Gọi điện", "0900 000 300"], ["Booking.com", ""], ["Agoda", ""]]),
+    // 08
+    greeting: V("Dạ khách sạn Sân Nhài xin nghe ạ."),
+    closing: V("Dạ em cảm ơn mình, chúc mình một ngày vui ạ."),
+    voice: V(1),
+    english: V(true),
+    quote: V("Giá từng đêm"),
+    disclose: V(false),
+    upsell: V(false),
+    wifiPass: V(false),
+    // 09
+    extra: V(""),
+    faq: V([]),
+    fixes: V([]),
   };
-  const ok = { name: true, type: true, phone: true, address: false, directions: false, checkin: false, checkout: false, rec24: true, early: true, children: false, pets: false, smoking: true, deposit: false, cancel: false, amen: false, greeting: true, closing: true, voice: true, english: true, extra: true };
   const rooms = [
-    room("Standard", "4", "18", "1 giường đôi", "2", "cửa sổ trong", true, 200000, 50000, true, 380000, "22:00", "12:00", true, 450000, 550000, true),
-    room("Superior", "4", "22", "1 giường đôi hoặc 2 đơn", "2", "cửa sổ", true, 250000, 60000, true, 450000, "22:00", "12:00", true, 520000, 620000, false),
-    room("Deluxe ban công", "3", "28", "1 giường đôi lớn", "2", "ban công hướng phố", false, "", "", true, 550000, "22:00", "12:00", true, 750000, 850000, false),
-    room("Family", "2", "34", "2 giường đôi", "4", "cửa sổ hướng phố", false, "", "", false, "", "22:00", "12:00", true, 950000, 1100000, false),
-    room("Suite", "1", "45", "1 giường king", "3", "ban công góc", false, "", "", false, "", "22:00", "12:00", true, 1400000, 1600000, true),
+    room({ name: "Standard", aliases: ["phòng thường", "phòng tiêu chuẩn"], count: "4", bed: "1 giường đôi", maxAdults: "2", maxChildren: "1", size: "18", view: "Cửa sổ trong",
+      daily: { on: true, wd: 450000, we: 550000 }, overnight: { on: true, price: 380000, from: "22:00", to: "12:00" }, hourly: { on: true, h2: 200000, hn: 50000 } }),
+    room({ name: "Superior", aliases: ["phòng có cửa sổ"], count: "4", bed: "1 giường đôi hoặc 2 giường đơn", maxAdults: "2", maxChildren: "1", size: "22", view: "Cửa sổ",
+      daily: { on: true, wd: 520000, we: 620000 }, overnight: { on: true, price: 450000, from: "22:00", to: "12:00" }, hourly: { on: true, h2: 250000, hn: 60000 }, st: "new", src: booking }),
+    room({ name: "Deluxe ban công", aliases: ["phòng ban công", "deluxe"], count: "3", bed: "1 giường đôi lớn", maxAdults: "2", maxChildren: "1", size: "28", view: "Ban công hướng phố", extras: ["Bồn tắm", "Ban công"], extraBed: "Có, 150.000đ/đêm",
+      daily: { on: true, wd: 750000, we: 850000 }, overnight: { on: true, price: 550000, from: "22:00", to: "12:00" }, st: "new", src: booking }),
+    room({ name: "Family", aliases: ["phòng gia đình"], count: "2", bed: "2 giường đôi", maxAdults: "4", maxChildren: "2", size: "34", view: "Cửa sổ hướng phố",
+      daily: { on: true, wd: 950000, we: 1100000 }, st: "new", src: booking }),
+    room({ name: "Suite", count: "1", bed: "1 giường king", maxAdults: "3", maxChildren: "1", size: "45", view: "Ban công góc", extras: ["Bồn tắm", "Sofa"],
+      daily: { on: true, wd: 1400000, we: 1600000 } }),
   ];
-  return { f, ok, rooms };
+  return { values, rooms };
 }
 
-/** Keys still waiting for the owner, in page order: [section, fieldKey]. */
-export function pendingList({ ok, rooms }) {
+/** Plain { key: value } view of the profile, for screens and the demo engine. */
+export const flat = (s) => Object.fromEntries(Object.entries(s.values).map(([k, x]) => [k, x.v]));
+
+/** What still waits for the owner, in page order: [sectionKey, fieldKey | "room:i"]. */
+export function pendingList({ values, rooms }) {
   const out = [];
-  ["s1", "s3", "s4"].forEach((sec) => CARDS[sec].forEach(([, keys]) => keys.forEach((k) => { if (!ok[k]) out.push([sec, k]); })));
-  rooms.forEach((r, i) => { if (!r.ok) out.push(["s2", `room:${i}`]); });
+  SECTIONS.forEach((sec) => {
+    sec.cards.forEach(([, keys]) => keys.forEach((k) => { if (values[k] && values[k].st !== "ok") out.push([sec.key, k]); }));
+    if (sec.rooms) rooms.forEach((r, i) => { if (r.st !== "ok") out.push([sec.key, `room:${i}`]); });
+  });
   return out;
 }
+
+/** "Cần bạn điền": nothing found, nothing typed. */
+export const needsFill = (x) => !!x && x.st === "new" && isEmpty(x.v);

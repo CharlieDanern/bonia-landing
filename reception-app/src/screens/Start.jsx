@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Orb } from "../components/Orb.jsx";
 import { StoreQR } from "../components/StoreQR.jsx";
+import { flat } from "../data/settings.js";
 import { SECTORS } from "../data/sectors.js";
 import { BONIA_MARK } from "../lib/assets.js";
 import { useLayout } from "../layout.jsx";
@@ -254,8 +255,8 @@ export function Start({ step: slug = "" }) {
     body = (
       <>
         <div style={{ display: "flex", justifyContent: "center" }}><Orb size={180} mood="idle" tone="warm" /></div>
-        <span style={{ fontSize: phone ? 14.5 : 15, lineHeight: 1.55, textWrap: "pretty" }}>Từ giờ, khi bạn không bắt máy, Bonia nghe máy cho <b style={{ fontWeight: 600 }}>{app.settings.f.name}</b> và nói:</span>
-        <div style={{ padding: "16px 18px", borderRadius: 14, background: "#FAF7F1", border: "1px solid #EFE9DD", fontFamily: SERIF, fontStyle: "italic", fontSize: 18, lineHeight: 1.45 }}>“{app.settings.f.greeting}”</div>
+        <span style={{ fontSize: phone ? 14.5 : 15, lineHeight: 1.55, textWrap: "pretty" }}>Từ giờ, khi bạn không bắt máy, Bonia nghe máy cho <b style={{ fontWeight: 600 }}>{flat(app.settings).name}</b> và nói:</span>
+        <div style={{ padding: "16px 18px", borderRadius: 14, background: "#FAF7F1", border: "1px solid #EFE9DD", fontFamily: SERIF, fontStyle: "italic", fontSize: 18, lineHeight: 1.45 }}>“{flat(app.settings).greeting}”</div>
         <button type="button" className="b-primary" onClick={() => go("live")} style={primary(46, 14.5)}>Bắt đầu nghe máy</button>
         <button type="button" onClick={() => go("hub")} style={{ height: 44, fontSize: 14, color: "#4A4239", textAlign: "center" }}>Chưa, để sau</button>
       </>
@@ -264,7 +265,7 @@ export function Start({ step: slug = "" }) {
     body = (
       <>
         <div style={{ display: "flex", justifyContent: "center" }}><Orb size={200} mood="bonia" tone="green" lively pickup={1} /></div>
-        <h1 style={{ ...h1, textAlign: "center" }}>Bonia đang nghe máy cho {app.settings.f.name}</h1>
+        <h1 style={{ ...h1, textAlign: "center" }}>Bonia đang nghe máy cho {flat(app.settings).name}</h1>
         <Link href="/" className="b-primary" style={primary(46, 14.5)}>Vào Trực tiếp</Link>
       </>
     );

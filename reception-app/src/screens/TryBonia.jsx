@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { Orb } from "../components/Orb.jsx";
 import { Bubble, RequestCard } from "../components/Request.jsx";
-import { VOICE_COUNT } from "../data/settings.js";
+import { VOICE_COUNT, flat } from "../data/settings.js";
 import { scriptReply } from "../test-call/scriptEngine.js";
 import { DeskHeader, PhoneTabs, Switch, useLayout } from "../layout.jsx";
 import { hm, useApp } from "../state.jsx";
@@ -13,7 +13,7 @@ import { playVoice } from "../voice.js";
 // from this device about anything, like a real guest; quick settings sit
 // beside it (voice, greeting, closing, English, quoting prices) and apply to
 // the next answer. Any answer can be fixed with "Sửa" (saved into Cài đặt ·
-// Thông tin khác). Not billed. Speech in/out uses the browser for now; answers
+// Đã sửa trong Thử Bonia). Not billed. Speech in/out uses the browser for now; answers
 // come from the demo engine (src/test-call/scriptEngine.js) until the test
 // call runs on the real voice agent.
 const VI = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
@@ -97,7 +97,7 @@ export function TryBonia() {
       const v = ss.getVoices().find((x) => x.lang?.toLowerCase().startsWith(en ? "en" : "vi"));
       if (v) u.voice = v;
       u.lang = en ? "en-US" : "vi-VN";
-      const vv = VOICES[(settingsRef.current.f.voice || 1) - 1] || VOICES[0];
+      const vv = VOICES[(flat(settingsRef.current).voice || 1) - 1] || VOICES[0];
       u.pitch = vv[0];
       u.rate = vv[1];
       u.onend = done;
@@ -215,12 +215,12 @@ export function TryBonia() {
       R.current.rec = rec;
     }
     if (!S.current.live) return;
-    say(settingsRef.current.f.greeting || "Dạ xin nghe ạ.", firstLine ? () => guest(firstLine) : null);
+    say(flat(settingsRef.current).greeting || "Dạ xin nghe ạ.", firstLine ? () => guest(firstLine) : null);
   };
 
   // ── view model ─────────────────────────────────────────────────────────
   const d = dims(phone);
-  const { f } = app.settings;
+  const f = flat(app.settings);
   const live = st.live;
   const run = view ? runs.find((r) => r.id === view) : null;
   const turns = live ? st.turns : run ? run.turns : [];
@@ -240,7 +240,7 @@ export function TryBonia() {
     const txt = fixDraft.trim();
     if (i == null || !txt) return;
     const q = (turns[i - 1] || {}).text || "";
-    app.appendExtra(`• Khi khách nói "${q.slice(0, 80)}": ${txt}`);
+    app.addFix(q.slice(0, 160), txt);
     if (live) patch((s) => ({ fixes: { ...s.fixes, [i]: txt } }));
     else setRuns((rs) => rs.map((r) => (r.id === view ? { ...r, fixes: { ...r.fixes, [i]: txt } } : r)));
     setFixAt(null);
@@ -292,9 +292,12 @@ export function TryBonia() {
         <textarea rows={2} value={f.closing} onChange={(e) => app.applyNow("closing", e.target.value)} style={quickInput} />
       </label>
       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {[["english", "Trả lời tiếng Anh khi khách nói tiếng Anh"], ["quote", "Được báo giá phòng"]].map(([k, l]) => (
-          <button key={k} type="button" onClick={() => app.applyNow(k, !f[k])} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: d.fs.body, color: "#1F1B16", textAlign: "left", minHeight: d.row }}>
-            <Switch on={!!f[k]} />
+        {[
+          ["english", "Trả lời tiếng Anh khi khách nói tiếng Anh", !!f.english, () => app.applyNow("english", !f.english)],
+          ["quote", "Được báo giá phòng", f.quote !== "Không báo giá", () => app.applyNow("quote", f.quote === "Không báo giá" ? "Giá từng đêm" : "Không báo giá")],
+        ].map(([k, l, on, go]) => (
+          <button key={k} type="button" onClick={go} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: d.fs.body, color: "#1F1B16", textAlign: "left", minHeight: d.row }}>
+            <Switch on={on} />
             {l}
           </button>
         ))}
@@ -363,7 +366,7 @@ export function TryBonia() {
               )}
               {fx && (
                 <div style={{ maxWidth: "86%", padding: "5px 9px", borderRadius: 8, background: "#EEF0E6", fontSize: 11.5, color: "#4A6B3A", lineHeight: 1.45, marginTop: 2 }}>
-                  ✓ “{fx}” · <Link href="/cai-dat#s4" style={{ color: "#4A6B3A", textDecoration: "underline" }}>Đã lưu vào Cài đặt · Thông tin khác</Link>
+                  ✓ “{fx}” · <Link href="/cai-dat#s9" style={{ color: "#4A6B3A", textDecoration: "underline" }}>Đã lưu vào Cài đặt · Đã sửa trong Thử Bonia</Link>
                 </div>
               )}
             </div>

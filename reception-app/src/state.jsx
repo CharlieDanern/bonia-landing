@@ -10,7 +10,8 @@ import { INVOICE } from "./data/account.js";
 const AppState = createContext(null);
 export const useApp = () => useContext(AppState);
 
-const SETTINGS_KEY = "tt3.settings";
+// tt4: the hotel profile schema of 2026-10-04 (values with source + status).
+const SETTINGS_KEY = "tt4.settings";
 
 export const hm = () => {
   const d = new Date();
@@ -25,18 +26,20 @@ export function copyToClipboard(text) {
   }
 }
 
+const snapshot = (s) => JSON.stringify({ values: s.values, rooms: s.rooms });
+
 function loadSettings() {
   const D = defaultSettings();
   try {
     const P = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "null");
-    if (P && P.f && P.rooms) {
-      const cur = { f: { ...D.f, ...P.f }, ok: { ...D.ok, ...(P.ok || {}) }, rooms: P.rooms };
-      return { ...cur, saved: P.saved || JSON.stringify(cur) };
+    if (P && P.values && P.rooms) {
+      const cur = { values: { ...D.values, ...P.values }, rooms: P.rooms };
+      return { ...cur, saved: P.saved || snapshot(cur) };
     }
   } catch {
     // private mode or bad JSON: start from the defaults
   }
-  return { ...D, saved: JSON.stringify(D) };
+  return { ...D, saved: snapshot(D) };
 }
 
 /** Seconds into a call, frozen once the desk takes over or the phone rings. */
@@ -175,58 +178,55 @@ export function AppStateProvider({ children }) {
   // ── settings ───────────────────────────────────────────────────────────
   useEffect(() => {
     try {
-      const { f, ok, rooms, saved } = settings;
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ f, ok, rooms, saved }));
+      const { values, rooms, saved } = settings;
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ values, rooms, saved }));
     } catch {
       // storage full / blocked: settings still work for this session
     }
   }, [settings]);
 
-  const settingsApi = useMemo(() => ({
-    setF: (k, v, confirm) => setSettings((s) => ({ ...s, f: { ...s.f, [k]: v }, ok: confirm ? { ...s.ok, [k]: true } : s.ok })),
-    setRoom: (i, patch) => setSettings((s) => ({ ...s, rooms: s.rooms.map((r, j) => (j === i ? { ...r, ...patch } : r)) })),
-    confirmKeys: (keys) => setSettings((s) => {
-      const ok = { ...s.ok };
-      keys.forEach((k) => { ok[k] = true; });
-      return { ...s, ok };
-    }),
-    save: () => setSettings((s) => ({ ...s, saved: JSON.stringify({ f: s.f, ok: s.ok, rooms: s.rooms }) })),
-    discard: () => setSettings((s) => {
-      const o = JSON.parse(s.saved);
-      return { ...s, f: o.f, ok: o.ok, rooms: o.rooms };
-    }),
-    resetAll: () => {
-      const D = defaultSettings();
-      setSettings({ ...D, saved: JSON.stringify(D) });
-    },
-    /** Thử Bonia's quick settings: change and save at once (no unsaved-changes bar). */
-    applyNow: (k, v) => setSettings((s) => {
+  const settingsApi = useMemo(() => {
+    const owner = { t: "owner" };
+    const setValues = (fn) => setSettings((s) => ({ ...s, values: fn(s.values) }));
+    /** Change and also write into the saved snapshot (no unsaved-changes bar). */
+    const applySaved = (fn) => setSettings((s) => {
+      const next = { ...s, values: fn(s.values) };
       let saved = s.saved;
       try {
         const sv = JSON.parse(saved);
-        sv.f = { ...sv.f, [k]: v };
-        sv.ok = { ...sv.ok, [k]: true };
+        sv.values = fn(sv.values);
         saved = JSON.stringify(sv);
       } catch {
-        // no saved snapshot yet
+        saved = snapshot(next);
       }
-      return { ...s, f: { ...s.f, [k]: v }, ok: { ...s.ok, [k]: true }, saved };
-    }),
-    /** A Thử Bonia correction: appended to "Thông tin khác" and saved at once. */
-    appendExtra: (line) => setSettings((s) => {
-      const ex = (s.f.extra || "").trim();
-      const extra = (ex ? `${ex}\n` : "") + line;
-      let saved = s.saved;
-      try {
-        const sv = JSON.parse(saved);
-        sv.f = { ...sv.f, extra };
-        saved = JSON.stringify(sv);
-      } catch {
-        // no saved snapshot yet
-      }
-      return { ...s, f: { ...s.f, extra }, saved };
-    }),
-  }), []);
+      return { ...next, saved };
+    });
+    return {
+      /** The owner typed or picked a value: it is now confirmed. */
+      setVal: (k, v) => setValues((vs) => ({ ...vs, [k]: { v, st: "ok", src: owner } })),
+      /** "Đúng hết": confirm what the AI found. */
+      confirmKeys: (keys) => setValues((vs) => {
+        const out = { ...vs };
+        keys.forEach((k) => { out[k] = { ...out[k], st: "ok" }; });
+        return out;
+      }),
+      /** Two sources disagreed; the owner picked one. */
+      pickAlt: (k, alt) => setValues((vs) => ({ ...vs, [k]: { v: alt.v, st: "ok", src: alt.src } })),
+      setRoom: (i, patch) => setSettings((s) => ({ ...s, rooms: s.rooms.map((r, j) => (j === i ? { ...r, ...patch } : r)) })),
+      addRoom: () => setSettings((s) => ({ ...s, rooms: [...s.rooms, { name: "Loại phòng mới", aliases: [], count: "", bed: "", maxAdults: "", maxChildren: "", size: "", view: "", bath: "Riêng", floor: "", extras: [], extraBed: "", daily: { on: true, wd: "", we: "" }, overnight: { on: false, price: "", from: "22:00", to: "12:00" }, hourly: { on: false, h2: "", hn: "" }, monthly: { on: false, price: "" }, st: "ok", src: owner }] })),
+      removeRoom: (i) => setSettings((s) => ({ ...s, rooms: s.rooms.filter((_, j) => j !== i) })),
+      save: () => setSettings((s) => ({ ...s, saved: snapshot(s) })),
+      discard: () => setSettings((s) => ({ ...s, ...JSON.parse(s.saved) })),
+      resetAll: () => {
+        const D = defaultSettings();
+        setSettings({ ...D, saved: snapshot(D) });
+      },
+      /** Thử Bonia's quick settings: change and save at once. */
+      applyNow: (k, v) => applySaved((vs) => ({ ...vs, [k]: { v, st: "ok", src: owner } })),
+      /** A Thử Bonia correction: [guest line, what Bonia should say], saved at once. */
+      addFix: (q, a) => applySaved((vs) => ({ ...vs, fixes: { v: [...((vs.fixes && vs.fixes.v) || []), [q, a]], st: "ok", src: { t: "test" } } })),
+    };
+  }, []);
 
   const value = {
     reqs, calls, now, pickups, offline, focus, copied, settings, unpaid: !INVOICE.paid,
