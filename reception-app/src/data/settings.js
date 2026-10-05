@@ -28,7 +28,6 @@ export function defaultSettings() {
     type: V("Khách sạn mini"),
     languages: V(["Tiếng Việt", "Tiếng Anh"]),
     hotline: V("0900 000 300"),
-    legal: V("Công ty TNHH Sân Nhài · 0300 000 300"),
     deskHours: V({ allDay: true, from: "", to: "" }),
     afterHours: N("Sau 0:30 kéo nửa cửa cuốn; khách tới khuya bấm chuông hoặc gọi hotline, lễ tân đêm ra mở."),
     // 02
@@ -39,7 +38,6 @@ export function defaultSettings() {
     parking: V("Xe máy gửi miễn phí trong sảnh. Ô tô gửi bãi đầu hẻm, 40.000đ một lượt."),
     sights: N([["Hồ Con Rùa", "500 m"], ["Bảo tàng Chứng tích Chiến tranh", "1 km"], ["Dinh Độc Lập", "1,5 km"], ["Nhà thờ Tân Định", "1,8 km"]], booking),
     transport: V([["Sân bay Tân Sơn Nhất", "6 km, khoảng 25 phút"], ["Ga Sài Gòn", "2,5 km"]]),
-    howToGet: V("Taxi, Grab, Xanh SM tới thẳng cửa."),
     nearby: V([["Cơm tấm, phở, bánh mì", "đầu hẻm"], ["Cửa hàng tiện lợi 24h", "50 m"], ["Nhà thuốc, ATM", "100 m"]]),
     // 03
     checkin: V(null, "conflict", null, [{ v: "13:00", src: site }, { v: "14:00", src: booking }]),
@@ -58,7 +56,7 @@ export function defaultSettings() {
     extraPerson: V([["Bé dưới 6 tuổi ngủ chung", "Miễn phí, 1 bé/phòng"], ["Trẻ 6–11 tuổi", "100.000đ/đêm"], ["Từ 12 tuổi", "Tính như người lớn"], ["Giường phụ (chỉ Deluxe)", "150.000đ/đêm"]]),
     minNights: V("Tết: tối thiểu 2 đêm"),
     holidays: V([["30/4–2/5/2027, 2/9/2026", "Tăng 25%"], ["Tết: 5/2–11/2/2027", "Tăng 50%, trả trước, không hoàn"]]),
-    promos: V([]),
+    promos: V([{ title: "Ở 3 đêm tặng 1 đêm", from: "2026-11-01", to: "2026-11-30", details: "Phòng Deluxe ban công, nhận phòng Chủ nhật tới thứ Năm", price: "2.250.000đ cho 4 đêm" }]),
     // 05
     children: N("Bé dưới 6 tuổi ngủ chung miễn phí"),
     pets: V(null, "new"),
@@ -87,14 +85,9 @@ export function defaultSettings() {
     greeting: V("Dạ khách sạn Sân Nhài xin nghe ạ."),
     voice: V(1),
     english: V(true),
-    quote: V("Giá từng đêm"),
-    disclose: V(false),
-    upsell: V(false),
-    wifiPass: V(false),
     // 09
     extra: V(""),
     faq: V([]),
-    fixes: V([]),
   };
   const rooms = [
     room({ name: "Standard", aliases: ["phòng thường", "phòng tiêu chuẩn"], count: "4", bed: "1 giường đôi", maxAdults: "2", maxChildren: "1", size: "18", view: "Cửa sổ trong",
@@ -111,7 +104,7 @@ export function defaultSettings() {
   return { values, rooms };
 }
 
-const EMPTY = { text: "", mono: "", area: "", time: "", number: "", chips: null, multi: [], tags: [], toggle: null, list: [], voice: 1 };
+const EMPTY = { text: "", mono: "", area: "", time: "", number: "", chips: null, multi: [], tags: [], toggle: null, list: [], promos: [], voice: 1 };
 const emptyOf = (type) => (type === "hours" ? { allDay: false, from: "", to: "" } : EMPTY[type] ?? null);
 
 /** A blank Cài đặt (nothing found or "Tôi tự điền"): empty fields, the owner's permissions at their defaults. */
@@ -125,10 +118,6 @@ export function blankSettings(name = "") {
     greeting: V(name ? `Dạ ${name} xin nghe ạ.` : ""),
     voice: V(1),
     english: V(true),
-    quote: V("Giá từng đêm"),
-    disclose: V(false),
-    upsell: V(false),
-    wifiPass: V(false),
   });
   return { values, rooms: [] };
 }

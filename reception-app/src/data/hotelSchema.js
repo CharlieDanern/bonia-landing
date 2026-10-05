@@ -5,11 +5,13 @@
 // Every field has:
 //   label   what the owner sees
 //   type    text · mono · area · time · hours · number · chips (one) · multi ·
-//           tags (free chips) · toggle · list (rows; cols = column labels)
+//           tags (free chips) · toggle · list (rows; cols = column labels) ·
+//           promos ([{ title, from, to, details, price }]: dates YYYY-MM-DD)
 //   kind    D fact · C business policy · Q permission (what Bonia may say/do)
 //   live    1 always in the call prompt · 2 if the budget allows, else a one-line
 //           summary + backend · 3 backend lookup only · 0 not part of any prompt
 //   note    a locked line shown under the field (a system rule, not editable)
+//   ph      the placeholder of an empty field
 //   say     the label in the prompts when the owner's label carries a hint
 //   opts    options for chips / multi
 //
@@ -22,25 +24,23 @@ export const FIELDS = {
   type: { label: "Loại chỗ nghỉ", type: "chips", kind: "D", live: 1, opts: ["Khách sạn", "Khách sạn mini", "Nhà nghỉ", "Homestay", "Farmstay, resort", "Căn hộ dịch vụ", "Villa"] },
   hotline: { label: "Hotline, điện thoại quầy", type: "mono", kind: "D", live: 3 },
   deskHours: { label: "Giờ quầy có người", type: "hours", kind: "D", live: 1 },
-  afterHours: { label: "Ngoài giờ quầy (tới khuya, bị khóa ngoài)", type: "area", kind: "C", live: 2 },
+  afterHours: { label: "Lưu ý khác", say: "Lưu ý về quầy lễ tân", type: "area", kind: "C", live: 2, ph: "Vd: tới sau 22:00 thì gọi trước; cổng khóa lúc 23:00" },
   languages: { label: "Ngôn ngữ phục vụ", type: "multi", kind: "D", live: 1, opts: ["Tiếng Việt", "Tiếng Anh", "Tiếng Trung", "Tiếng Hàn", "Tiếng Nhật", "Tiếng Nga"] },
-  legal: { label: "Pháp nhân, mã số thuế", type: "text", kind: "D", live: 3 },
 
   // 02 · Vị trí & đường đi
   address: { label: "Địa chỉ", type: "text", kind: "D", live: 1 },
-  addressOld: { label: "Địa chỉ cũ khách quen gọi", type: "text", kind: "D", live: 1 },
+  addressOld: { label: "Địa chỉ cũ", type: "text", kind: "D", live: 1 },
   landmark: { label: "Mốc dễ tìm", type: "text", kind: "D", live: 1 },
   directions: { label: "Đường vào", type: "text", kind: "D", live: 2 },
   parking: { label: "Gửi xe máy, ô tô", type: "text", kind: "D", live: 1 },
   sights: { label: "Điểm tham quan gần", type: "list", kind: "D", live: 3, cols: ["Nơi", "Khoảng cách"] },
   transport: { label: "Ga, sân bay, bến xe", type: "list", kind: "D", live: 3, cols: ["Nơi", "Khoảng cách"] },
-  howToGet: { label: "Cách đi tới", type: "area", kind: "D", live: 3 },
-  nearby: { label: "Ăn uống, ATM, nhà thuốc quanh đây", type: "list", kind: "D", live: 3, cols: ["Nơi", "Ghi chú"] },
+  nearby: { label: "Tiện ích xung quanh (ATM, nhà thuốc, cửa hàng tiện lợi...)", say: "Tiện ích xung quanh", type: "list", kind: "D", live: 3, cols: ["Nơi", "Ghi chú"] },
 
   // 03 · Nhận & trả phòng
   checkin: { label: "Giờ nhận phòng", type: "time", kind: "D", live: 1 },
   checkout: { label: "Giờ trả phòng", type: "time", kind: "D", live: 1 },
-  earlyLate: { label: "Nhận sớm, trả trễ", type: "text", kind: "C", live: 2, note: "Bonia không tự hứa nhận sớm, trả trễ" },
+  earlyLate: { label: "Chính sách nhận và trả phòng sớm/trễ", say: "Nhận phòng sớm, trả phòng trễ", type: "text", kind: "C", live: 2, ph: "Cần quản lý xác nhận", note: "Bonia không tự hứa nhận sớm, trả trễ" },
   idDocs: { label: "Giấy tờ khi nhận phòng", type: "multi", kind: "C", live: 2, opts: ["CCCD", "VNeID", "Hộ chiếu", "Bằng lái xe"] },
   minAge: { label: "Tuổi nhận phòng, trẻ dưới 18 đi một mình", type: "text", kind: "C", live: 3 },
   checkinDeposit: { label: "Cọc khi nhận phòng", type: "text", kind: "C", live: 2 },
@@ -55,7 +55,8 @@ export const FIELDS = {
   extraPerson: { label: "Trẻ em và người thêm", type: "list", kind: "C", live: 2, cols: ["Ai", "Phụ thu"] },
   minNights: { label: "Số đêm tối thiểu", type: "text", kind: "C", live: 2 },
   holidays: { label: "Ngày lễ, Tết (ngày cụ thể)", say: "Ngày lễ, Tết", type: "list", kind: "C", live: 3, cols: ["Ngày, vd 30/4–2/5", "Giá"] },
-  promos: { label: "Khuyến mãi, combo", type: "list", kind: "D", live: 2, cols: ["Tên", "Chi tiết, hạn"] },
+  // founder 2026-10-05: a promotion is posted every so often, so each one has its own title, dates, details and price
+  promos: { label: "Khuyến mãi, combo", type: "promos", kind: "D", live: 2 },
 
   // 05 · Chính sách
   children: { label: "Trẻ em", type: "text", kind: "C", live: 2 },
@@ -81,35 +82,32 @@ export const FIELDS = {
 
   // 07 · Nhận yêu cầu đặt phòng
   askFor: { label: "Hỏi khách khi đặt", type: "multi", kind: "Q", live: 1, opts: ["Tên", "Ngày nhận phòng", "Số đêm", "Số người lớn", "Trẻ em và tuổi", "Giờ tới", "Yêu cầu riêng", "Email"] },
-  groupSize: { label: "Đoàn từ bao nhiêu người thì chủ gọi lại", type: "number", kind: "Q", live: 1 },
+  groupSize: { label: "Số lượng khách đặt cần quản lý tư vấn trực tiếp", type: "number", kind: "Q", live: 1 },
   channels: { label: "Kênh đặt phòng", type: "list", kind: "D", live: 3, cols: ["Kênh", "Đường dẫn"] },
 
   // 08 · Cách nghe máy
   greeting: { label: "Khi nhấc máy", type: "text", kind: "Q", live: 1 },
   voice: { label: "Giọng", type: "voice", kind: "Q", live: 0 },
   english: { label: "Tiếng Anh", type: "toggle", kind: "Q", live: 1, on: "Khách nói tiếng Anh thì Bonia trả lời bằng tiếng Anh" },
-  quote: { label: "Báo giá", type: "chips", kind: "Q", live: 1, opts: ["Giá từng đêm", "Tổng tiền", "Không báo giá"] },
-  disclose: { label: "Báo khách đây là trợ lý tự động", type: "toggle", kind: "Q", live: 1, on: "Có, nói ngay sau lời chào" },
-  upsell: { label: "Giới thiệu thêm combo, hoạt động", type: "toggle", kind: "Q", live: 1, on: "Khi hợp lý, tối đa 1 lần mỗi cuộc gọi" },
-  wifiPass: { label: "Đọc mật khẩu Wi-Fi qua điện thoại", type: "toggle", kind: "Q", live: 1, on: "Có (Bonia không biết người gọi có đang ở không)" },
 
   // 09 · Thông tin khác
   extra: { label: "Điều khác Bonia nên biết", type: "area", kind: "D", live: 3 },
   faq: { label: "Hỏi – đáp", type: "list", kind: "D", live: 3, cols: ["Khách hỏi", "Trả lời"] },
-  fixes: { label: "Câu đã sửa trong Thử Bonia", type: "list", kind: "Q", live: 1, cols: ["Khi khách nói", "Bonia nên nói"] },
 };
 
 /** Section → cards → field keys. §04 also renders the room cards (ROOM_FIELDS). */
 export const SECTIONS = [
-  { key: "s1", n: "01", title: "Thông tin chung", cards: [["Khách sạn", ["name", "aliases", "type", "languages", "hotline", "legal"]], ["Quầy lễ tân", ["deskHours", "afterHours"]]] },
-  { key: "s2", n: "02", title: "Vị trí & đường đi", cards: [["Địa chỉ", ["address", "addressOld", "landmark", "directions", "parking"]], ["Quanh đây", ["sights", "transport", "howToGet", "nearby"]]] },
+  { key: "s1", n: "01", title: "Thông tin chung", cards: [["Khách sạn", ["name", "aliases", "type", "languages", "hotline"]], ["Quầy lễ tân", ["deskHours", "afterHours"]]] },
+  { key: "s2", n: "02", title: "Vị trí & đường đi", cards: [["Địa chỉ", ["address", "addressOld", "landmark", "directions", "parking"]], ["Quanh đây", ["sights", "transport", "nearby"]]] },
   { key: "s3", n: "03", title: "Nhận & trả phòng", cards: [["Giờ giấc", ["checkin", "checkout", "earlyLate"]], ["Khi nhận phòng", ["idDocs", "minAge", "checkinDeposit", "luggage"]]] },
-  { key: "s4", n: "04", title: "Phòng & giá", cards: [["Chung cho mọi phòng", ["roomAmenities", "priceBasis", "priceTax", "priceIncludes", "weekendNights", "extraPerson", "minNights"]], ["Lễ Tết, khuyến mãi", ["holidays", "promos"]]], rooms: true },
+  { key: "s4", n: "04", title: "Phòng & giá", cards: [["Chung cho mọi phòng", ["roomAmenities", "priceBasis", "priceTax", "priceIncludes", "weekendNights", "extraPerson", "minNights"]]], rooms: true },
   { key: "s5", n: "05", title: "Chính sách", cards: [["Khách", ["children", "pets", "smoking", "houseRules"]], ["Cọc, đổi, hủy", ["deposit", "changeDate", "cancel", "payment", "vat"]]] },
   { key: "s6", n: "06", title: "Tiện nghi & dịch vụ", cards: [["Tiện nghi", ["amenities", "wifi", "housekeeping"]], ["Ăn uống", ["breakfast", "dining"]], ["Hoạt động, dịch vụ", ["activities", "services", "dayVisit", "groups"]]] },
   { key: "s7", n: "07", title: "Nhận yêu cầu đặt phòng", cards: [["Khi khách muốn đặt", ["askFor", "groupSize", "channels"]]] },
-  { key: "s8", n: "08", title: "Cách nghe máy", cards: [["Lời chào", ["greeting"]], ["Giọng, ngôn ngữ", ["voice", "english"]], ["Bonia được", ["quote", "disclose", "upsell", "wifiPass"]]] },
-  { key: "s9", n: "09", title: "Thông tin khác", cards: [["Thông tin khác", ["extra", "faq"]], ["Đã sửa trong Thử Bonia", ["fixes"]]] },
+  { key: "s8", n: "08", title: "Cách nghe máy", cards: [["Lời chào", ["greeting"]], ["Giọng, ngôn ngữ", ["voice", "english"]]] },
+  { key: "s9", n: "09", title: "Thông tin khác", cards: [["Thông tin khác", ["extra", "faq"]]] },
+  // founder 2026-10-05: last, because promotions change every so often
+  { key: "s10", n: "10", title: "Lễ Tết, khuyến mãi", cards: [["Ngày lễ, Tết", ["holidays"]], ["Khuyến mãi", ["promos"]]] },
 ];
 
 /** One room type. Prices: daily (ngày thường / cuối tuần), overnight, hourly, monthly. */

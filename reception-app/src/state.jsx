@@ -343,8 +343,6 @@ export function AppStateProvider({ children }) {
         setSettings({ ...next, saved: snapshot(next) });
         return true;
       },
-      /** A Thử Bonia correction: [guest line, what Bonia should say], saved at once. */
-      addFix: (q, a) => saveNow((vs) => ({ ...vs, fixes: { v: [...((vs.fixes && vs.fixes.v) || []), [q, a]], st: "ok", src: { t: "test" } } })),
     };
   }, [demo, persist]);
 

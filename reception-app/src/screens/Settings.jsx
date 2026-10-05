@@ -60,10 +60,48 @@ function ListRows({ value, onChange, cols, d, input }) {
         <div key={i} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1.3fr) auto", gap: 5, alignItems: "center" }}>
           <input value={r[0]} onChange={(e) => set(i, 0, e.target.value)} placeholder={cols[0]} style={{ ...input, width: "100%" }} />
           <input value={r[1]} onChange={(e) => set(i, 1, e.target.value)} placeholder={cols[1]} style={{ ...input, width: "100%" }} />
-          <button type="button" aria-label="Xóa dòng" onClick={() => onChange(rows.filter((_, k) => k !== i))} className="h-line" style={{ width: 28, height: 28, borderRadius: 14, fontSize: 11, color: "#6E6255" }}>✕</button>
+          <button type="button" aria-label="Xóa dòng" onClick={() => onChange(rows.filter((_, k) => k !== i))} className="h-line" style={{ width: 28, height: 28, borderRadius: 14, fontSize: 11, lineHeight: 1, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#6E6255" }}>✕</button>
         </div>
       ))}
       <button type="button" onClick={() => onChange([...rows, ["", ""]])} style={{ alignSelf: "flex-start", height: d.btnSm, padding: "0 4px", fontSize: d.fs.small, color: "#7B4A2D" }}>+ Thêm dòng</button>
+    </div>
+  );
+}
+
+/** Khuyến mãi (founder 2026-10-05): each one with its title, dates, details and price; an expired one is never offered on a call. */
+function PromoList({ value, onChange, d, input }) {
+  const rows = Array.isArray(value) ? value.map((r) => (Array.isArray(r) ? { title: r[0] || "", details: r[1] || "", from: "", to: "", price: "" } : r)) : [];
+  const set = (i, patch) => onChange(rows.map((r, k) => (k === i ? { ...r, ...patch } : r)));
+  const today = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+  const lab = { display: "flex", flexDirection: "column", gap: 4, minWidth: 0 };
+  const cap = { fontSize: d.fs.tiny, color: "#6E6255" };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {rows.map((r, i) => {
+        const over = r.to && r.to < today;
+        return (
+          <div key={i} style={{ display: "flex", flexDirection: "column", gap: 7, padding: "10px 12px", border: `1px solid ${over ? "#E4DCCB" : "#D9D0BF"}`, borderRadius: 10, background: over ? "#FAF7F1" : "#fff" }}>
+            <label style={lab}>
+              <span style={cap}>Tên ưu đãi{over ? " · đã hết hạn, Bonia không giới thiệu" : ""}</span>
+              <input value={r.title || ""} onChange={(e) => set(i, { title: e.target.value })} placeholder="Vd: Ở 3 đêm tặng 1 đêm" style={{ ...input, width: "100%", fontWeight: 600 }} />
+            </label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+              <label style={lab}><span style={cap}>Áp dụng từ</span><input type="date" value={r.from || ""} onChange={(e) => set(i, { from: e.target.value })} style={{ ...input, width: "100%" }} /></label>
+              <label style={lab}><span style={cap}>Tới</span><input type="date" value={r.to || ""} onChange={(e) => set(i, { to: e.target.value })} style={{ ...input, width: "100%" }} /></label>
+            </div>
+            <label style={lab}>
+              <span style={cap}>Chi tiết</span>
+              <textarea value={r.details || ""} onChange={(e) => set(i, { details: e.target.value })} rows={2} placeholder="Gồm những gì, áp dụng cho phòng nào, điều kiện" style={{ ...input, height: "auto", width: "100%", padding: "7px 10px", lineHeight: 1.5, resize: "vertical" }} />
+            </label>
+            <label style={lab}>
+              <span style={cap}>Giá</span>
+              <input value={r.price || ""} onChange={(e) => set(i, { price: e.target.value })} placeholder="Vd: 2.250.000đ cho 4 đêm" style={{ ...input, width: "100%" }} />
+            </label>
+            <button type="button" onClick={() => onChange(rows.filter((_, k) => k !== i))} style={{ alignSelf: "flex-start", height: d.btnSm, padding: "0 4px", fontSize: d.fs.small, color: "#A0412D" }}>Xóa ưu đãi</button>
+          </div>
+        );
+      })}
+      <button type="button" onClick={() => onChange([...rows, { title: "", from: "", to: "", details: "", price: "" }])} style={{ alignSelf: "flex-start", height: d.btnSm, padding: "0 4px", fontSize: d.fs.small, color: "#7B4A2D" }}>+ Thêm ưu đãi</button>
     </div>
   );
 }
@@ -127,15 +165,15 @@ function VoicePick({ value, onChange, d, greeting }) {
 function Control({ def, value, onChange, d, input, greeting }) {
   switch (def.type) {
     case "text":
-      return <input value={value ?? ""} onChange={(e) => onChange(e.target.value)} style={{ ...input, width: "100%" }} />;
+      return <input value={value ?? ""} onChange={(e) => onChange(e.target.value)} placeholder={def.ph} style={{ ...input, width: "100%" }} />;
     case "mono":
-      return <input value={value ?? ""} onChange={(e) => onChange(e.target.value)} style={{ ...input, width: 180, maxWidth: "100%", fontFamily: MONO }} />;
+      return <input value={value ?? ""} onChange={(e) => onChange(e.target.value)} placeholder={def.ph} style={{ ...input, width: 180, maxWidth: "100%", fontFamily: MONO }} />;
     case "time":
       return <input value={value ?? ""} onChange={(e) => onChange(e.target.value)} placeholder="14:00" style={{ ...input, width: 90, fontFamily: MONO }} />;
     case "number":
       return <input value={value ?? ""} onChange={(e) => onChange(digits(e.target.value))} inputMode="numeric" style={{ ...input, width: 90, fontFamily: MONO }} />;
     case "area":
-      return <textarea value={value ?? ""} onChange={(e) => onChange(e.target.value)} rows={3} style={{ ...input, height: "auto", width: "100%", minHeight: 64, padding: "7px 10px", lineHeight: 1.5, resize: "vertical" }} />;
+      return <textarea value={value ?? ""} onChange={(e) => onChange(e.target.value)} placeholder={def.ph} rows={3} style={{ ...input, height: "auto", width: "100%", minHeight: 64, padding: "7px 10px", lineHeight: 1.5, resize: "vertical" }} />;
     case "hours":
       return <Hours value={value} onChange={onChange} d={d} input={input} />;
     case "toggle":
@@ -175,6 +213,8 @@ function Control({ def, value, onChange, d, input, greeting }) {
       return <Tags value={value} onChange={onChange} d={d} input={input} />;
     case "list":
       return <ListRows value={value} onChange={onChange} cols={def.cols} d={d} input={input} />;
+    case "promos":
+      return <PromoList value={value} onChange={onChange} d={d} input={input} />;
     case "voice":
       return <VoicePick value={value} onChange={onChange} d={d} greeting={greeting} />;
     default:
@@ -190,8 +230,8 @@ function FieldRow({ k, x, app, d, phone, greeting }) {
   const input = { height: d.input, minWidth: 0, border: "1px solid #D9D0BF", borderRadius: 8, padding: "0 10px", fontSize: d.fs.body, background: "#fff", color: "#1F1B16" };
   const border = `1px ${warn || x.st !== "ok" ? "dashed" : "solid"} ${warn ? "#A0412D" : x.st === "ok" ? "#EFE9DD" : "#C9BCA5"}`;
   return (
-    <div data-f={k} style={{ display: "grid", gridTemplateColumns: phone ? "minmax(0,1fr)" : "170px minmax(0,1fr)", gap: phone ? 5 : 12, alignItems: def.type === "list" || def.type === "area" ? "start" : "center", padding: "6px 8px", borderRadius: 8, border, background: warn ? "#FBF8F2" : "#fff" }}>
-      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", paddingTop: def.type === "list" || def.type === "area" ? 7 : 0 }}>
+    <div data-f={k} style={{ display: "grid", gridTemplateColumns: phone ? "minmax(0,1fr)" : "170px minmax(0,1fr)", gap: phone ? 5 : 12, alignItems: def.type === "list" || def.type === "area" || def.type === "promos" ? "start" : "center", padding: "6px 8px", borderRadius: 8, border, background: warn ? "#FBF8F2" : "#fff" }}>
+      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", paddingTop: def.type === "list" || def.type === "area" || def.type === "promos" ? 7 : 0 }}>
         <span style={{ fontSize: d.fs.small, color: "#4A4239", lineHeight: 1.4 }}>{def.label}</span>
         {fill && <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: "0.12em", padding: "2px 5px", borderRadius: 4, background: "#F6E7E1", color: "#A0412D" }}>CẦN BẠN ĐIỀN</span>}
       </div>

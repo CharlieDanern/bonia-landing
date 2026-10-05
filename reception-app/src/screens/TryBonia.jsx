@@ -11,9 +11,9 @@ import { playVoice } from "../voice.js";
 
 // Thử Bonia: a free playground (founder 2026-10-04). The owner talks to Bonia
 // from this device about anything, like a real guest; quick settings sit
-// beside it (voice, greeting, English, quoting prices) and apply to
-// the next answer. Any answer can be fixed with "Sửa" (saved into Cài đặt ·
-// Đã sửa trong Thử Bonia). Not billed. Speech in/out uses the browser for now; answers
+// beside it (voice, greeting, English) and apply to the next answer. An
+// answer the owner doesn't like is fixed in Cài đặt, then tested again
+// (founder 2026-10-05: no corrections feature). Not billed. Speech in/out uses the browser for now; answers
 // come from the demo engine (src/test-call/scriptEngine.js) until the test
 // call runs on the real voice agent.
 const VI = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
@@ -22,14 +22,12 @@ const VOICES = [[1.12, 1.02], [1.0, 1.0], [0.86, 0.98], [1.28, 1.06], [0.74, 0.9
 export function TryBonia() {
   const app = useApp();
   const { phone, reduce } = useLayout();
-  const [st, setSt] = useState({ live: false, phase: "idle", turns: [], interim: "", out: null, err: "", t0: 0, level: 0, fixes: {} });
+  const [st, setSt] = useState({ live: false, phase: "idle", turns: [], interim: "", out: null, err: "", t0: 0, level: 0 });
   const [now, setNow] = useState(Date.now());
   const [pickups, setPickups] = useState(0);
   const [draft, setDraft] = useState("");
   const [runs, setRuns] = useState([]);
   const [view, setView] = useState(null);
-  const [fixAt, setFixAt] = useState(null);
-  const [fixDraft, setFixDraft] = useState("");
   const S = useRef(st);
   S.current = st;
   const R = useRef({});
@@ -115,7 +113,7 @@ export function TryBonia() {
     teardown();
     const g = s.turns.filter((t) => t.w === "K");
     const sec = Math.round((Date.now() - s.t0) / 1000);
-    const run = { id: `r${Date.now()}`, at: hm(), turns: s.turns, out: s.out || {}, fixes: { ...s.fixes }, len: `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}` };
+    const run = { id: `r${Date.now()}`, at: hm(), turns: s.turns, out: s.out || {}, len: `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}` };
     patch({ live: false, phase: "idle", interim: "", level: 0 });
     if (g.length) {
       setRuns((rs) => [run, ...rs]);
@@ -173,10 +171,9 @@ export function TryBonia() {
     if (S.current.live) return;
     R.current.ended = false;
     setView(null);
-    setFixAt(null);
     setPickups((p) => p + 1);
     const t0 = Date.now();
-    patch({ live: true, phase: "speaking", turns: [], interim: "", out: null, err: "", t0, fixes: {} });
+    patch({ live: true, phase: "speaking", turns: [], interim: "", out: null, err: "", t0 });
     S.current = { ...S.current, live: true, turns: [], t0 };
     setNow(t0);
     R.current.tick = setInterval(() => setNow(Date.now()), 500);
@@ -224,7 +221,6 @@ export function TryBonia() {
   const live = st.live;
   const run = view ? runs.find((r) => r.id === view) : null;
   const turns = live ? st.turns : run ? run.turns : [];
-  const fixes = live ? st.fixes : run ? run.fixes : {};
   const out = live ? st.out : run ? run.out : null;
   const talking = st.phase === "listening" && (st.interim || st.level > 0.045);
   const mood = !live ? "idle" : st.phase === "speaking" ? "bonia" : st.phase === "thinking" ? "writing" : talking ? "guest" : "idle";
@@ -234,17 +230,6 @@ export function TryBonia() {
   const phaseC = st.phase === "listening" ? "#4A6B3A" : "#7B4A2D";
   const o = out || {};
   const resultReq = { id: "test", name: o.name || null, room: o.room || null, number: "Máy này", at: run ? run.at : "", type: o.type || "Lời nhắn", urgent: !!o.urgent, summary: o.summary || "" };
-
-  const saveFix = () => {
-    const i = fixAt;
-    const txt = fixDraft.trim();
-    if (i == null || !txt) return;
-    const q = (turns[i - 1] || {}).text || "";
-    app.addFix(q.slice(0, 160), txt);
-    if (live) patch((s) => ({ fixes: { ...s.fixes, [i]: txt } }));
-    else setRuns((rs) => rs.map((r) => (r.id === view ? { ...r, fixes: { ...r.fixes, [i]: txt } } : r)));
-    setFixAt(null);
-  };
 
   // ── quick settings: save at once, used by the next answer ───────────────
   const eyebrow = { fontFamily: MONO, fontSize: 9, letterSpacing: "0.18em", color: "#6E6255" };
@@ -290,7 +275,6 @@ export function TryBonia() {
       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {[
           ["english", "Trả lời tiếng Anh khi khách nói tiếng Anh", !!f.english, () => app.applyNow("english", !f.english)],
-          ["quote", "Được báo giá phòng", f.quote !== "Không báo giá", () => app.applyNow("quote", f.quote === "Không báo giá" ? "Giá từng đêm" : "Không báo giá")],
         ].map(([k, l, on, go]) => (
           <button key={k} type="button" onClick={go} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: d.fs.body, color: "#1F1B16", textAlign: "left", minHeight: d.row }}>
             <Switch on={on} />
@@ -306,16 +290,15 @@ export function TryBonia() {
     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <span style={{ ...eyebrow, paddingBottom: 4 }}>LẦN THỬ GẦN ĐÂY</span>
       {runs.map((r) => {
-        const n = Object.keys(r.fixes).length;
         const g = r.turns.find((t) => t.w === "K");
         return (
-          <button key={r.id} type="button" onClick={() => !S.current.live && (setView(r.id), setFixAt(null))} style={{ display: "grid", gridTemplateColumns: "40px minmax(0,1fr) auto", gap: 8, alignItems: "center", padding: "7px 6px", borderTop: "1px solid #E4DCCB", background: view === r.id ? "#FFFFFF" : "transparent", textAlign: "left", borderRadius: 6 }}>
+          <button key={r.id} type="button" onClick={() => !S.current.live && setView(r.id)} style={{ display: "grid", gridTemplateColumns: "40px minmax(0,1fr) auto", gap: 8, alignItems: "center", padding: "7px 6px", borderTop: "1px solid #E4DCCB", background: view === r.id ? "#FFFFFF" : "transparent", textAlign: "left", borderRadius: 6 }}>
             <span style={{ fontFamily: MONO, fontSize: 10.5, color: "#6E6255" }}>{r.at}</span>
             <span style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
               <span style={{ fontSize: d.fs.small, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#1F1B16" }}>{r.out?.type || "Gọi thử"}</span>
               <span style={{ fontSize: d.fs.tiny, color: "#6E6255", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{g ? g.text : ""}</span>
             </span>
-            <span style={{ fontSize: d.fs.tiny, color: n ? "#7B4A2D" : "#6E6255", whiteSpace: "nowrap" }}>{n ? `${n} câu đã sửa` : "không sửa"}</span>
+            <span style={{ fontSize: d.fs.tiny, color: "#6E6255", whiteSpace: "nowrap" }}>{r.len}</span>
           </button>
         );
       })}
@@ -335,36 +318,16 @@ export function TryBonia() {
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontFamily: MONO, fontSize: 11.5, color: "#4A4239" }}>{live ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}` : run ? run.len : ""}</span>
           {!live && run && (
-            <button type="button" onClick={() => { setView(null); setFixAt(null); }} aria-label="Đóng" className="h-line" style={{ width: 34, height: 34, borderRadius: 17, fontSize: 14, color: "#4A4239", textAlign: "center" }}>✕</button>
+            <button type="button" onClick={() => setView(null)} aria-label="Đóng" className="h-line" style={{ width: 34, height: 34, borderRadius: 17, fontSize: 14, color: "#4A4239", textAlign: "center" }}>✕</button>
           )}
         </div>
       </div>
       <div style={{ flex: 1, minHeight: 0, overflow: "auto", display: "flex", flexDirection: "column", gap: 8, padding: "12px 14px" }}>
         {turns.map((t, i) => {
           const B = t.w === "B";
-          const fx = fixes[i];
           return (
             <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: B ? "flex-end" : "flex-start", gap: 2, flex: "none" }}>
               <Bubble who={t.w} text={t.text} />
-              {B && i > 0 && !fx && fixAt !== i && (
-                <button type="button" onClick={() => { setFixAt(i); setFixDraft(""); }} style={{ height: 24, padding: "0 8px", fontSize: 11.5, color: "#7B4A2D" }}>Sửa</button>
-              )}
-              {B && fixAt === i && (
-                <div style={{ width: "86%", display: "flex", flexDirection: "column", gap: 5, padding: 8, borderRadius: 10, border: "1px solid #7B4A2D", background: "#FBF5EC", marginTop: 3 }}>
-                  <span style={{ fontSize: 11.5, color: "#4A4239" }}>Bonia nên nói (hoặc nên biết):</span>
-                  {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
-                  <textarea value={fixDraft} onChange={(e) => setFixDraft(e.target.value)} rows={2} autoFocus style={{ width: "100%", resize: "vertical", border: "1px solid #D9D0BF", borderRadius: 6, padding: "6px 8px", fontSize: 12.5, lineHeight: 1.45, background: "#fff", color: "#1F1B16" }} />
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 5 }}>
-                    <button type="button" className="b-ghost" onClick={() => setFixAt(null)} style={{ height: 28, padding: "0 12px", borderRadius: 14, fontSize: 12 }}>Huỷ</button>
-                    <button type="button" className="b-primary" onClick={saveFix} style={{ height: 28, padding: "0 14px", borderRadius: 14, fontSize: 12 }}>Lưu</button>
-                  </div>
-                </div>
-              )}
-              {fx && (
-                <div style={{ maxWidth: "86%", padding: "5px 9px", borderRadius: 8, background: "#EEF0E6", fontSize: 11.5, color: "#4A6B3A", lineHeight: 1.45, marginTop: 2 }}>
-                  ✓ “{fx}” · <Link href="/cai-dat#s9" style={{ color: "#4A6B3A", textDecoration: "underline" }}>Đã lưu vào Cài đặt · Đã sửa trong Thử Bonia</Link>
-                </div>
-              )}
             </div>
           );
         })}
