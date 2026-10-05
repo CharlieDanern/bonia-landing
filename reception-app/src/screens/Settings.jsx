@@ -3,15 +3,16 @@ import { useLocation, useSearch } from "wouter";
 import { FIELDS, ROOM_FIELDS, SECTIONS, SOURCE_LABEL } from "../data/hotelSchema.js";
 import { VOICE_COUNT, flat, needsFill, pendingList } from "../data/settings.js";
 import { DeskHeader, PhoneTabs, Switch, useLayout } from "../layout.jsx";
+import { Orb } from "../components/Orb.jsx";
 import { useApp } from "../state.jsx";
 import { EASE, MONO, SERIF, dims } from "../ui.js";
 import { playVoice } from "../voice.js";
 
 // Cài đặt: the hotel profile (HOTEL_SETTINGS_FIELDS.md v2), nine sections
-// drawn from data/hotelSchema.js. Values the AI found start unconfirmed
-// (dashed); typing or picking confirms them; when sources disagree the owner
-// picks one tile (each tile names its source). Review mode (after the AI
-// search, or while anything is left to check) adds "Còn N mục cần xem lại".
+// drawn from data/hotelSchema.js. First visit (founder 2026-10-05): Bonia
+// offers to fill everything from the web; while it searches a loading screen
+// shows; what it found is dashed with its source (another source's reading
+// is a hint to swap in); the owner edits, and Lưu confirms everything.
 
 const fmt = (n) => (n === "" || n == null ? "" : String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "."));
 const digits = (s) => String(s).replace(/\D/g, "");
@@ -207,6 +208,19 @@ function FieldRow({ k, x, app, d, phone, greeting }) {
         ) : (
           <Control def={def} value={x.v} onChange={(v) => app.setVal(k, v)} d={d} input={input} greeting={greeting} />
         )}
+        {!conflict && x.st === "new" && (x.alts || []).length > 0 && (
+          <span style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", fontSize: d.fs.tiny, color: "#6E6255" }}>
+            Nguồn khác ghi:
+            {x.alts.map((alt) => (
+              <button key={`${JSON.stringify(alt.v)}-${alt.src?.t}`} type="button" className="h-clayline" onClick={() => app.pickAlt(k, alt)} title="Dùng giá trị này" style={{ padding: "1px 8px", border: "1px solid #D9D0BF", borderRadius: 10, fontSize: d.fs.tiny, color: "#1F1B16", background: "#fff" }}>
+                {Array.isArray(alt.v) ? alt.v.join(", ") : String(alt.v)} · {SOURCE_LABEL[alt.src?.t] || "nguồn khác"}
+              </button>
+            ))}
+          </span>
+        )}
+        {!conflict && x.st === "new" && x.src?.t && SOURCE_LABEL[x.src.t] && !fill && (
+          <span style={{ fontSize: d.fs.tiny, color: "#6E6255" }}>Bonia tìm thấy trên {SOURCE_LABEL[x.src.t]}</span>
+        )}
         {def.note && (
           <span style={{ display: "flex", gap: 7, alignItems: "center", fontSize: d.fs.tiny, color: "#6E6255" }}>
             <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: "0.12em", border: "1px solid #6E6255", borderRadius: 4, padding: "1px 4px" }}>KHÓA</span>
@@ -242,7 +256,7 @@ function RoomCard({ r, i, open, onToggle, app, d, phone }) {
       <button type="button" onClick={onToggle} style={{ width: "100%", display: "flex", flexDirection: "column", gap: 3, padding: "9px 12px", textAlign: "left" }}>
         <span style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", width: "100%" }}>
           <span style={{ fontSize: d.fs.title, fontWeight: 600, color: "#1F1B16" }}>{r.name}</span>
-          <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: "0.1em", padding: "2px 7px", borderRadius: 9, whiteSpace: "nowrap", border: `1px solid ${ok ? "#D9D0BF" : "#7B4A2D"}`, color: ok ? "#4A6B3A" : "#7B4A2D" }}>{ok ? "✓" : `XEM LẠI${r.src ? ` · ${(SOURCE_LABEL[r.src.t] || "").toUpperCase()}` : ""}`}</span>
+          <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: "0.1em", padding: "2px 7px", borderRadius: 9, whiteSpace: "nowrap", border: `1px solid ${ok ? "#D9D0BF" : "#7B4A2D"}`, color: ok ? "#4A6B3A" : "#7B4A2D" }}>{ok ? "✓" : `BONIA TÌM THẤY${r.src ? ` · ${(SOURCE_LABEL[r.src.t] || "").toUpperCase()}` : ""}`}</span>
         </span>
         {meta && <span style={{ fontSize: d.fs.small, color: "#4A4239", lineHeight: 1.4 }}>{meta}</span>}
         <span style={{ fontFamily: MONO, fontSize: 11, color: "#1F1B16", lineHeight: 1.5 }}>{parts.join(" · ") || "Chưa có giá"}</span>
@@ -296,13 +310,94 @@ function RoomCard({ r, i, open, onToggle, app, d, phone }) {
           })}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <button type="button" onClick={() => app.removeRoom(i)} style={{ height: d.btnSm, padding: "0 4px", fontSize: d.fs.small, color: "#A0412D" }}>Xóa loại phòng</button>
-            {!ok && <button type="button" className="b-primary" onClick={() => set({ st: "ok" })} style={{ height: d.btn, padding: "0 16px", borderRadius: d.btn / 2, fontSize: d.fs.small }}>Đúng giá này</button>}
           </div>
         </div>
       )}
     </div>
   );
 }
+
+// ── first visit: the offer to fill everything from the web, and the wait ────
+
+const LOOKUP_ERRORS = {
+  daily_limit: "Hôm nay bạn đã tìm 5 lần. Bạn điền tay giúp, hoặc mai thử lại.",
+  network: "Không kết nối được. Kiểm tra mạng rồi thử lại.",
+  lookup_failed: "Bonia chưa tìm được lúc này. Thử lại, hoặc bạn điền tay giúp.",
+};
+const CENTER = { display: "flex", alignItems: "center", justifyContent: "center", width: "100%" };
+const SOURCES_READ = "Trang web khách sạn · Google Maps · Booking.com · Agoda · Trip.com · Airbnb";
+
+function Overlay({ children, phone }) {
+  return (
+    <div style={{ position: "absolute", inset: 0, zIndex: 20, background: "rgba(242,238,230,0.92)", display: "flex", alignItems: phone ? "flex-start" : "center", justifyContent: "center", padding: phone ? "calc(var(--tt-top) + 16px) 16px 24px" : 24, overflow: "auto" }}>
+      <div style={{ width: "100%", maxWidth: 520, display: "flex", flexDirection: "column", gap: 14, padding: phone ? "20px 18px" : "28px 32px", background: "#fff", border: "1px solid #D9D0BF", borderRadius: 20, boxShadow: "0 12px 40px rgba(31,27,22,0.08)" }}>{children}</div>
+    </div>
+  );
+}
+
+function LookupOffer({ app, phone, d }) {
+  const [name, setName] = useState(flat(app.settings).name || "");
+  const [area, setArea] = useState("");
+  const [url, setUrl] = useState("");
+  const field = (l, v, set, ph, extra = {}) => (
+    <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <span style={{ fontSize: 13, color: "#4A4239" }}>{l}</span>
+      <input value={v} onChange={(e) => set(e.target.value)} placeholder={ph} style={{ height: 44, border: "1px solid #D9D0BF", borderRadius: 10, padding: "0 12px", fontSize: 14.5, background: "#fff", color: "#1F1B16" }} {...extra} />
+    </label>
+  );
+  const ok = name.trim().length >= 2;
+  return (
+    <Overlay phone={phone}>
+      <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.18em", color: "#7B4A2D" }}>CÀI ĐẶT LẦN ĐẦU</span>
+      <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 23 : 26, lineHeight: 1.2 }}>Để Bonia tự tìm thông tin khách sạn của bạn trên mạng?</h2>
+      <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239" }}>Bonia đọc trang web của khách sạn và các trang đặt phòng, rồi điền sẵn vào Cài đặt. Bạn xem lại, sửa chỗ chưa đúng, rồi bấm Lưu.</span>
+      {field("Tên khách sạn", name, setName, "Vd: Khách sạn Sân Nhài")}
+      {field("Khu vực", area, setArea, "Vd: Phường Mũi Né, Lâm Đồng")}
+      {field("Trang web hoặc link Booking (không bắt buộc)", url, setUrl, "https://…", { inputMode: "url" })}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 2 }}>
+        <button type="button" className="b-primary" disabled={!ok} onClick={() => app.startLookup({ name: name.trim(), area: area.trim(), urls: url.trim() ? [url.trim()] : [] })} style={{ ...CENTER, height: 46, borderRadius: 23, fontSize: 14.5, opacity: ok ? 1 : 0.5 }}>Có, tìm giúp tôi</button>
+        <button type="button" className="b-ghost" disabled={!ok} onClick={() => app.startBlank(name.trim())} style={{ ...CENTER, height: 44, borderRadius: 22, fontSize: 14, opacity: ok ? 1 : 0.5 }}>Tôi tự điền</button>
+      </div>
+      <span style={{ fontSize: d.fs.tiny, color: "#6E6255", textAlign: "center" }}>Thường mất 1–2 phút.</span>
+    </Overlay>
+  );
+}
+
+function LookupWait({ app, phone, d }) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const iv = setInterval(() => setTick((n) => n + 1), 1000);
+    return () => clearInterval(iv);
+  }, []);
+  const l = app.lookup;
+  const s = Math.max(0, Math.floor((Date.now() - l.startedAt) / 1000));
+  if (l.status === "failed") {
+    return (
+      <Overlay phone={phone}>
+        <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 23 : 26, lineHeight: 1.2 }}>Chưa tìm được</h2>
+        <span role="alert" style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239" }}>{LOOKUP_ERRORS[l.error] || LOOKUP_ERRORS.lookup_failed}</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {l.error !== "daily_limit" && <button type="button" className="b-primary" onClick={() => app.dismissLookup()} style={{ ...CENTER, height: 46, borderRadius: 23, fontSize: 14.5 }}>Thử lại</button>}
+          <button type="button" className="b-ghost" onClick={() => app.startBlank(l.name)} style={{ ...CENTER, height: 44, borderRadius: 22, fontSize: 14 }}>Tôi tự điền</button>
+        </div>
+      </Overlay>
+    );
+  }
+  return (
+    <Overlay phone={phone}>
+      <div style={{ display: "flex", justifyContent: "center" }}><Orb size={phone ? 150 : 180} mood="writing" tone="warm" lively /></div>
+      <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 22 : 25, lineHeight: 1.25, textAlign: "center" }}>Bonia đang tìm thông tin của {l.name} trên mạng…</h2>
+      <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239", textAlign: "center" }}>Thường mất 1–2 phút. Cứ để trang này mở, xong Bonia điền sẵn vào Cài đặt để bạn xem lại.</span>
+      <span style={{ fontFamily: MONO, fontSize: 22, color: "#7B4A2D", textAlign: "center" }}>{Math.floor(s / 60)}:{String(s % 60).padStart(2, "0")}</span>
+      <span style={{ fontSize: d.fs.tiny, color: "#6E6255", textAlign: "center", lineHeight: 1.6 }}>{SOURCES_READ}</span>
+    </Overlay>
+  );
+}
+
+const SAVE_ERRORS = {
+  stale: "Cài đặt vừa được lưu ở máy khác. Tải lại trang để xem bản mới rồi sửa lại.",
+  network: "Chưa lưu được: không kết nối được. Thử lại.",
+};
 
 // ── the page ──────────────────────────────────────────────────────────────
 
@@ -318,10 +413,25 @@ export function Settings() {
   const [active, setActive] = useState(SECTIONS[0].key);
   const [openRoom, setOpenRoom] = useState(null);
   const fromSetup = new URLSearchParams(search).has("xem-lai");
+  const [saving, setSaving] = useState(false);
+  const [saveErr, setSaveErr] = useState("");
+  // first visit: no profile saved yet (demo: right after the demo login, /cai-dat?moi=1)
+  const firstRun = app.demo ? new URLSearchParams(search).has("moi") : !!app.account.firstRun;
+  const offer = firstRun && !app.lookup;
+  const waiting = app.lookup && (app.lookup.status === "running" || app.lookup.status === "failed");
+  const found = app.lookup && app.lookup.status === "done" ? app.lookup : null;
 
   const pend = pendingList(app.settings);
   const pendN = pend.length;
+  const fillN = pend.filter(([, fk]) => !fk.startsWith("room:") && needsFill(values[fk])).length;
   const review = fromSetup || pendN > 0;
+  const onSave = async () => {
+    setSaving(true);
+    setSaveErr("");
+    const r = await app.save();
+    setSaving(false);
+    if (r && r.error) setSaveErr(SAVE_ERRORS[r.error] || "Chưa lưu được. Thử lại.");
+  };
 
   const jump = (sec, fk) => {
     if (fk && fk.startsWith("room:")) setOpenRoom(Number(fk.split(":")[1]));
@@ -372,12 +482,10 @@ export function Settings() {
 
   const cards = (sec) =>
     sec.cards.map(([title, keys]) => {
-      const p = keys.filter((k) => values[k] && values[k].st === "new" && !needsFill(values[k]));
       return (
         <div key={title} style={{ background: "#fff", border: "1px solid #E4DCCB", borderRadius: 12, padding: "10px 12px 12px", display: "flex", flexDirection: "column", gap: 5 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "0 2px 3px", minHeight: 28 }}>
             <span style={{ fontSize: d.fs.title, fontWeight: 600 }}>{title}</span>
-            {p.length > 0 && <button type="button" className="b-ghost" onClick={() => app.confirmKeys(p)} style={smallBtn}>Đúng hết · {p.length}</button>}
           </div>
           {keys.filter((k) => values[k]).map((k) => <FieldRow key={k} k={k} x={values[k]} app={app} d={d} phone={phone} greeting={greeting} />)}
         </div>
@@ -397,7 +505,8 @@ export function Settings() {
 
   const index = SECTIONS.map((s) => {
     const c = pend.filter((p) => p[0] === s.key).length;
-    return { k: s.key, num: s.n, l: s.title, mark: c ? `${c} cần xem lại` : "✓ Đã xong", mc: c ? "#7B4A2D" : "#4A6B3A", badge: c ? String(c) : "✓", go: () => { setActive(s.key); jump(s.key); } };
+    // never saved yet (first visit, before or after "Tôi tự điền"): nothing to tick
+    return { k: s.key, num: s.n, l: s.title, mark: c ? `${c} mục chưa lưu` : firstRun ? "" : "✓ Đã lưu", mc: c ? "#7B4A2D" : "#4A6B3A", badge: c ? String(c) : firstRun ? "" : "✓", go: () => { setActive(s.key); jump(s.key); } };
   });
   const revGo = () => {
     if (pendN) {
@@ -412,7 +521,12 @@ export function Settings() {
       {!phone && <DeskHeader active={2} solid />}
       {review && (
         <div style={{ position: "absolute", left: 0, right: 0, top: topH, height: revH, zIndex: 3, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: `0 ${phone ? 16 : 48}px`, background: pendN ? "#FBF5EC" : "#EEF0E6", borderBottom: "1px solid #D9D0BF" }}>
-          <span style={{ fontSize: d.fs.body, fontWeight: 600, color: pendN ? "#7B4A2D" : "#4A6B3A" }}>{pendN ? `Còn ${pendN} mục cần xem lại` : "Đã xem lại hết"}</span>
+          <span style={{ fontSize: d.fs.body, fontWeight: 600, color: pendN ? "#7B4A2D" : "#4A6B3A", lineHeight: 1.35 }}>
+            {!pendN ? "Đã lưu hết"
+              : found && found.found === false ? `Bonia không tìm thấy ${found.name} trên mạng. Bạn điền giúp rồi bấm Lưu.`
+                : phone ? `Bonia đã điền ${pendN - fillN} mục. Xem lại rồi bấm Lưu.`
+                  : `Bonia đã điền ${pendN - fillN} mục${fillN ? `, ${fillN} mục cần bạn điền` : ""}. Xem lại, sửa nếu cần, rồi bấm Lưu.`}
+          </span>
           <button type="button" className="b-primary" onClick={revGo} style={{ ...smallBtn, height: d.btnSm + 2, padding: "0 14px" }}>{pendN ? (phone ? "Mục tiếp" : "Tới mục tiếp theo") : "Thử Bonia →"}</button>
         </div>
       )}
@@ -451,6 +565,11 @@ export function Settings() {
             </aside>
           )}
           <main style={{ display: "flex", flexDirection: "column", gap: 30, minWidth: 0 }}>
+            {found && found.notes && (
+              <div style={{ padding: "10px 14px", borderRadius: 12, background: "#FBF5EC", border: "1px solid #E4DCCB", fontSize: d.fs.small, lineHeight: 1.55, color: "#4A4239" }}>
+                <b style={{ fontWeight: 600, color: "#7B4A2D" }}>Ghi chú của Bonia khi tìm: </b>{found.notes}
+              </div>
+            )}
             {SECTIONS.map((sec) => (
               <section key={sec.key} data-sec={sec.key} id={sec.key} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
@@ -466,14 +585,19 @@ export function Settings() {
       </div>
       <div style={{ position: "absolute", left: 0, right: 0, bottom: phone ? "calc(57px + var(--tt-bot))" : 0, zIndex: 4, display: "flex", justifyContent: "center", padding: `8px ${phone ? 16 : 48}px`, background: "#fff", borderTop: "1px solid #D9D0BF", transform: dirtyN ? "translateY(0)" : "translateY(120%)", opacity: dirtyN ? 1 : 0, pointerEvents: dirtyN ? "auto" : "none", transition: `transform 280ms ${EASE}, opacity 200ms ease` }}>
         <div style={{ width: "100%", maxWidth: 1100, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: d.fs.body }}>{dirtyN} thay đổi chưa lưu</span>
+          <span style={{ fontSize: d.fs.body, display: "flex", flexDirection: "column", gap: 2 }}>
+            {dirtyN} thay đổi chưa lưu
+            {saveErr && <span role="alert" style={{ fontSize: d.fs.tiny, color: "#A0412D" }}>{saveErr}</span>}
+          </span>
           <div style={{ display: "flex", gap: 6 }}>
-            <button type="button" className="b-ghost" onClick={app.discard} style={{ ...smallBtn, height: d.btn, borderRadius: d.btn / 2 }}>Bỏ thay đổi</button>
-            <button type="button" className="b-primary" onClick={app.save} style={{ ...smallBtn, height: d.btn, padding: "0 20px", borderRadius: d.btn / 2 }}>Lưu</button>
+            {!found && <button type="button" className="b-ghost" onClick={app.discard} disabled={saving} style={{ ...smallBtn, height: d.btn, borderRadius: d.btn / 2 }}>Bỏ thay đổi</button>}
+            <button type="button" className="b-primary" onClick={onSave} disabled={saving} style={{ ...smallBtn, height: d.btn, padding: "0 20px", borderRadius: d.btn / 2, opacity: saving ? 0.6 : 1 }}>{saving ? "Đang lưu…" : "Lưu"}</button>
           </div>
         </div>
       </div>
       {phone && <PhoneTabs active={2} />}
+      {offer && <LookupOffer app={app} phone={phone} d={d} />}
+      {waiting && <LookupWait app={app} phone={phone} d={d} />}
     </div>
   );
 }

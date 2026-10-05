@@ -111,6 +111,34 @@ export function defaultSettings() {
   return { values, rooms };
 }
 
+const EMPTY = { text: "", mono: "", area: "", time: "", number: "", chips: null, multi: [], tags: [], toggle: null, list: [], voice: 1 };
+const emptyOf = (type) => (type === "hours" ? { allDay: false, from: "", to: "" } : EMPTY[type] ?? null);
+
+/** A blank Cài đặt (nothing found or "Tôi tự điền"): empty fields, the owner's permissions at their defaults. */
+export function blankSettings(name = "") {
+  const values = {};
+  for (const [k, f] of Object.entries(FIELDS)) values[k] = V(emptyOf(f.type));
+  Object.assign(values, {
+    name: V(name),
+    askFor: V(["Tên", "Ngày nhận phòng", "Số đêm", "Số người lớn", "Trẻ em và tuổi"]),
+    groupSize: V("10"),
+    greeting: V(name ? `Dạ ${name} xin nghe ạ.` : ""),
+    voice: V(1),
+    english: V(true),
+    quote: V("Giá từng đêm"),
+    disclose: V(false),
+    upsell: V(false),
+    wifiPass: V(false),
+  });
+  return { values, rooms: [] };
+}
+
+/** A saved or looked-up profile over the blank form, so every field of the schema is there. */
+export function withAllFields(p, name = "") {
+  const B = blankSettings(name);
+  return { values: { ...B.values, ...(p?.values || {}) }, rooms: Array.isArray(p?.rooms) ? p.rooms : [] };
+}
+
 /** Plain { key: value } view of the profile, for screens and the demo engine. */
 export const flat = (s) => Object.fromEntries(Object.entries(s.values).map(([k, x]) => [k, x.v]));
 

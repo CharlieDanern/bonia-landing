@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import { isDemo } from "./demo.js";
 import { Link } from "wouter";
 import { BONIA_MARK } from "./lib/assets.js";
 import { useApp } from "./state.jsx";
@@ -30,12 +31,7 @@ function writeSession(key, v) {
   }
 }
 
-function initialDemo() {
-  const q = new URLSearchParams(window.location.search).get("demo");
-  if (q === "0") writeSession("tt3.demo", false);
-  if (q === "1") writeSession("tt3.demo", true);
-  return readSession("tt3.demo", import.meta.env.DEV);
-}
+const initialDemo = isDemo;
 
 function useMedia(query) {
   const [m, setM] = useState(() => window.matchMedia?.(query).matches ?? false);

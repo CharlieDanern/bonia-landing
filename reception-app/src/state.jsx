@@ -1,11 +1,15 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { REQUESTS, SCRIPTS, copyText } from "./data/sample.js";
-import { defaultSettings } from "./data/settings.js";
+import { defaultSettings, blankSettings, withAllFields } from "./data/settings.js";
 import { INVOICE } from "./data/account.js";
+import { api, token } from "./api.js";
+import { isDemo } from "./demo.js";
 
-// One store for the whole app (sample data until the backend is wired):
-// requests (Trực tiếp + Lịch sử share them), the scripted live calls of the
-// demo, the Offline state, and Cài đặt (persisted per browser).
+// One store for the whole app: requests (Trực tiếp + Lịch sử share them), the
+// scripted live calls of the demo, the Offline state, and Cài đặt.
+// Demo mode: sample data, Cài đặt persisted per browser. Otherwise (founder
+// 2026-10-05): the owner logs in with a code pushed to the Bonia app, and Cài
+// đặt is the hotel's profile on the backend; saving confirms everything.
 
 const AppState = createContext(null);
 export const useApp = () => useContext(AppState);
@@ -27,6 +31,9 @@ export function copyToClipboard(text) {
 }
 
 const snapshot = (s) => JSON.stringify({ values: s.values, rooms: s.rooms });
+const withSaved = (p) => ({ ...p, saved: snapshot(p) });
+// the demo's lookup: the sample hotel, found after a few seconds
+const DEMO_LOOKUP_MS = 6000;
 
 function loadSettings() {
   const D = defaultSettings();
@@ -70,14 +77,23 @@ function requestFromCall(c, now) {
 }
 
 export function AppStateProvider({ children }) {
-  const [reqs, setReqs] = useState(() => REQUESTS.map((r) => ({ ...r })));
+  const [demo] = useState(isDemo);
+  // account: demo · loading · out · in ({ phone, version, firstRun: no profile saved yet })
+  const [account, setAccount] = useState(() => (demo ? { status: "demo" } : token.get() ? { status: "loading" } : { status: "out" }));
+  // the AI lookup: null · { status: running | done | failed, name, startedAt, notes, found, filled, error }
+  const [lookup, setLookup] = useState(null);
+  const [reqs, setReqs] = useState(() => (demo ? REQUESTS.map((r) => ({ ...r })) : []));
   const [calls, setCalls] = useState([]);
   const [now, setNow] = useState(Date.now());
   const [pickups, setPickups] = useState(0);
   const [offline, setOffline] = useState(false);
   const [focus, setFocus] = useState(null);
   const [copied, setCopied] = useState(null);
-  const [settings, setSettings] = useState(loadSettings);
+  const [settings, setSettings] = useState(() => (demo ? loadSettings() : withSaved(blankSettings())));
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+  const accountRef = useRef(account);
+  accountRef.current = account;
 
   const tickRef = useRef(null);
   const timeouts = useRef([]);
@@ -175,8 +191,84 @@ export function AppStateProvider({ children }) {
     setCalls([]);
   }, []);
 
+  // ── account (not in demo mode) ──────────────────────────────────────────
+  const loadAccount = useCallback(async () => {
+    if (demo || !token.get()) return setAccount(demo ? { status: "demo" } : { status: "out" });
+    setAccount((a) => (a.status === "in" ? a : { status: "loading" }));
+    try {
+      const me = await api.me();
+      setSettings(withSaved(withAllFields(me.profile)));
+      setAccount({ status: "in", phone: me.phone, version: me.version, firstRun: !me.profile });
+    } catch (e) {
+      setAccount(e.status === 401 ? { status: "out" } : { status: "error", error: e.error || "network" });
+    }
+  }, [demo]);
+  useEffect(() => { loadAccount(); }, [loadAccount]);
+
+  const signIn = useCallback(async (t) => { token.set(t); await loadAccount(); }, [loadAccount]);
+  const signOut = useCallback(() => { token.set(null); setLookup(null); setSettings(withSaved(blankSettings())); setAccount({ status: "out" }); }, []);
+
+  /** Store a profile on the backend; the answer (every value confirmed) becomes the saved form. */
+  const persist = useCallback(async (profile) => {
+    const a = accountRef.current;
+    try {
+      const r = await api.saveProfile({ values: profile.values, rooms: profile.rooms }, a.version);
+      setAccount((x) => ({ ...x, version: r.version, firstRun: false }));
+      return { ok: true, profile: withAllFields(r.profile) };
+    } catch (e) {
+      return { error: e.error || "network" };
+    }
+  }, []);
+
+  // ── the AI lookup (founder 2026-10-05: fill every field, the owner edits and saves) ──
+  const startLookup = useCallback(async ({ name, area, urls }) => {
+    const startedAt = Date.now();
+    setLookup({ status: "running", name, startedAt });
+    const finish = (profile, notes, found) => {
+      const before = settingsRef.current;
+      const next = withAllFields(profile, name);
+      const filled = Object.values(next.values).filter((x) => x.st === "new" && x.v != null && x.v !== "" && !(Array.isArray(x.v) && !x.v.length)).length + next.rooms.length;
+      // unsaved on purpose: the owner reviews, then saves
+      setSettings({ ...next, saved: before.saved });
+      setLookup({ status: "done", name, startedAt, notes: notes || "", found, filled });
+    };
+    if (demo) {
+      timeouts.current.push(setTimeout(() => {
+        const D = defaultSettings();
+        const found = { values: Object.fromEntries(Object.entries(D.values).map(([k, x]) => [k, x.st === "ok" && k !== "name" ? { ...x, st: "new", src: x.src || { t: "booking" } } : x])), rooms: D.rooms.map((r) => ({ ...r, st: "new" })) };
+        finish(found, "Bản demo: thông tin mẫu của Khách sạn Sân Nhài.", true);
+      }, DEMO_LOOKUP_MS));
+      return;
+    }
+    try {
+      const { job_id: id } = await api.startImport({ name, area, urls });
+      const poll = async () => {
+        try {
+          const j = await api.importStatus(id);
+          if (j.status === "running") return void timeouts.current.push(setTimeout(poll, 3000));
+          if (j.status === "done") return finish(j.profile, j.notes, j.found);
+          setLookup({ status: "failed", name, startedAt, error: j.error || "lookup_failed" });
+        } catch (e) {
+          setLookup({ status: "failed", name, startedAt, error: e.error || "network" });
+        }
+      };
+      timeouts.current.push(setTimeout(poll, 3000));
+    } catch (e) {
+      setLookup({ status: "failed", name, startedAt, error: e.error || "network" });
+    }
+  }, [demo]);
+
+  /** "Tôi tự điền": a blank form with the hotel's name. */
+  const startBlank = useCallback((name) => {
+    const before = settingsRef.current;
+    const next = blankSettings(name);
+    setSettings({ ...next, saved: before.saved });
+    setLookup({ status: "skipped", name });
+  }, []);
+
   // ── settings ───────────────────────────────────────────────────────────
   useEffect(() => {
+    if (!demo) return;
     try {
       const { values, rooms, saved } = settings;
       localStorage.setItem(SETTINGS_KEY, JSON.stringify({ values, rooms, saved }));
@@ -187,6 +279,17 @@ export function AppStateProvider({ children }) {
 
   const settingsApi = useMemo(() => {
     const owner = { t: "owner" };
+    /** Change one thing and store it at once (Thử Bonia's quick settings, a correction), leaving other edits unsaved. */
+    const saveNow = (fn) => {
+      if (demo) return applySaved(fn);
+      const cur = settingsRef.current;
+      let base;
+      try { base = JSON.parse(cur.saved); } catch { base = cur; }
+      const next = { values: fn(base.values), rooms: base.rooms };
+      setSettings((s) => ({ ...s, values: fn(s.values), saved: snapshot(next) }));
+      persist(next);
+      return undefined;
+    };
     const setValues = (fn) => setSettings((s) => ({ ...s, values: fn(s.values) }));
     /** Change and also write into the saved snapshot (no unsaved-changes bar). */
     const applySaved = (fn) => setSettings((s) => {
@@ -204,25 +307,33 @@ export function AppStateProvider({ children }) {
     return {
       /** The owner typed or picked a value: it is now confirmed. */
       setVal: (k, v) => setValues((vs) => ({ ...vs, [k]: { v, st: "ok", src: owner } })),
-      /** "Đúng hết": confirm what the AI found. */
-      confirmKeys: (keys) => setValues((vs) => {
-        const out = { ...vs };
-        keys.forEach((k) => { out[k] = { ...out[k], st: "ok" }; });
-        return out;
-      }),
       /** Two sources disagreed; the owner picked one. */
       pickAlt: (k, alt) => setValues((vs) => ({ ...vs, [k]: { v: alt.v, st: "ok", src: alt.src } })),
       setRoom: (i, patch) => setSettings((s) => ({ ...s, rooms: s.rooms.map((r, j) => (j === i ? { ...r, ...patch } : r)) })),
       addRoom: () => setSettings((s) => ({ ...s, rooms: [...s.rooms, { name: "Loại phòng mới", aliases: [], count: "", bed: "", maxAdults: "", maxChildren: "", size: "", view: "", bath: "Riêng", floor: "", extras: [], extraBed: "", daily: { on: true, wd: "", we: "" }, overnight: { on: false, price: "", from: "22:00", to: "12:00" }, hourly: { on: false, h2: "", hn: "" }, monthly: { on: false, price: "" }, st: "ok", src: owner }] })),
       removeRoom: (i) => setSettings((s) => ({ ...s, rooms: s.rooms.filter((_, j) => j !== i) })),
-      save: () => setSettings((s) => ({ ...s, saved: snapshot(s) })),
+      /** Saving confirms everything in the form (founder 2026-10-05). Resolves to { ok } or { error }. */
+      save: async () => {
+        const cur = settingsRef.current;
+        const confirmed = { values: Object.fromEntries(Object.entries(cur.values).map(([k, x]) => [k, { v: x.v ?? null, st: "ok", ...(x.src ? { src: x.src } : {}) }])), rooms: cur.rooms.map((r) => ({ ...r, st: "ok" })) };
+        if (demo) {
+          setSettings(withSaved(confirmed));
+          return { ok: true };
+        }
+        const r = await persist(confirmed);
+        if (r.ok) {
+          setSettings(withSaved(r.profile));
+          setLookup(null);
+        }
+        return r;
+      },
       discard: () => setSettings((s) => ({ ...s, ...JSON.parse(s.saved) })),
       resetAll: () => {
         const D = defaultSettings();
         setSettings({ ...D, saved: snapshot(D) });
       },
       /** Thử Bonia's quick settings: change and save at once. */
-      applyNow: (k, v) => applySaved((vs) => ({ ...vs, [k]: { v, st: "ok", src: owner } })),
+      applyNow: (k, v) => saveNow((vs) => ({ ...vs, [k]: { v, st: "ok", src: owner } })),
       /** Demo: load a profile from the AI import ({ profile } or { values, rooms }); unknown keys keep the defaults. */
       loadProfile: (data) => {
         const prof = data && data.profile ? data.profile : data;
@@ -233,12 +344,13 @@ export function AppStateProvider({ children }) {
         return true;
       },
       /** A Thử Bonia correction: [guest line, what Bonia should say], saved at once. */
-      addFix: (q, a) => applySaved((vs) => ({ ...vs, fixes: { v: [...((vs.fixes && vs.fixes.v) || []), [q, a]], st: "ok", src: { t: "test" } } })),
+      addFix: (q, a) => saveNow((vs) => ({ ...vs, fixes: { v: [...((vs.fixes && vs.fixes.v) || []), [q, a]], st: "ok", src: { t: "test" } } })),
     };
-  }, []);
+  }, [demo, persist]);
 
   const value = {
-    reqs, calls, now, pickups, offline, focus, copied, settings, unpaid: !INVOICE.paid,
+    demo, account, signIn, signOut, reloadAccount: loadAccount, lookup, startLookup, startBlank, dismissLookup: () => setLookup(null),
+    reqs, calls, now, pickups, offline, focus, copied, settings, unpaid: demo && !INVOICE.paid,
     startCall, listen, later, markDone, copy, resetDemo, toggleOffline, setFocus,
     elapsed, ...settingsApi,
   };

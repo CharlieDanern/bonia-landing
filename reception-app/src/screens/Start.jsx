@@ -1,29 +1,36 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Orb } from "../components/Orb.jsx";
 import { StoreQR } from "../components/StoreQR.jsx";
-import { flat } from "../data/settings.js";
-import { SECTORS } from "../data/sectors.js";
 import { BONIA_MARK } from "../lib/assets.js";
 import { useLayout } from "../layout.jsx";
 import { useApp } from "../state.jsx";
+import { api } from "../api.js";
 
-// Bắt đầu (handoff 13 + brief v3 §3): the phone app does sign-up, forwarding
-// and the test call; the web then logs in with a code sent to the app, picks
-// the sector, lets Bonia search the internet, reviews (Cài đặt), tries Bonia,
-// and finally switches the number to Bonia Tiếp tân with an explicit step.
-// Sample flow: any 6-digit code works; 0900 000 999 shows "no account".
+// Bắt đầu (founder 2026-10-05): the phone app does sign-up, forwarding and
+// the test call; the web only asks for the phone number and the code the
+// Bonia app receives as a notification, then opens Cài đặt, which offers to
+// fill everything from the web. Demo mode: any 6-digit code works;
+// 0900 000 999 shows "no account".
 
 const MONO = "'JetBrains Mono', monospace";
 const SERIF = "'Source Serif 4', Georgia, serif";
+const RESEND_S = 30;
 
-export const STEPS = {
-  "": "login", "nhap-ma": "code", "khong-nhan-ma": "nocode", "chua-co-tai-khoan": "noacct", "cai-ung-dung": "sales",
-  "linh-vuc": "sector", tim: "ask", "dang-tim": "searching", "gan-xong": "hub", "bat-dau-nghe-may": "golive", xong: "live",
-};
+export const STEPS = { "": "login", "nhap-ma": "code", "khong-nhan-ma": "nocode", "chua-co-tai-khoan": "noacct", "cai-ung-dung": "sales" };
 const PATH = Object.fromEntries(Object.entries(STEPS).map(([p, s]) => [s, p ? `/bat-dau/${p}` : "/bat-dau"]));
 
-const SOURCES = [["Google Maps", 14, "✓ ĐÃ ĐỌC"], ["Booking.com", 12, "✓ ĐÃ ĐỌC"], ["Agoda", 6, "✓ ĐÃ ĐỌC"], ["Trang web khách sạn", 7, "✓ ĐÃ ĐỌC"], ["Facebook", 2, "✓ ĐÃ ĐỌC"], ["Traveloka", 0, "— KHÔNG TÌM THẤY"]];
+// what each backend refusal means for the owner
+const ERRORS = {
+  phone: "Số điện thoại chưa đúng.",
+  no_device: "Điện thoại này chưa nhận được thông báo từ Bonia. Mở ứng dụng Bonia, cho phép thông báo, rồi thử lại.",
+  too_many_attempts: "Thử quá nhiều lần. Đợi vài phút rồi thử lại.",
+  wrong: "Mã chưa đúng. Kiểm tra lại thông báo mới nhất trong ứng dụng Bonia.",
+  expired: "Mã đã hết hạn. Bấm gửi lại mã.",
+  too_many: "Nhập sai quá nhiều lần. Bấm gửi lại mã.",
+  no_code: "Mã đã hết hạn. Bấm gửi lại mã.",
+  network: "Không kết nối được. Kiểm tra mạng rồi thử lại.",
+};
+const errorText = (e) => (e?.error === "too_soon" ? `Mã vừa được gửi. Đợi ${Math.ceil((e.retry_in_ms || 30000) / 1000)} giây rồi thử lại.` : ERRORS[e?.error] || "Có lỗi, thử lại sau ít phút.");
 
 function session(key, v) {
   try {
@@ -35,7 +42,7 @@ function session(key, v) {
   return null;
 }
 
-/** /start/VNPT-HCM-0123: a salesperson's link. Remembers the referral, opens step 1. */
+/** /start/VNPT-HCM-0123: a salesperson's link. Remembers the referral, opens the app install. */
 export function StartLink({ code }) {
   const [, navigate] = useLocation();
   useEffect(() => {
@@ -52,30 +59,68 @@ export function Start({ step: slug = "" }) {
   const [, navigate] = useLocation();
   const step = STEPS[slug] || "login";
   const go = (s) => navigate(PATH[s]);
-  const [tel, setTel] = useState(() => session("tt3.phone") || "0900 000 300");
+  const [tel, setTel] = useState(() => session("tt3.phone") || (app.demo ? "0900 000 300" : ""));
   const [code, setCode] = useState("");
-  const [srcN, setSrcN] = useState(0);
-  const iv = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [resendAt, setResendAt] = useState(0);
+  const [, setTick] = useState(0);
   const ref = session("tt3.ref");
-  const progress = session("tt3.setup") || {};
 
+  // logged in already: straight to Cài đặt
   useEffect(() => {
-    clearInterval(iv.current);
-    if (step === "searching") {
-      setSrcN(0);
-      iv.current = setInterval(() => setSrcN((n) => {
-        if (n + 1 >= SOURCES.length + 1) clearInterval(iv.current);
-        return n + 1;
-      }), 900);
-    }
+    if (app.account.status === "in") navigate("/cai-dat", { replace: true });
+  }, [app.account.status, navigate]);
+  useEffect(() => {
+    setErr("");
     if (step === "code") setCode("");
-    return () => clearInterval(iv.current);
   }, [step]);
+  useEffect(() => {
+    if (resendAt <= Date.now()) return undefined;
+    const iv = setInterval(() => setTick((n) => n + 1), 1000);
+    return () => clearInterval(iv);
+  }, [resendAt]);
+  const wait = Math.max(0, Math.ceil((resendAt - Date.now()) / 1000));
 
-  // Headings as in the frames: login/code/nocode sit at 1.15 (login also -0.01em), the rest at 1.2.
-  const tight = ["login", "code", "nocode"].includes(step);
-  const h1 = { margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 24 : 28, lineHeight: tight ? 1.15 : 1.2, letterSpacing: step === "login" ? "-0.01em" : undefined };
-  const primary = (h = 44, fs = 14) => ({ height: h, borderRadius: h / 2, fontSize: fs, textAlign: "center", width: "100%", display: "flex", alignItems: "center", justifyContent: "center" });
+  /** Ask the backend to push a code to the Bonia app on this number. */
+  const sendCode = async (then) => {
+    session("tt3.phone", tel);
+    setErr("");
+    if (app.demo) {
+      setResendAt(Date.now() + RESEND_S * 1000);
+      return go(tel.replace(/\s/g, "") === "0900000999" ? "noacct" : then);
+    }
+    setBusy(true);
+    try {
+      await api.requestCode(tel);
+      setResendAt(Date.now() + RESEND_S * 1000);
+      go(then);
+    } catch (e) {
+      if (e.error === "no_account") go("noacct");
+      else setErr(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const verify = async (c) => {
+    if (app.demo) return void setTimeout(() => navigate("/cai-dat?moi=1"), 350);
+    setBusy(true);
+    setErr("");
+    try {
+      const { token } = await api.verify(tel, c);
+      await app.signIn(token);
+      navigate("/cai-dat");
+    } catch (e) {
+      setErr(errorText(e));
+      setCode("");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const h1 = { margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 24 : 28, lineHeight: 1.15, letterSpacing: step === "login" ? "-0.01em" : undefined };
+  const primary = (h = 44, fs = 14) => ({ height: h, borderRadius: h / 2, fontSize: fs, textAlign: "center", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: busy ? 0.6 : 1 });
   const steps = (list) => (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {list.map((t, i) => (
@@ -86,33 +131,36 @@ export function Start({ step: slug = "" }) {
       ))}
     </div>
   );
+  const errLine = err && <span role="alert" style={{ fontSize: 13, lineHeight: 1.5, color: "#A0412D" }}>{err}</span>;
 
   let body = null;
   if (step === "login") {
     body = (
-      <>
+      <form style={{ display: "contents" }} onSubmit={(e) => { e.preventDefault(); if (!busy && tel.replace(/\D/g, "").length >= 9) sendCode("code"); }}>
         <h1 style={h1}>Đăng nhập</h1>
         <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <span style={{ fontSize: 13, color: "#4A4239" }}>Số điện thoại đã cài Bonia</span>
-          <input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="tel" autoComplete="tel" style={{ height: 46, border: "1px solid #D9D0BF", borderRadius: 10, padding: "0 14px", fontFamily: MONO, fontSize: 17, background: "#fff", color: "#1F1B16" }} />
+          <input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="tel" autoComplete="tel" placeholder="0909 123 456" style={{ height: 46, border: "1px solid #D9D0BF", borderRadius: 10, padding: "0 14px", fontFamily: MONO, fontSize: 17, background: "#fff", color: "#1F1B16" }} />
         </label>
-        <button type="button" className="b-primary" onClick={() => { session("tt3.phone", tel); go(tel.replace(/\s/g, "") === "0900000999" ? "noacct" : "code"); }} style={primary(46, 14.5)}>Gửi mã tới ứng dụng Bonia</button>
+        {errLine}
+        <button type="submit" className="b-primary" disabled={busy} style={primary(46, 14.5)}>{busy ? "Đang gửi…" : "Gửi mã tới ứng dụng Bonia"}</button>
         <span style={{ fontSize: 13, color: "#6E6255", textAlign: "center" }}>Chưa có ứng dụng Bonia? <Link href={PATH.noacct}>Cài ứng dụng</Link></span>
-      </>
+      </form>
     );
   } else if (step === "code") {
     body = (
       <>
         <h1 style={h1}>Nhập mã</h1>
-        <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239" }}>Mã đã gửi tới ứng dụng Bonia trên số <span style={{ fontFamily: MONO, color: "#1F1B16" }}>{tel}</span>.</span>
+        <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239" }}>Mã đã gửi tới ứng dụng Bonia trên số <span style={{ fontFamily: MONO, color: "#1F1B16" }}>{tel}</span>, trong thông báo mới nhất.</span>
         {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
         <input
           value={code}
           autoFocus
+          disabled={busy}
           onChange={(e) => {
             const c = e.target.value.replace(/\D/g, "").slice(0, 6);
             setCode(c);
-            if (c.length === 6) setTimeout(() => go("sector"), 350);
+            if (c.length === 6) verify(c);
           }}
           inputMode="numeric"
           autoComplete="one-time-code"
@@ -120,9 +168,12 @@ export function Start({ step: slug = "" }) {
           placeholder="••••••"
           style={{ height: 56, border: "2px solid #7B4A2D", borderRadius: 10, padding: "0 14px", fontFamily: MONO, fontSize: 24, letterSpacing: "0.5em", textAlign: "center", background: "#fff", color: "#1F1B16" }}
         />
+        {errLine}
         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 14 }}>
           <button type="button" onClick={() => go("nocode")} style={{ minHeight: 44, color: "#7B4A2D", fontSize: 14 }}>Không nhận được mã?</button>
-          <span style={{ fontFamily: MONO, fontSize: 13, color: "#6E6255", alignSelf: "center" }}>Gửi lại sau 0:45</span>
+          {wait > 0
+            ? <span style={{ fontFamily: MONO, fontSize: 13, color: "#6E6255", alignSelf: "center" }}>Gửi lại sau 0:{String(wait).padStart(2, "0")}</span>
+            : <button type="button" disabled={busy} onClick={() => sendCode("code")} style={{ minHeight: 44, color: "#7B4A2D", fontSize: 14 }}>Gửi lại mã</button>}
         </div>
       </>
     );
@@ -130,22 +181,23 @@ export function Start({ step: slug = "" }) {
     body = (
       <>
         <h1 style={h1}>Không nhận được mã?</h1>
-        {steps(["Mở ứng dụng Bonia trên điện thoại có số này.", "Mã nằm trong thông báo mới nhất, hoặc ở mục Thông báo trong ứng dụng.", "Chưa có ứng dụng? Cài Bonia rồi đăng ký bằng số này trước."])}
+        {steps(["Mở ứng dụng Bonia trên điện thoại có số này, và cho phép Bonia gửi thông báo.", "Mã nằm trong thông báo mới nhất trên điện thoại.", "Chưa có ứng dụng? Cài Bonia rồi đăng ký bằng số này trước."])}
         <div style={{ padding: 14, borderRadius: 14, background: "#fff", border: "1px solid #D9D0BF", display: "flex", gap: 12, alignItems: "center" }}>
           <img src={BONIA_MARK} alt="" style={{ height: 30, width: "auto" }} />
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <span style={{ fontSize: 13, fontWeight: 600 }}>Bonia · bây giờ</span>
-            <span style={{ fontSize: 13.5, color: "#4A4239" }}>Mã đăng nhập Bonia Tiếp tân: <span style={{ fontFamily: MONO, color: "#1F1B16" }}>482 913</span></span>
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Mã đăng nhập Bonia Tiếp tân</span>
+            <span style={{ fontSize: 13.5, color: "#4A4239" }}><span style={{ fontFamily: MONO, color: "#1F1B16" }}>482913</span>. Mã hết hạn sau 5 phút.</span>
           </div>
         </div>
-        <button type="button" className="b-primary" onClick={() => go("code")} style={primary()}>Gửi lại mã</button>
+        {errLine}
+        <button type="button" className="b-primary" disabled={busy || wait > 0} onClick={() => sendCode("code")} style={primary()}>{wait > 0 ? `Gửi lại sau ${wait} giây` : "Gửi lại mã"}</button>
       </>
     );
   } else if (step === "noacct") {
     body = (
       <>
         <h1 style={h1}>Số này chưa dùng Bonia.</h1>
-        <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239" }}>Cài ứng dụng Bonia trên điện thoại này trước.</span>
+        <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239" }}>Cài ứng dụng Bonia trên điện thoại này và đăng ký bằng số này trước.</span>
         <StoreQR />
         <button type="button" className="b-primary" onClick={() => go("login")} style={primary()}>Tôi đã cài xong</button>
       </>
@@ -160,119 +212,10 @@ export function Start({ step: slug = "" }) {
         <button type="button" className="b-primary" onClick={() => go("login")} style={primary()}>Tôi đã cài xong</button>
       </>
     );
-  } else if (step === "sector") {
-    body = (
-      <>
-        <h1 style={h1}>Bonia nghe máy cho</h1>
-        <div role="radiogroup" aria-label="Lĩnh vực" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          {SECTORS.map((s) => (
-            <button
-              key={s.key}
-              type="button"
-              role="radio"
-              aria-checked={s.ready}
-              disabled={!s.ready}
-              style={{ minHeight: 64, padding: "12px 14px", border: s.ready ? "2px solid #7B4A2D" : "1px solid #E4DCCB", borderRadius: 12, background: s.ready ? "#FBF5EC" : "#F7F3EC", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", gap: 4, cursor: s.ready ? "pointer" : "default", textAlign: "left" }}
-            >
-              <span style={{ fontSize: 14.5, fontWeight: 600, color: s.ready ? "#1F1B16" : "#6E6255" }}>{s.label}</span>
-              <span style={{ fontSize: 12.5, color: "#6E6255" }}>{s.desc}</span>
-            </button>
-          ))}
-        </div>
-        <button type="button" className="b-primary" onClick={() => go("ask")} style={primary()}>Tiếp tục</button>
-      </>
-    );
-  } else if (step === "ask") {
-    const field = (l, v) => (
-      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <span style={{ fontSize: 13, color: "#4A4239" }}>{l}</span>
-        <input defaultValue={v} style={{ height: 44, border: "1px solid #D9D0BF", borderRadius: 10, padding: "0 12px", fontSize: 14.5, background: "#fff" }} />
-      </label>
-    );
-    body = (
-      <>
-        <h1 style={h1}>Để Bonia tự tìm thông tin khách sạn của bạn trên mạng?</h1>
-        {field("Tên khách sạn", "Khách sạn Sân Nhài")}
-        {field("Khu vực", "Phường Xuân Hòa, TP.HCM")}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <button type="button" className="b-primary" onClick={() => go("searching")} style={primary(46, 14.5)}>Có, tìm giúp tôi</button>
-          <button type="button" className="b-ghost" onClick={() => go("hub")} style={primary(44, 14)}>Tôi tự điền</button>
-        </div>
-      </>
-    );
-  } else if (step === "searching") {
-    const found = SOURCES.slice(0, Math.min(srcN, SOURCES.length)).reduce((a, x) => a + x[1], 0);
-    body = (
-      <>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
-          <span style={{ fontFamily: SERIF, fontSize: phone ? 72 : 88, lineHeight: 1, color: "#7B4A2D" }}>{found}</span>
-          <span style={{ fontSize: 15, color: "#4A4239" }}>thông tin tìm được</span>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          {SOURCES.map(([l, n, s], i) => {
-            const done = srcN > i;
-            const cur = srcN === i;
-            return (
-              <div key={l} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, minHeight: 40, borderTop: "1px solid #E4DCCB", opacity: done || cur ? 1 : 0.45, transition: "opacity 400ms ease" }}>
-                <span style={{ fontSize: 13.5 }}>{l}</span>
-                <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.12em", color: done ? (n ? "#4A6B3A" : "#6E6255") : cur ? "#7B4A2D" : "#6E6255", whiteSpace: "nowrap" }}>{done ? s : cur ? "ĐANG ĐỌC…" : "CHỜ"}</span>
-              </div>
-            );
-          })}
-        </div>
-        {srcN > SOURCES.length && <button type="button" className="b-primary" onClick={() => go("hub")} style={primary(46, 14.5)}>Xem lại thông tin</button>}
-      </>
-    );
-  } else if (step === "hub") {
-    const items = [
-      { done: !!progress.reviewed, l: "Xem lại thông tin", sub: progress.reviewed ? "Đã xem lại" : "Còn 12 mục cần xem lại", href: "/cai-dat?xem-lai=1", mark: "reviewed" },
-      { done: !!progress.tested, l: "Thử Bonia", sub: progress.tested ? "Đã gọi thử" : "Gọi như một khách thật, sửa chỗ chưa đúng", href: "/thu-bonia", mark: "tested" },
-      { done: false, l: "Bắt đầu nghe máy", sub: "Bonia nghe máy cho khách sạn", href: PATH.golive },
-    ];
-    body = (
-      <>
-        <h1 style={h1}>Gần xong</h1>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {items.map((h, i) => (
-            <Link
-              key={h.l}
-              href={h.href}
-              onClick={() => h.mark && session("tt3.setup", { ...progress, [h.mark]: true })}
-              style={{ display: "grid", gridTemplateColumns: "28px minmax(0,1fr) auto", gap: 12, alignItems: "center", minHeight: 56, padding: "10px 12px", borderRadius: 12, border: "1px solid #D9D0BF", background: "#fff", color: "#1F1B16" }}
-            >
-              <span style={{ width: 28, height: 28, borderRadius: 14, border: `1px solid ${h.done ? "#4A6B3A" : "#7B4A2D"}`, background: h.done ? "#EEF0E6" : "#fff", color: h.done ? "#4A6B3A" : "#7B4A2D", fontFamily: MONO, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>{h.done ? "✓" : i + 1}</span>
-              <span style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <span style={{ fontSize: 14, fontWeight: 600 }}>{h.l}</span>
-                <span style={{ fontSize: 12, color: h.done ? "#4A6B3A" : "#6E6255" }}>{h.sub}</span>
-              </span>
-              <span style={{ color: "#7B4A2D", fontSize: 16 }}>→</span>
-            </Link>
-          ))}
-        </div>
-      </>
-    );
-  } else if (step === "golive") {
-    body = (
-      <>
-        <div style={{ display: "flex", justifyContent: "center" }}><Orb size={180} mood="idle" tone="warm" /></div>
-        <span style={{ fontSize: phone ? 14.5 : 15, lineHeight: 1.55, textWrap: "pretty" }}>Từ giờ, khi bạn không bắt máy, Bonia nghe máy cho <b style={{ fontWeight: 600 }}>{flat(app.settings).name}</b> và nói:</span>
-        <div style={{ padding: "16px 18px", borderRadius: 14, background: "#FAF7F1", border: "1px solid #EFE9DD", fontFamily: SERIF, fontStyle: "italic", fontSize: 18, lineHeight: 1.45 }}>“{flat(app.settings).greeting}”</div>
-        <button type="button" className="b-primary" onClick={() => go("live")} style={primary(46, 14.5)}>Bắt đầu nghe máy</button>
-        <button type="button" onClick={() => go("hub")} style={{ height: 44, fontSize: 14, color: "#4A4239", textAlign: "center" }}>Chưa, để sau</button>
-      </>
-    );
-  } else if (step === "live") {
-    body = (
-      <>
-        <div style={{ display: "flex", justifyContent: "center" }}><Orb size={200} mood="bonia" tone="green" lively pickup={1} /></div>
-        <h1 style={{ ...h1, textAlign: "center" }}>Bonia đang nghe máy cho {flat(app.settings).name}</h1>
-        <Link href="/" className="b-primary" style={primary(46, 14.5)}>Vào Trực tiếp</Link>
-      </>
-    );
   }
 
   return (
-    <div style={{ position: "absolute", inset: 0, background: step === "live" ? "#EEF0E6" : "#F2EEE6", transition: "background-color 900ms ease", overflow: "hidden" }}>
+    <div style={{ position: "absolute", inset: 0, background: "#F2EEE6", overflow: "hidden" }}>
       <div style={{ position: "absolute", left: 0, right: 0, top: phone ? "var(--tt-top)" : 12, height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", padding: `0 ${phone ? 20 : 40}px` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img src={BONIA_MARK} alt="Bonia" style={{ height: 22, width: "auto" }} />
