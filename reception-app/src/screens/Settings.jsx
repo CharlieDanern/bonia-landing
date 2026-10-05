@@ -467,7 +467,7 @@ function RoomCard({ r, i, open, onToggle, app, d, phone }) {
   const meta = [r.count && `${r.count} phòng`, r.size && `${r.size} m²`, r.bed, r.maxAdults && `tối đa ${r.maxAdults} người lớn`].filter(Boolean).join(" · ");
   const ok = r.st === "ok";
   // a price read on a booking site (the hotel's own site had none): an estimate until the owner saves
-  const otaPrice = !ok && r.priceSrc && (r.priceSrc.from || !["site", "owner"].includes(r.priceSrc.t)) && SOURCE_LABEL[r.priceSrc.t];
+  const otaPrice = !ok && r.priceSrc && !["site", "owner"].includes(r.priceSrc.t) && SOURCE_LABEL[r.priceSrc.t];
   return (
     <div data-f={`room:${i}`} style={{ background: "#fff", border: `1px ${ok ? "solid" : "dashed"} ${ok ? "#E4DCCB" : "#C9BCA5"}`, borderRadius: 10, overflow: "hidden" }}>
       <button type="button" onClick={onToggle} style={{ width: "100%", display: "flex", flexDirection: "column", gap: 3, padding: "9px 12px", textAlign: "left" }}>
@@ -479,7 +479,7 @@ function RoomCard({ r, i, open, onToggle, app, d, phone }) {
         <span style={{ fontFamily: MONO, fontSize: 11, color: "#1F1B16", lineHeight: 1.5 }}>{parts.join(" · ") || "Chưa có giá"}</span>
         {parts.length > 0 && otaPrice && (
           <span style={{ fontSize: d.fs.tiny, color: "#7B4A2D" }}>
-            {r.priceSrc.from ? `Giá ước lượng: giá thấp nhất của khách sạn trên ${SOURCE_LABEL[r.priceSrc.t]}. Sửa lại theo giá phòng này` : `Giá tham khảo trên ${SOURCE_LABEL[r.priceSrc.t]}: sửa lại theo giá của khách sạn`}
+            {`Giá tham khảo trên ${SOURCE_LABEL[r.priceSrc.t]}: sửa lại theo giá của khách sạn`}
           </span>
         )}
       </button>
@@ -608,8 +608,8 @@ function LookupWait({ app, phone, d }) {
   return (
     <Overlay phone={phone}>
       <div style={{ display: "flex", justifyContent: "center" }}><Orb size={phone ? 150 : 180} mood="writing" tone="warm" lively /></div>
-      <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 22 : 25, lineHeight: 1.25, textAlign: "center" }}>{l.status === "pricing" ? `Bonia đang tìm giá phòng tham khảo của ${l.picked.name}…` : reading ? `Bonia đang đọc thông tin của ${l.picked.name}…` : `Bonia đang tìm ${l.name} trên mạng…`}</h2>
-      <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239", textAlign: "center" }}>{l.status === "pricing" ? "Trang của khách sạn chưa ghi giá, nên Bonia lấy giá ước lượng trên Agoda, Trip.com, Traveloka. Sắp xong." : reading ? "Thường mất 1–2 phút. Cứ để trang này mở, xong Bonia điền sẵn vào Cài đặt để bạn xem lại." : "Vài giây thôi. Bonia sẽ hỏi bạn đúng khách sạn nào trước khi điền."}</span>
+      <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 22 : 25, lineHeight: 1.25, textAlign: "center" }}>{l.status === "pricing" ? `Bonia đang tìm giá từng loại phòng của ${l.picked.name}…` : reading ? `Bonia đang đọc thông tin của ${l.picked.name}…` : `Bonia đang tìm ${l.name} trên mạng…`}</h2>
+      <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239", textAlign: "center" }}>{l.status === "pricing" ? "Trang của khách sạn chưa ghi đủ giá, nên Bonia lấy giá từng loại phòng trên Agoda, Trip.com, Traveloka. Sắp xong." : reading ? "Thường mất 1–2 phút. Cứ để trang này mở, xong Bonia điền sẵn vào Cài đặt để bạn xem lại." : "Vài giây thôi. Bonia sẽ hỏi bạn đúng khách sạn nào trước khi điền."}</span>
       <span style={{ fontFamily: MONO, fontSize: 22, color: "#7B4A2D", textAlign: "center" }}>{Math.floor(s / 60)}:{String(s % 60).padStart(2, "0")}</span>
       <span style={{ fontSize: d.fs.tiny, color: "#6E6255", textAlign: "center", lineHeight: 1.6 }}>{SOURCES_READ}</span>
     </Overlay>
