@@ -10,6 +10,7 @@
 //   live    1 always in the call prompt · 2 if the budget allows, else a one-line
 //           summary + backend · 3 backend lookup only · 0 not part of any prompt
 //   note    a locked line shown under the field (a system rule, not editable)
+//   say     the label in the prompts when the owner's label carries a hint
 //   opts    options for chips / multi
 //
 // A stored value is { v, st, src, alts } (see hotelValue below).
@@ -49,11 +50,11 @@ export const FIELDS = {
   roomAmenities: { label: "Tiện nghi có ở mọi phòng", type: "multi", kind: "D", live: 2, opts: ["Máy lạnh", "Quạt", "Wifi", "Nước nóng", "TV", "Tủ lạnh", "Máy sấy tóc", "Ấm siêu tốc", "Nước suối", "Két sắt", "Bàn làm việc"] },
   priceBasis: { label: "Giá tính theo", type: "chips", kind: "D", live: 1, opts: ["Theo phòng", "Theo người"] },
   priceTax: { label: "Thuế, phí dịch vụ", type: "chips", kind: "D", live: 1, opts: ["Giá đã gồm thuế, phí", "Chưa gồm thuế, phí"] },
-  priceIncludes: { label: "Giá đã gồm (từng món cụ thể)", type: "tags", kind: "D", live: 1 },
+  priceIncludes: { label: "Giá đã gồm (từng món cụ thể)", say: "Giá đã gồm", type: "tags", kind: "D", live: 1 },
   weekendNights: { label: "Đêm tính giá cuối tuần", type: "multi", kind: "D", live: 1, opts: ["Thứ Sáu", "Thứ Bảy", "Chủ nhật"] },
   extraPerson: { label: "Trẻ em và người thêm", type: "list", kind: "C", live: 2, cols: ["Ai", "Phụ thu"] },
   minNights: { label: "Số đêm tối thiểu", type: "text", kind: "C", live: 2 },
-  holidays: { label: "Ngày lễ, Tết (ngày cụ thể)", type: "list", kind: "C", live: 3, cols: ["Ngày, vd 30/4–2/5", "Giá"] },
+  holidays: { label: "Ngày lễ, Tết (ngày cụ thể)", say: "Ngày lễ, Tết", type: "list", kind: "C", live: 3, cols: ["Ngày, vd 30/4–2/5", "Giá"] },
   promos: { label: "Khuyến mãi, combo", type: "list", kind: "D", live: 2, cols: ["Tên", "Chi tiết, hạn"] },
 
   // 05 · Chính sách
