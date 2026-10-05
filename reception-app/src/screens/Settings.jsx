@@ -411,6 +411,7 @@ function LookupWait({ app, phone, d }) {
   }, []);
   const l = app.lookup;
   const s = Math.max(0, Math.floor((Date.now() - l.startedAt) / 1000));
+  const reading = l.status === "running";
   if (l.status === "failed") {
     return (
       <Overlay phone={phone}>
@@ -426,10 +427,53 @@ function LookupWait({ app, phone, d }) {
   return (
     <Overlay phone={phone}>
       <div style={{ display: "flex", justifyContent: "center" }}><Orb size={phone ? 150 : 180} mood="writing" tone="warm" lively /></div>
-      <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 22 : 25, lineHeight: 1.25, textAlign: "center" }}>Bonia đang tìm thông tin của {l.name} trên mạng…</h2>
-      <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239", textAlign: "center" }}>Thường mất 1–2 phút. Cứ để trang này mở, xong Bonia điền sẵn vào Cài đặt để bạn xem lại.</span>
+      <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 22 : 25, lineHeight: 1.25, textAlign: "center" }}>{reading ? `Bonia đang đọc thông tin của ${l.picked.name}…` : `Bonia đang tìm ${l.name} trên mạng…`}</h2>
+      <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239", textAlign: "center" }}>{reading ? "Thường mất 1–2 phút. Cứ để trang này mở, xong Bonia điền sẵn vào Cài đặt để bạn xem lại." : "Vài giây thôi. Bonia sẽ hỏi bạn đúng khách sạn nào trước khi điền."}</span>
       <span style={{ fontFamily: MONO, fontSize: 22, color: "#7B4A2D", textAlign: "center" }}>{Math.floor(s / 60)}:{String(s % 60).padStart(2, "0")}</span>
       <span style={{ fontSize: d.fs.tiny, color: "#6E6255", textAlign: "center", lineHeight: 1.6 }}>{SOURCES_READ}</span>
+    </Overlay>
+  );
+}
+
+/** "Có phải khách sạn của bạn không?" — always asked, even with one match; a look-alike is never filled in. */
+function LookupChoose({ app, phone, d }) {
+  const l = app.lookup;
+  const none = l.status === "none";
+  const [other, setOther] = useState(none);
+  const [url, setUrl] = useState("");
+  const okUrl = /^https?:\/\/\S+\.\S+/.test(url.trim());
+  const host = (u) => {
+    try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; }
+  };
+  return (
+    <Overlay phone={phone}>
+      <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.18em", color: "#7B4A2D" }}>XÁC NHẬN KHÁCH SẠN</span>
+      <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 23 : 26, lineHeight: 1.2 }}>{none ? `Bonia chưa thấy ${l.name} trên mạng` : l.candidates.length === 1 ? "Có phải khách sạn của bạn không?" : "Khách sạn của bạn là chỗ nào?"}</h2>
+      <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239" }}>{none ? "Dán link trang web, Google Maps hoặc Booking của khách sạn để Bonia tìm lại, hoặc bạn tự điền." : "Bonia chỉ điền thông tin của đúng chỗ bạn chọn. Chỗ trùng hoặc gần giống tên sẽ bị bỏ qua."}</span>
+      {!none && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {l.candidates.map((c, i) => (
+            <button key={i} type="button" onClick={() => app.pickCandidate(i)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3, textAlign: "left", padding: "12px 14px", border: "1px solid #D9D0BF", borderRadius: 12, background: "#FBF8F2", color: "#1F1B16" }}>
+              <span style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.3 }}>{c.name}</span>
+              {c.address && <span style={{ fontSize: 13, lineHeight: 1.45, color: "#4A4239" }}>{c.address}</span>}
+              <span style={{ fontSize: d.fs.tiny, color: "#6E6255", lineHeight: 1.5 }}>{[c.phone, host(c.url) || SOURCE_LABEL[c.source]].filter(Boolean).join(" · ")}</span>
+              <span style={{ marginTop: 4, fontSize: 13, color: "#7B4A2D", fontWeight: 600 }}>Đúng, chỗ này →</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {other ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={{ fontSize: 13, color: "#4A4239" }}>Link trang web, Google Maps hoặc Booking của khách sạn</span>
+            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" inputMode="url" style={{ height: 44, border: "1px solid #D9D0BF", borderRadius: 10, padding: "0 12px", fontSize: 14.5, background: "#fff", color: "#1F1B16" }} />
+          </label>
+          <button type="button" className="b-primary" disabled={!okUrl} onClick={() => app.startLookup({ name: l.name, area: l.area || "", urls: [url.trim()] })} style={{ ...CENTER, height: 46, borderRadius: 23, fontSize: 14.5, opacity: okUrl ? 1 : 0.5 }}>Tìm lại với link này</button>
+        </div>
+      ) : (
+        <button type="button" className="b-ghost" onClick={() => setOther(true)} style={{ ...CENTER, height: 44, borderRadius: 22, fontSize: 14 }}>Không có trong danh sách</button>
+      )}
+      <button type="button" onClick={() => app.startBlank(l.name)} style={{ ...CENTER, height: 40, fontSize: 13.5, color: "#6E6255" }}>Tôi tự điền</button>
     </Overlay>
   );
 }
@@ -458,7 +502,8 @@ export function Settings() {
   // first visit: no profile saved yet (demo: right after the demo login, /cai-dat?moi=1)
   const firstRun = app.demo ? new URLSearchParams(search).has("moi") : !!app.account.firstRun;
   const offer = firstRun && !app.lookup;
-  const waiting = app.lookup && (app.lookup.status === "running" || app.lookup.status === "failed");
+  const waiting = app.lookup && ["identifying", "running", "failed"].includes(app.lookup.status);
+  const choosing = app.lookup && ["choose", "none"].includes(app.lookup.status);
   const found = app.lookup && app.lookup.status === "done" ? app.lookup : null;
 
   const pend = pendingList(app.settings);
@@ -638,6 +683,7 @@ export function Settings() {
       {phone && <PhoneTabs active={2} />}
       {offer && <LookupOffer app={app} phone={phone} d={d} />}
       {waiting && <LookupWait app={app} phone={phone} d={d} />}
+      {choosing && <LookupChoose key={app.lookup.startedAt} app={app} phone={phone} d={d} />}
     </div>
   );
 }

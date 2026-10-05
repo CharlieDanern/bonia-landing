@@ -32,8 +32,14 @@ export function copyToClipboard(text) {
 
 const snapshot = (s) => JSON.stringify({ values: s.values, rooms: s.rooms });
 const withSaved = (p) => ({ ...p, saved: snapshot(p) });
-// the demo's lookup: the sample hotel, found after a few seconds
+// the demo's lookup: two places with the name (one a look-alike), then the sample hotel after a few seconds
+const DEMO_IDENTIFY_MS = 2500;
 const DEMO_LOOKUP_MS = 6000;
+const DEMO_CANDIDATES = [
+  { name: "Khách sạn Sân Nhài", address: "27 đường Sân Nhài, phường Xuân Hòa, TP.HCM", phone: "028 3930 0000", url: "https://www.booking.com/hotel/vn/san-nhai.html", source: "booking" },
+  { name: "Sân Nhài Homestay", address: "14 Hoa Hồng, phường 2, Đà Lạt", phone: "", url: "https://www.agoda.com/san-nhai-homestay", source: "agoda" },
+];
+const LOOKUP_POLL_MS = 2000;
 
 function loadSettings() {
   const D = defaultSettings();
@@ -80,8 +86,12 @@ export function AppStateProvider({ children }) {
   const [demo] = useState(isDemo);
   // account: demo · loading · out · in ({ phone, version, firstRun: no profile saved yet })
   const [account, setAccount] = useState(() => (demo ? { status: "demo" } : token.get() ? { status: "loading" } : { status: "out" }));
-  // the AI lookup: null · { status: running | done | failed, name, startedAt, notes, found, filled, error }
+  // the AI lookup: null · { status: identifying | choose | none | running | done | failed | skipped,
+  //   name, startedAt, candidates, picked, notes, found, filled, error }
+  // The owner confirms which place before anything is filled (founder 2026-10-05: never a look-alike hotel).
   const [lookup, setLookup] = useState(null);
+  const lookupRef = useRef(null);
+  lookupRef.current = lookup;
   const [reqs, setReqs] = useState(() => (demo ? REQUESTS.map((r) => ({ ...r })) : []));
   const [calls, setCalls] = useState([]);
   const [now, setNow] = useState(Date.now());
@@ -221,42 +231,68 @@ export function AppStateProvider({ children }) {
   }, []);
 
   // ── the AI lookup (founder 2026-10-05: fill every field, the owner edits and saves) ──
-  const startLookup = useCallback(async ({ name, area, urls }) => {
-    const startedAt = Date.now();
-    setLookup({ status: "running", name, startedAt });
-    const finish = (profile, notes, found) => {
-      const before = settingsRef.current;
-      const next = withAllFields(profile, name);
-      const filled = Object.values(next.values).filter((x) => x.st === "new" && x.v != null && x.v !== "" && !(Array.isArray(x.v) && !x.v.length)).length + next.rooms.length;
-      // unsaved on purpose: the owner reviews, then saves
-      setSettings({ ...next, saved: before.saved });
-      setLookup({ status: "done", name, startedAt, notes: notes || "", found, filled });
+  const finishLookup = useCallback((base, profile, notes, found) => {
+    const before = settingsRef.current;
+    const next = withAllFields(profile, base.picked?.name || base.name);
+    const filled = Object.values(next.values).filter((x) => x.st === "new" && x.v != null && x.v !== "" && !(Array.isArray(x.v) && !x.v.length)).length + next.rooms.length;
+    // unsaved on purpose: the owner reviews, then saves
+    setSettings({ ...next, saved: before.saved });
+    setLookup({ ...base, status: "done", notes: notes || "", found, filled });
+  }, []);
+
+  /** Polls a lookup job through its steps: identifying → choose (the owner picks) → running → done. */
+  const pollLookup = useCallback((id, base) => {
+    const tick = async () => {
+      try {
+        const j = await api.importStatus(id);
+        if (j.status === "identifying" || j.status === "running") return void timeouts.current.push(setTimeout(tick, LOOKUP_POLL_MS));
+        if (j.status === "choose") return setLookup({ ...base, status: "choose", jobId: id, candidates: j.candidates || [] });
+        if (j.status === "none") return setLookup({ ...base, status: "none" });
+        if (j.status === "done") return finishLookup(base, j.profile, j.notes, j.found);
+        setLookup({ ...base, status: "failed", error: j.error || "lookup_failed" });
+      } catch (e) {
+        setLookup({ ...base, status: "failed", error: e.error || "network" });
+      }
     };
+    timeouts.current.push(setTimeout(tick, LOOKUP_POLL_MS));
+  }, [finishLookup]);
+
+  const startLookup = useCallback(async ({ name, area, urls }) => {
+    const base = { name, area, startedAt: Date.now() };
+    setLookup({ ...base, status: "identifying" });
     if (demo) {
-      timeouts.current.push(setTimeout(() => {
-        const D = defaultSettings();
-        const found = { values: Object.fromEntries(Object.entries(D.values).map(([k, x]) => [k, x.st === "ok" && k !== "name" ? { ...x, st: "new", src: x.src || { t: "booking" } } : x])), rooms: D.rooms.map((r) => ({ ...r, st: "new" })) };
-        finish(found, "Bản demo: thông tin mẫu của Khách sạn Sân Nhài.", true);
-      }, DEMO_LOOKUP_MS));
+      timeouts.current.push(setTimeout(() => setLookup({ ...base, status: "choose", jobId: "demo", candidates: DEMO_CANDIDATES }), DEMO_IDENTIFY_MS));
       return;
     }
     try {
       const { job_id: id } = await api.startImport({ name, area, urls });
-      const poll = async () => {
-        try {
-          const j = await api.importStatus(id);
-          if (j.status === "running") return void timeouts.current.push(setTimeout(poll, 3000));
-          if (j.status === "done") return finish(j.profile, j.notes, j.found);
-          setLookup({ status: "failed", name, startedAt, error: j.error || "lookup_failed" });
-        } catch (e) {
-          setLookup({ status: "failed", name, startedAt, error: e.error || "network" });
-        }
-      };
-      timeouts.current.push(setTimeout(poll, 3000));
+      pollLookup(id, base);
     } catch (e) {
-      setLookup({ status: "failed", name, startedAt, error: e.error || "network" });
+      setLookup({ ...base, status: "failed", error: e.error || "network" });
     }
-  }, [demo]);
+  }, [demo, pollLookup]);
+
+  /** The owner's place: the full lookup reads only about it. */
+  const pickCandidate = useCallback(async (i) => {
+    const l = lookupRef.current;
+    if (!l || l.status !== "choose") return;
+    const base = { name: l.name, area: l.area, picked: l.candidates[i], startedAt: Date.now() };
+    setLookup({ ...base, status: "running" });
+    if (demo) {
+      timeouts.current.push(setTimeout(() => {
+        const D = defaultSettings();
+        const found = { values: Object.fromEntries(Object.entries(D.values).map(([k, x]) => [k, x.st === "ok" && k !== "name" ? { ...x, st: "new", src: x.src || { t: "booking" } } : x])), rooms: D.rooms.map((r) => ({ ...r, st: "new" })) };
+        finishLookup(base, found, "Bản demo: thông tin mẫu của Khách sạn Sân Nhài.", true);
+      }, DEMO_LOOKUP_MS));
+      return;
+    }
+    try {
+      await api.pickImport(l.jobId, i);
+      pollLookup(l.jobId, base);
+    } catch (e) {
+      setLookup({ ...base, status: "failed", error: e.error || "network" });
+    }
+  }, [demo, pollLookup, finishLookup]);
 
   /** "Tôi tự điền": a blank form with the hotel's name. */
   const startBlank = useCallback((name) => {
@@ -347,7 +383,7 @@ export function AppStateProvider({ children }) {
   }, [demo, persist]);
 
   const value = {
-    demo, account, signIn, signOut, reloadAccount: loadAccount, lookup, startLookup, startBlank, dismissLookup: () => setLookup(null),
+    demo, account, signIn, signOut, reloadAccount: loadAccount, lookup, startLookup, pickCandidate, startBlank, dismissLookup: () => setLookup(null),
     reqs, calls, now, pickups, offline, focus, copied, settings, unpaid: demo && !INVOICE.paid,
     startCall, listen, later, markDone, copy, resetDemo, toggleOffline, setFocus,
     elapsed, ...settingsApi,

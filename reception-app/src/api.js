@@ -51,4 +51,5 @@ export const api = {
   saveProfile: (profile, version) => call("PUT", "/reception/web/profile", { profile, version }),
   startImport: (input) => call("POST", "/reception/web/import", input),
   importStatus: (id) => call("GET", `/reception/web/import/${encodeURIComponent(id)}`),
+  pickImport: (id, index) => call("POST", `/reception/web/import/${encodeURIComponent(id)}/pick`, { index }),
 };
