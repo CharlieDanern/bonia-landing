@@ -154,7 +154,7 @@ export const SYSTEM_RULES = [
 export const placeholderOf = (def) => [def.ph, def.opt && "Để trống nếu không có"].filter(Boolean).join(". ") || undefined;
 
 /** Where a value came from. */
-export const SOURCE_LABEL = { site: "trang web", booking: "Booking.com", agoda: "Agoda", tripcom: "Trip.com", airbnb: "Airbnb", tripadvisor: "TripAdvisor", gmaps: "Google Maps", facebook: "Facebook", other: "nguồn khác", owner: "chủ nhập", test: "Thử Bonia" };
+export const SOURCE_LABEL = { site: "trang web", booking: "Booking.com", agoda: "Agoda", tripcom: "Trip.com", traveloka: "Traveloka", airbnb: "Airbnb", tripadvisor: "TripAdvisor", gmaps: "Google Maps", facebook: "Facebook", other: "nguồn khác", owner: "chủ nhập", test: "Thử Bonia" };
 
 /**
  * A stored value: { v, st, src, alts }
