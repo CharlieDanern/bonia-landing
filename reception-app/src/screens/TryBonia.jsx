@@ -191,6 +191,13 @@ export function TryBonia() {
         profile: { values: cur.values, rooms: cur.rooms },
         on: {
           state: (phase) => { if (S.current.live && S.current.phase !== phase) patch({ phase }); },
+          // the call's clock starts when Bonia picks up (her greeting is ready)
+          ready: () => {
+            const at = Date.now();
+            S.current = { ...S.current, t0: at };
+            patch({ t0: at });
+            setNow(at);
+          },
           level: (lv) => { if (Math.abs(lv - S.current.level) > 0.01) patch({ level: lv }); },
           transcript: (who, text) => {
             const w = who === "bonia" ? "B" : "K";
@@ -284,7 +291,7 @@ export function TryBonia() {
   const mood = !live || st.phase === "connecting" ? "idle" : st.phase === "speaking" ? "bonia" : st.phase === "thinking" ? "writing" : talking ? "guest" : "idle";
   const showPanel = live || !!run;
   const sec = Math.max(0, Math.floor((now - st.t0) / 1000));
-  const phaseLabel = { connecting: "ĐANG KẾT NỐI…", speaking: "BONIA ĐANG NÓI", thinking: "BONIA ĐANG NGHĨ…", listening: talking ? "BẠN ĐANG NÓI" : "BONIA ĐANG NGHE · MỜI BẠN NÓI" }[st.phase] || "";
+  const phaseLabel = { connecting: "ĐANG KẾT NỐI · BONIA SẮP NHẤC MÁY…", speaking: "BONIA ĐANG NÓI", thinking: "BONIA ĐANG NGHĨ…", listening: talking ? "BẠN ĐANG NÓI" : "BONIA ĐANG NGHE · MỜI BẠN NÓI" }[st.phase] || "";
   const phaseC = st.phase === "listening" ? "#4A6B3A" : "#7B4A2D";
   const o = out || {};
   const resultReq = { id: "test", name: o.name || null, room: o.room || null, number: "Máy này", at: run ? run.at : "", type: o.type || "Lời nhắn", urgent: !!o.urgent, summary: o.summary || "" };

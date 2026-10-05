@@ -32,8 +32,9 @@ registerProcessor("up8k", Up8k);
 `;
 
 /**
- * Starts a call. on: { state(phase: connecting | speaking | listening), level(rms), transcript(who, text),
- * request({ id, card, withdrawn }), end(), error(message) }. Resolves to { stop }.
+ * Starts a call. on: { state(phase: connecting | speaking | listening), ready(), level(rms), transcript(who, text),
+ * request({ id, card, withdrawn }), end(), error(message) }. Resolves to { stop }. "connecting" lasts until Bonia's
+ * greeting is ready (the server's 'ready'), so the call starts with her greeting; the mic goes up only from then.
  */
 export async function startRealCall({ profile, on }) {
   let ac;
@@ -64,11 +65,12 @@ export async function startRealCall({ profile, on }) {
   up.connect(sink);
   sink.connect(ac.destination);
   const stats = { rate: ac.sampleRate, sent: 0, maxLevel: 0, got: 0 };
+  let ready = false;
   if (import.meta.env.DEV) window.__boniaCall = stats; // local debugging only
   up.port.onmessage = (e) => {
     on.level?.(e.data.level);
     stats.maxLevel = Math.max(stats.maxLevel, e.data.level);
-    if (ws.readyState === 1) {
+    if (ready && ws.readyState === 1) {
       ws.send(e.data.pcm);
       stats.sent += 1;
     }
@@ -116,7 +118,7 @@ export async function startRealCall({ profile, on }) {
   let stopped = false;
   const tick = setInterval(() => {
     if (stopped) return;
-    on.state?.(ws.readyState === 0 ? "connecting" : voicedUntil > ac.currentTime ? "speaking" : "listening");
+    on.state?.(!ready ? "connecting" : voicedUntil > ac.currentTime ? "speaking" : "listening");
   }, 120);
   const stop = () => {
     if (stopped) return;
@@ -137,7 +139,10 @@ export async function startRealCall({ profile, on }) {
     }
     let m;
     try { m = JSON.parse(e.data); } catch { return undefined; }
-    if (m.type === "clearAudio") clear();
+    if (m.type === "ready") {
+      ready = true;
+      on.ready?.(m);
+    } else if (m.type === "clearAudio") clear();
     else if (m.type === "transcript") on.transcript?.(m.who, m.text);
     else if (m.type === "request") on.request?.(m);
     return undefined;
