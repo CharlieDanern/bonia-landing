@@ -248,7 +248,11 @@ export function AppStateProvider({ children }) {
     const tick = async () => {
       try {
         const j = await api.importStatus(id);
-        if (j.status === "identifying" || j.status === "running") return void timeouts.current.push(setTimeout(tick, LOOKUP_POLL_MS));
+        if (j.status === "identifying" || j.status === "running" || j.status === "pricing") {
+          // the wait screen says which step it is on ("pricing": reference prices from the booking sites)
+          if (j.status !== lookupRef.current?.status) setLookup((l) => (l ? { ...l, status: j.status } : l));
+          return void timeouts.current.push(setTimeout(tick, LOOKUP_POLL_MS));
+        }
         if (j.status === "choose") return setLookup({ ...base, status: "choose", jobId: id, candidates: j.candidates || [] });
         if (j.status === "none") return setLookup({ ...base, status: "none" });
         if (j.status === "done") return finishLookup(base, j.profile, j.notes, j.found);

@@ -121,6 +121,52 @@ const dateRange = (from, to) => {
   return from.slice(0, 4) === to.slice(0, 4) ? `${a.replace(/\/\d{4}$/, "")} – ${b}` : `${a} – ${b}`;
 };
 
+/** Hotline (founder 2026-10-05): one box per number, and a button for more. */
+function PhoneList({ value, onChange, d, input }) {
+  const rows = Array.isArray(value) ? value : value ? [String(value)] : [];
+  const shown = rows.length ? rows : [""];
+  const set = (i, t) => onChange(shown.map((x, k) => (k === i ? t : x)));
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-start" }}>
+      {shown.map((n, i) => (
+        <div key={i} style={{ display: "flex", gap: 5, alignItems: "center" }}>
+          <input value={n} onChange={(e) => set(i, e.target.value)} inputMode="tel" placeholder="0900 000 000" aria-label={`Số ${i + 1}`} style={{ ...input, width: 180, maxWidth: "100%", fontFamily: MONO }} />
+          {shown.length > 1 && <button type="button" aria-label="Xóa số này" onClick={() => onChange(shown.filter((_, k) => k !== i))} className="h-line" style={{ width: 28, height: 28, borderRadius: 14, fontSize: 11, lineHeight: 1, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#6E6255" }}>✕</button>}
+        </div>
+      ))}
+      <button type="button" onClick={() => onChange([...shown, ""])} style={{ height: d.btnSm, padding: "0 4px", fontSize: d.fs.small, color: "#7B4A2D" }}>+ Thêm số</button>
+    </div>
+  );
+}
+
+/**
+ * Hoạt động, trải nghiệm (founder 2026-10-05): each one is either "Đã gồm trong giá
+ * phòng" (a note: hours, booking ahead) or "Tính phí" with its price, two buttons
+ * so every owner says it the same way. Neither: not known yet (Bonia says it has
+ * no information).
+ */
+function PricedList({ value, onChange, d, input }) {
+  const rows = Array.isArray(value) ? value : [];
+  const set = (i, patch) => onChange(rows.map((r, k) => (k === i ? { ...r, ...patch } : r)));
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {rows.map((r, i) => (
+        <div key={i} style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center", padding: "7px 8px", border: "1px solid #EFE9DD", borderRadius: 9 }}>
+          <input value={r.name || ""} onChange={(e) => set(i, { name: e.target.value })} placeholder="Hoạt động, vd cưỡi ngựa" style={{ ...input, flex: "1 1 180px", minWidth: 0 }} />
+          <span style={{ display: "flex", gap: 5, flex: "none" }}>
+            <Chip d={d} filled on={r.included === true} onClick={() => set(i, { included: r.included === true ? null : true })}>Đã gồm trong giá phòng</Chip>
+            <Chip d={d} filled on={r.included === false} onClick={() => set(i, { included: r.included === false ? null : false })}>Tính phí</Chip>
+          </span>
+          {r.included === false && <input value={r.price || ""} onChange={(e) => set(i, { price: e.target.value })} placeholder="Giá, vd 150.000đ/người" style={{ ...input, flex: "1 1 150px", minWidth: 0 }} />}
+          {(r.included === true || (r.included == null && r.note)) && <input value={r.note || ""} onChange={(e) => set(i, { note: e.target.value })} placeholder="Ghi chú, vd buổi sáng 7:00–9:00" style={{ ...input, flex: "1 1 150px", minWidth: 0 }} />}
+          <button type="button" aria-label="Xóa hoạt động" onClick={() => onChange(rows.filter((_, k) => k !== i))} className="h-line" style={{ width: 28, height: 28, marginLeft: "auto", borderRadius: 14, fontSize: 11, lineHeight: 1, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#6E6255", flex: "none" }}>✕</button>
+        </div>
+      ))}
+      <button type="button" onClick={() => onChange([...rows, { name: "", included: null, price: "", note: "" }])} style={{ alignSelf: "flex-start", height: d.btnSm, padding: "0 4px", fontSize: d.fs.small, color: "#7B4A2D" }}>+ Thêm hoạt động</button>
+    </div>
+  );
+}
+
 /** "+ thêm" beside a multi's options (founder 2026-10-05: amenities the list doesn't have). */
 function AddItem({ list, onChange, d, input }) {
   const [draft, setDraft] = useState("");
@@ -336,6 +382,10 @@ function Control({ def, value, onChange, d, input, greeting, host, phone }) {
       return <ListRows value={value} onChange={onChange} cols={def.cols} d={d} input={input} />;
     case "promos":
       return <PromoList value={value} onChange={onChange} d={d} input={input} />;
+    case "phones":
+      return <PhoneList value={value} onChange={onChange} d={d} input={input} />;
+    case "priced":
+      return <PricedList value={value} onChange={onChange} d={d} input={input} />;
     case "holidays":
       return <HolidayList value={value} onChange={onChange} d={d} input={input} host={host} phone={phone} />;
     case "voice":
@@ -345,7 +395,7 @@ function Control({ def, value, onChange, d, input, greeting, host, phone }) {
   }
 }
 
-const TOP_ALIGNED = ["list", "area", "promos", "holidays"];
+const TOP_ALIGNED = ["list", "area", "promos", "holidays", "phones", "priced"];
 
 function FieldRow({ k, x, app, d, phone, greeting, host }) {
   const def = FIELDS[k];
@@ -416,6 +466,8 @@ function RoomCard({ r, i, open, onToggle, app, d, phone }) {
   if (r.monthly?.on) parts.push(`Theo tháng ${fmt(r.monthly.price)}đ`);
   const meta = [r.count && `${r.count} phòng`, r.size && `${r.size} m²`, r.bed, r.maxAdults && `tối đa ${r.maxAdults} người lớn`].filter(Boolean).join(" · ");
   const ok = r.st === "ok";
+  // a price read on a booking site (the hotel's own site had none): an estimate until the owner saves
+  const otaPrice = !ok && r.priceSrc && !["site", "owner"].includes(r.priceSrc.t) && SOURCE_LABEL[r.priceSrc.t];
   return (
     <div data-f={`room:${i}`} style={{ background: "#fff", border: `1px ${ok ? "solid" : "dashed"} ${ok ? "#E4DCCB" : "#C9BCA5"}`, borderRadius: 10, overflow: "hidden" }}>
       <button type="button" onClick={onToggle} style={{ width: "100%", display: "flex", flexDirection: "column", gap: 3, padding: "9px 12px", textAlign: "left" }}>
@@ -425,6 +477,7 @@ function RoomCard({ r, i, open, onToggle, app, d, phone }) {
         </span>
         {meta && <span style={{ fontSize: d.fs.small, color: "#4A4239", lineHeight: 1.4 }}>{meta}</span>}
         <span style={{ fontFamily: MONO, fontSize: 11, color: "#1F1B16", lineHeight: 1.5 }}>{parts.join(" · ") || "Chưa có giá"}</span>
+        {parts.length > 0 && otaPrice && <span style={{ fontSize: d.fs.tiny, color: "#7B4A2D" }}>Giá tham khảo trên {SOURCE_LABEL[r.priceSrc.t]}: sửa lại theo giá của khách sạn</span>}
       </button>
       {open && (
         <div style={{ padding: "10px 12px 12px", display: "flex", flexDirection: "column", gap: 10, borderTop: "1px solid #EFE9DD" }}>
@@ -535,7 +588,7 @@ function LookupWait({ app, phone, d }) {
   }, []);
   const l = app.lookup;
   const s = Math.max(0, Math.floor((Date.now() - l.startedAt) / 1000));
-  const reading = l.status === "running";
+  const reading = l.status === "running" || l.status === "pricing";
   if (l.status === "failed") {
     return (
       <Overlay phone={phone}>
@@ -551,8 +604,8 @@ function LookupWait({ app, phone, d }) {
   return (
     <Overlay phone={phone}>
       <div style={{ display: "flex", justifyContent: "center" }}><Orb size={phone ? 150 : 180} mood="writing" tone="warm" lively /></div>
-      <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 22 : 25, lineHeight: 1.25, textAlign: "center" }}>{reading ? `Bonia đang đọc thông tin của ${l.picked.name}…` : `Bonia đang tìm ${l.name} trên mạng…`}</h2>
-      <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239", textAlign: "center" }}>{reading ? "Thường mất 1–2 phút. Cứ để trang này mở, xong Bonia điền sẵn vào Cài đặt để bạn xem lại." : "Vài giây thôi. Bonia sẽ hỏi bạn đúng khách sạn nào trước khi điền."}</span>
+      <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 22 : 25, lineHeight: 1.25, textAlign: "center" }}>{l.status === "pricing" ? `Bonia đang tìm giá phòng tham khảo của ${l.picked.name}…` : reading ? `Bonia đang đọc thông tin của ${l.picked.name}…` : `Bonia đang tìm ${l.name} trên mạng…`}</h2>
+      <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239", textAlign: "center" }}>{l.status === "pricing" ? "Trang của khách sạn chưa ghi giá, nên Bonia xem thêm Agoda, Trip.com, Traveloka. Thêm khoảng 1 phút." : reading ? "Thường mất 1–2 phút. Cứ để trang này mở, xong Bonia điền sẵn vào Cài đặt để bạn xem lại." : "Vài giây thôi. Bonia sẽ hỏi bạn đúng khách sạn nào trước khi điền."}</span>
       <span style={{ fontFamily: MONO, fontSize: 22, color: "#7B4A2D", textAlign: "center" }}>{Math.floor(s / 60)}:{String(s % 60).padStart(2, "0")}</span>
       <span style={{ fontSize: d.fs.tiny, color: "#6E6255", textAlign: "center", lineHeight: 1.6 }}>{SOURCES_READ}</span>
     </Overlay>
@@ -629,7 +682,7 @@ export function Settings() {
   // first visit: no profile saved yet (demo: right after the demo login, /cai-dat?moi=1)
   const firstRun = app.demo ? new URLSearchParams(search).has("moi") : !!app.account.firstRun;
   const offer = firstRun && !app.lookup;
-  const waiting = app.lookup && ["identifying", "running", "failed"].includes(app.lookup.status);
+  const waiting = app.lookup && ["identifying", "running", "pricing", "failed"].includes(app.lookup.status);
   const choosing = app.lookup && ["choose", "none"].includes(app.lookup.status);
   const found = app.lookup && app.lookup.status === "done" ? app.lookup : null;
 

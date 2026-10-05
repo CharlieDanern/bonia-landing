@@ -27,7 +27,7 @@ export function defaultSettings() {
     aliases: V(["Sân Nhài", "khách sạn hồ Con Rùa"]),
     type: V("Khách sạn mini"),
     languages: V(["Tiếng Việt", "Tiếng Anh"]),
-    hotline: V("0900 000 300"),
+    hotline: V(["0900 000 300"]),
     deskHours: V({ allDay: true, from: "", to: "" }),
     afterHours: N("Sau 0:30 kéo nửa cửa cuốn; khách tới khuya bấm chuông hoặc gọi hotline, lễ tân đêm ra mở."),
     // 02
@@ -76,7 +76,7 @@ export function defaultSettings() {
     housekeeping: V("Dọn phòng mỗi ngày 9:00–15:00, hoặc khi khách yêu cầu"),
     breakfast: V("Không gồm trong giá; quán cà phê đối diện, khoảng 60.000đ"),
     dining: V(""),
-    activities: V([]),
+    activities: V([{ name: "Tour xe đạp quanh hồ", included: true, price: "", note: "sáng 6:00–7:00" }, { name: "Lớp nấu ăn Việt", included: false, price: "350.000đ/người, đặt trước 1 ngày", note: "" }]),
     services: V([["Đưa đón sân bay, xe 4 chỗ", "380.000đ; 22:00–05:00 thêm 150.000đ"], ["Thuê xe máy", "120.000đ/ngày xe số, 180.000đ tay ga"], ["Giặt ủi", "35.000đ/kg, tối thiểu 2 kg"]]),
     dayVisit: V(""),
     groups: V("Đoàn từ 10 người: chủ gọi lại báo giá"),
@@ -96,7 +96,7 @@ export function defaultSettings() {
     room({ name: "Standard", aliases: ["phòng thường", "phòng tiêu chuẩn"], count: "4", bed: "1 giường đôi", maxAdults: "2", maxChildren: "1", size: "18", view: "Cửa sổ trong",
       daily: { on: true, wd: 450000, we: 550000 }, overnight: { on: true, price: 380000, from: "22:00", to: "12:00" }, hourly: { on: true, h2: 200000, hn: 50000 } }),
     room({ name: "Superior", aliases: ["phòng có cửa sổ"], count: "4", bed: "1 giường đôi hoặc 2 giường đơn", maxAdults: "2", maxChildren: "1", size: "22", view: "Cửa sổ",
-      daily: { on: true, wd: 520000, we: 620000 }, overnight: { on: true, price: 450000, from: "22:00", to: "12:00" }, hourly: { on: true, h2: 250000, hn: 60000 }, st: "new", src: booking }),
+      daily: { on: true, wd: 520000, we: 620000 }, overnight: { on: true, price: 450000, from: "22:00", to: "12:00" }, hourly: { on: true, h2: 250000, hn: 60000 }, st: "new", src: booking, priceSrc: { t: "agoda" } }),
     room({ name: "Deluxe ban công", aliases: ["phòng ban công", "deluxe"], count: "3", bed: "1 giường đôi lớn", maxAdults: "2", maxChildren: "1", size: "28", view: "Ban công hướng phố", extras: ["Bồn tắm", "Ban công"], extraBed: "Có, 150.000đ/đêm",
       daily: { on: true, wd: 750000, we: 850000 }, overnight: { on: true, price: 550000, from: "22:00", to: "12:00" }, st: "new", src: booking }),
     room({ name: "Family", aliases: ["phòng gia đình"], count: "2", bed: "2 giường đôi", maxAdults: "4", maxChildren: "2", size: "34", view: "Cửa sổ hướng phố",
@@ -107,7 +107,7 @@ export function defaultSettings() {
   return { values, rooms };
 }
 
-const EMPTY = { text: "", mono: "", area: "", time: "", number: "", chips: null, multi: [], tags: [], toggle: null, list: [], promos: [], holidays: [], voice: 1 };
+const EMPTY = { text: "", mono: "", area: "", time: "", number: "", chips: null, multi: [], tags: [], toggle: null, list: [], promos: [], holidays: [], phones: [], priced: [], voice: 1 };
 const emptyOf = (type) => (type === "hours" ? { allDay: false, from: "", to: "" } : EMPTY[type] ?? null);
 
 /** A blank Cài đặt (nothing found or "Tôi tự điền"): empty fields, the owner's permissions at their defaults. */
@@ -127,12 +127,23 @@ export function blankSettings(name = "") {
   return { values, rooms: [] };
 }
 
+/** An older ["Cưỡi ngựa", "200.000đ" | "đã gồm trong giá phòng"] row as { name, included, price }. */
+const INCLUDED = /^\s*(đã gồm( trong giá( phòng)?)?|miễn phí( cho khách( lưu trú| ở| đang ở)?)?|free|included)[\s,;:.–-]*/i;
+// only an amount or "tính phí" makes it paid; other words stay a note
+const PAID = /\d.*(đ|vn[dđ]|k\b|nghìn|ngàn|triệu|usd|\$)|\$\s*\d|tính phí|có phí|phụ thu|trả thêm/i;
+const pricedRow = (name = "", note = "") => {
+  if (INCLUDED.test(note)) return { name, included: true, price: "", note: note.replace(INCLUDED, "") };
+  return PAID.test(note) ? { name, included: false, price: note, note: "" } : { name, included: null, price: "", note };
+};
+
 /** A value saved before its field changed shape (2026-10-05), in the field's current shape. */
 function upgrade(k, x) {
   const f = FIELDS[k];
   if (!x || !f) return x;
   if (f.type === "multi" && typeof x.v === "string") return { ...x, v: x.v ? [x.v] : [] };
   if (f.type === "holidays" && Array.isArray(x.v)) return { ...x, v: x.v.map((r) => (Array.isArray(r) ? { title: r[0] || "", from: "", to: "", price: r[1] || "" } : r)) };
+  if (f.type === "phones" && typeof x.v === "string") return { ...x, v: x.v.split(/[,;/]|\s{2,}/).map((t) => t.trim()).filter(Boolean) };
+  if (f.type === "priced" && Array.isArray(x.v)) return { ...x, v: x.v.map((r) => (Array.isArray(r) ? pricedRow(r[0], r[1]) : r)) };
   return x;
 }
 
@@ -144,7 +155,7 @@ export function withAllFields(p, name = "") {
   // the old Wi-Fi field: Wi-Fi is one of Tiện nghi chung now
   const wifi = p?.values?.wifi?.v;
   if (wifi && Array.isArray(values.amenities.v) && !values.amenities.v.includes("Wi-Fi miễn phí")) values.amenities = { ...values.amenities, v: ["Wi-Fi miễn phí", ...values.amenities.v] };
-  const roomKeys = new Set([...Object.keys(ROOM_FIELDS), "daily", "overnight", "hourly", "monthly", "st", "src"]);
+  const roomKeys = new Set([...Object.keys(ROOM_FIELDS), "daily", "overnight", "hourly", "monthly", "st", "src", "priceSrc"]);
   const rooms = (Array.isArray(p?.rooms) ? p.rooms : []).map((r) => Object.fromEntries(Object.entries({ notes: "", ...r }).filter(([k]) => roomKeys.has(k))));
   return { values, rooms };
 }

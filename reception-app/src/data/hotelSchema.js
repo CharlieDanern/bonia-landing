@@ -7,7 +7,9 @@
 //   type    text · mono · area · time · hours · number · chips (one) · multi ·
 //           tags (free chips) · toggle · list (rows; cols = column labels) ·
 //           promos ([{ title, from, to, details, price }]: dates YYYY-MM-DD) ·
-//           holidays ([{ title, from, to, price }]: dates YYYY-MM-DD; Vietnam's holidays offered in a picker)
+//           holidays ([{ title, from, to, price }]: dates YYYY-MM-DD; Vietnam's holidays offered in a picker) ·
+//           phones (string[]: one number per box) · priced ([{ name, included, price, note }]: included in the
+//           room price (a note), or its own price)
 //   kind    D fact · C business policy · Q permission (what Bonia may say/do)
 //   live    1 always in the call prompt · 2 if the budget allows, else a one-line
 //           summary + backend · 3 backend lookup only · 0 not part of any prompt
@@ -26,7 +28,8 @@ export const FIELDS = {
   name: { label: "Tên khách sạn", type: "text", kind: "D", live: 1 },
   aliases: { label: "Tên khác khách hay gọi", type: "tags", kind: "D", live: 1 },
   type: { label: "Loại chỗ nghỉ", type: "chips", kind: "D", live: 1, opts: ["Khách sạn", "Khách sạn mini", "Nhà nghỉ", "Homestay", "Resort", "Farmstay", "Căn hộ dịch vụ", "Villa"] },
-  hotline: { label: "Hotline, điện thoại quầy", type: "mono", kind: "D", live: 3 },
+  // founder 2026-10-05: one box per number, and a button for more
+  hotline: { label: "Hotline, điện thoại quầy", type: "phones", kind: "D", live: 3 },
   deskHours: { label: "Giờ quầy có người", type: "hours", kind: "D", live: 1 },
   afterHours: { label: "Lưu ý khác", say: "Lưu ý về quầy lễ tân", type: "area", kind: "C", live: 2, ph: "Vd: tới sau 22:00 thì gọi trước; cổng khóa lúc 23:00" },
   languages: { label: "Ngôn ngữ phục vụ", type: "multi", kind: "D", live: 1, opts: ["Tiếng Việt", "Tiếng Anh", "Tiếng Trung", "Tiếng Hàn", "Tiếng Nhật", "Tiếng Nga"] },
@@ -81,7 +84,8 @@ export const FIELDS = {
   amenities: { label: "Tiện nghi chung", type: "multi", kind: "D", live: 1, more: true, opts: ["Wi-Fi miễn phí", "Hồ bơi", "Thang máy", "Nhà hàng", "Quầy bar", "Phòng gym", "Spa, massage", "Khu BBQ", "Vườn", "Sân chơi trẻ em", "Phòng họp", "Giặt ủi", "Đưa đón sân bay", "Thuê xe máy", "Bãi đỗ ô tô"] },
   breakfast: { label: "Bữa sáng", type: "text", kind: "D", live: 1 },
   dining: { label: "Nhà hàng, đặt món, BBQ", type: "area", rows: 4, kind: "D", live: 2, opt: true },
-  activities: { label: "Hoạt động, trải nghiệm", type: "list", kind: "D", live: 2, opt: true, cols: ["Hoạt động", "Đã gồm trong giá phòng, hay giá"] },
+  // founder 2026-10-05: a button for "đã gồm trong giá phòng", else a price, so every owner writes it the same way
+  activities: { label: "Hoạt động, trải nghiệm", type: "priced", kind: "D", live: 2, opt: true },
   services: { label: "Dịch vụ có phí", type: "list", kind: "D", live: 3, opt: true, cols: ["Dịch vụ", "Giá"] },
   // how often a room is cleaned and towels, sheets changed during a stay, and how a guest asks for more
   housekeeping: { label: "Dọn phòng", type: "text", kind: "D", live: 3, ph: "Vd: dọn mỗi ngày 9:00–15:00, thay khăn mỗi ngày, ga giường 2 ngày một lần" },
@@ -162,4 +166,4 @@ export const SOURCE_LABEL = { site: "trang web", booking: "Booking.com", agoda: 
 export const hotelValue = (v, st = "ok", src = null, alts = null) => ({ v, st, ...(src ? { src } : {}), ...(alts ? { alts } : {}) });
 
 export const isEmpty = (v) =>
-  v == null || v === "" || (Array.isArray(v) && v.length === 0) || (typeof v === "object" && !Array.isArray(v) && "allDay" in v && !v.allDay && !v.from && !v.to);
+  v == null || v === "" || (Array.isArray(v) && v.every((x) => x === "" || x == null)) || (typeof v === "object" && !Array.isArray(v) && "allDay" in v && !v.allDay && !v.from && !v.to);
