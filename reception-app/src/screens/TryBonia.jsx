@@ -4,6 +4,7 @@ import { Orb } from "../components/Orb.jsx";
 import { Bubble, RequestCard } from "../components/Request.jsx";
 import { VOICE_COUNT, flat } from "../data/settings.js";
 import { scriptReply } from "../test-call/scriptEngine.js";
+import { WEBCALL_URL, startRealCall } from "../test-call/realCall.js";
 import { DeskHeader, PhoneTabs, Switch, useLayout } from "../layout.jsx";
 import { hm, useApp } from "../state.jsx";
 import { EASE, MONO, SERIF, dims } from "../ui.js";
@@ -11,11 +12,12 @@ import { playVoice } from "../voice.js";
 
 // Thử Bonia: a free playground (founder 2026-10-04). The owner talks to Bonia
 // from this device about anything, like a real guest; quick settings sit
-// beside it (voice, greeting, English) and apply to the next answer. An
+// beside it (voice, greeting, English) and apply to the next call. An
 // answer the owner doesn't like is fixed in Cài đặt, then tested again
-// (founder 2026-10-05: no corrections feature). Not billed. Speech in/out uses the browser for now; answers
-// come from the demo engine (src/test-call/scriptEngine.js) until the test
-// call runs on the real voice agent.
+// (founder 2026-10-05: no corrections feature). Not billed. Signed in, it is a
+// real call with the receptionist of the phone line on the Cài đặt on screen
+// (test-call/realCall.js, founder 2026-10-05); the demo keeps the browser's
+// speech and the demo engine (test-call/scriptEngine.js).
 const VI = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
 const VOICES = [[1.12, 1.02], [1.0, 1.0], [0.86, 0.98], [1.28, 1.06], [0.74, 0.95], [0.92, 1.0]]; // browser stand-ins for Giọng 1–6
 
@@ -36,8 +38,11 @@ export function TryBonia() {
 
   const patch = (p) => setSt((s) => ({ ...s, ...(typeof p === "function" ? p(s) : p) }));
 
+  const real = !app.demo && !!WEBCALL_URL;
   const teardown = () => {
     const r = R.current;
+    r.call?.stop();
+    r.call = null;
     clearInterval(r.tick);
     clearTimeout(r.safe);
     cancelAnimationFrame(r.raf);
@@ -167,7 +172,60 @@ export function TryBonia() {
     }
   };
 
+  // the real call: Bonia's own transcript and the request she records come back as they happen
+  const startReal = async () => {
+    if (S.current.live) return;
+    R.current.ended = false;
+    setView(null);
+    setPickups((p) => p + 1);
+    const t0 = Date.now();
+    patch({ live: true, phase: "connecting", turns: [], interim: "", out: null, err: "", t0, level: 0 });
+    S.current = { ...S.current, live: true, turns: [], t0 };
+    setNow(t0);
+    R.current.tick = setInterval(() => setNow(Date.now()), 500);
+    const open = { B: -1, K: -1 };
+    const last = { B: 0, K: 0 };
+    try {
+      const cur = settingsRef.current;
+      R.current.call = await startRealCall({
+        profile: { values: cur.values, rooms: cur.rooms },
+        on: {
+          state: (phase) => { if (S.current.live && S.current.phase !== phase) patch({ phase }); },
+          level: (lv) => { if (Math.abs(lv - S.current.level) > 0.01) patch({ level: lv }); },
+          transcript: (who, text) => {
+            const w = who === "bonia" ? "B" : "K";
+            const clean = text.replace(/\[[a-z_ ]+\]/gi, "");
+            if (!clean) return;
+            const at = Date.now();
+            // a pause of 2 s starts a new bubble; a late caller line still joins the caller's open bubble
+            patch((s) => {
+              const turns = [...s.turns];
+              const i = open[w];
+              if (i >= 0 && turns[i] && at - last[w] < 2000) turns[i] = { ...turns[i], text: turns[i].text + clean };
+              else {
+                turns.push({ w, text: clean.replace(/^\s+/, "") });
+                open[w] = turns.length - 1;
+              }
+              last[w] = at;
+              return { turns };
+            });
+          },
+          request: (m) => {
+            const c = m.card || {};
+            patch({ out: m.withdrawn ? { type: "Đã hủy", summary: "Khách rút lại yêu cầu trong cuộc gọi." } : { type: c.type, name: c.customer_name, room: c.room, urgent: !!c.urgent, summary: c.summary } });
+          },
+          end: () => finish(),
+          error: (msg) => patch({ err: msg }),
+        },
+      });
+    } catch (e) {
+      patch({ err: e?.name === "NotAllowedError" ? "Cần cho phép micro để gọi thử." : "Không bắt đầu được cuộc gọi thử. Thử lại sau." });
+      setTimeout(finish, 1800);
+    }
+  };
+
   const start = async (firstLine) => {
+    if (real) return startReal();
     if (S.current.live) return;
     R.current.ended = false;
     setView(null);
@@ -223,10 +281,10 @@ export function TryBonia() {
   const turns = live ? st.turns : run ? run.turns : [];
   const out = live ? st.out : run ? run.out : null;
   const talking = st.phase === "listening" && (st.interim || st.level > 0.045);
-  const mood = !live ? "idle" : st.phase === "speaking" ? "bonia" : st.phase === "thinking" ? "writing" : talking ? "guest" : "idle";
+  const mood = !live || st.phase === "connecting" ? "idle" : st.phase === "speaking" ? "bonia" : st.phase === "thinking" ? "writing" : talking ? "guest" : "idle";
   const showPanel = live || !!run;
   const sec = Math.max(0, Math.floor((now - st.t0) / 1000));
-  const phaseLabel = { speaking: "BONIA ĐANG NÓI", thinking: "BONIA ĐANG NGHĨ…", listening: talking ? "BẠN ĐANG NÓI" : "BONIA ĐANG NGHE · MỜI BẠN NÓI" }[st.phase] || "";
+  const phaseLabel = { connecting: "ĐANG KẾT NỐI…", speaking: "BONIA ĐANG NÓI", thinking: "BONIA ĐANG NGHĨ…", listening: talking ? "BẠN ĐANG NÓI" : "BONIA ĐANG NGHE · MỜI BẠN NÓI" }[st.phase] || "";
   const phaseC = st.phase === "listening" ? "#4A6B3A" : "#7B4A2D";
   const o = out || {};
   const resultReq = { id: "test", name: o.name || null, room: o.room || null, number: "Máy này", at: run ? run.at : "", type: o.type || "Lời nhắn", urgent: !!o.urgent, summary: o.summary || "" };
@@ -334,8 +392,8 @@ export function TryBonia() {
         {live && st.interim && <Bubble who="K" text={`${st.interim}…`} op={0.6} />}
         {!live && run && (
           <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingTop: 10, borderTop: "1px solid #EFE9DD", marginTop: 4 }}>
-            <span style={eyebrow}>YÊU CẦU BONIA SẼ GHI</span>
-            <RequestCard r={resultReq} actions={false} tel={false} />
+            <span style={eyebrow}>{real ? "YÊU CẦU BONIA ĐÃ GHI" : "YÊU CẦU BONIA SẼ GHI"}</span>
+            {o.summary ? <RequestCard r={resultReq} actions={false} tel={false} /> : <span style={{ fontSize: d.fs.small, color: "#6E6255", lineHeight: 1.5 }}>Không có yêu cầu: cuộc gọi chỉ hỏi thông tin.</span>}
           </div>
         )}
       </div>
@@ -344,10 +402,11 @@ export function TryBonia() {
           <>
             {phone && <span style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.14em", color: phaseC, textAlign: "center" }}>{phaseLabel}</span>}
             {phone && st.err && <span style={{ fontSize: 11.5, color: "#A0412D", textAlign: "center", lineHeight: 1.45 }}>{st.err}</span>}
-            <div style={{ display: "flex", gap: 6 }}>
+            {real && <span style={{ fontSize: d.fs.tiny, color: "#6E6255", textAlign: "center", lineHeight: 1.45 }}>Nói vào micro như một vị khách. Nên đeo tai nghe để Bonia không nghe lại giọng của chính mình.</span>}
+            {!real && <div style={{ display: "flex", gap: 6 }}>
               <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") guest(draft.trim()); }} placeholder="Gõ câu của khách…" style={{ flex: 1, minWidth: 0, height: d.input, border: "1px solid #D9D0BF", borderRadius: d.input / 2, padding: "0 14px", fontSize: d.fs.body, background: "#fff", color: "#1F1B16" }} />
               <button type="button" className="b-ghost" onClick={() => guest(draft.trim())} style={{ height: d.input, padding: "0 14px", borderRadius: d.input / 2, fontSize: d.fs.body }}>Gửi</button>
-            </div>
+            </div>}
             <button type="button" className="b-ghost" onClick={finish} style={{ height: d.btn, borderRadius: d.btn / 2, fontSize: d.fs.body, textAlign: "center" }}>Kết thúc cuộc gọi</button>
           </>
         )}
