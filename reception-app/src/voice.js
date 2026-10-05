@@ -1,4 +1,4 @@
-// Voice previews for Giọng 1–5. A recorded sample per voice when present
+// Voice previews for Giọng 1–6. A recorded sample per voice when present
 // (public/voices/giong-N.mp3, the engine's real voices), else the browser's
 // Vietnamese voice so the button still answers.
 

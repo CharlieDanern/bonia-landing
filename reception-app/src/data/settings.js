@@ -7,7 +7,7 @@
 import { FIELDS, SECTIONS, hotelValue as V, isEmpty } from "./hotelSchema.js";
 
 export { FIELDS, SECTIONS };
-export const VOICE_COUNT = 5; // Giọng 1…5 (the engine's own names stay hidden)
+export const VOICE_COUNT = 6; // Giọng 1…6 (the engine's own names stay hidden; 6 = cedar, founder 2026-10-05)
 
 const site = { t: "site", url: "https://sannhai.example" };
 const booking = { t: "booking", url: "https://www.booking.com/hotel/vn/san-nhai.html" };

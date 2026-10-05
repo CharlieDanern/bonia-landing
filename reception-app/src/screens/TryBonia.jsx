@@ -17,7 +17,7 @@ import { playVoice } from "../voice.js";
 // come from the demo engine (src/test-call/scriptEngine.js) until the test
 // call runs on the real voice agent.
 const VI = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
-const VOICES = [[1.12, 1.02], [1.0, 1.0], [0.86, 0.98], [1.28, 1.06], [0.74, 0.95]]; // browser stand-ins for Giọng 1–5
+const VOICES = [[1.12, 1.02], [1.0, 1.0], [0.86, 0.98], [1.28, 1.06], [0.74, 0.95], [0.92, 1.0]]; // browser stand-ins for Giọng 1–6
 
 export function TryBonia() {
   const app = useApp();
