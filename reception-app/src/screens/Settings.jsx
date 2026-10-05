@@ -694,12 +694,23 @@ export function Settings() {
   const pendN = pend.length;
   const fillN = pend.filter(([, fk]) => !fk.startsWith("room:") && needsFill(values[fk], fk)).length;
   const review = fromSetup || pendN > 0;
+  // founder 2026-10-05: right after Lưu, "great, now let's test it out", then on to Thử Bonia
+  const [savedPop, setSavedPop] = useState(false);
+  const toTry = useRef(null);
+  useEffect(() => () => clearTimeout(toTry.current), []);
+  const goTry = () => {
+    clearTimeout(toTry.current);
+    navigate("/thu-bonia");
+  };
   const onSave = async () => {
     setSaving(true);
     setSaveErr("");
     const r = await app.save();
     setSaving(false);
-    if (r && r.error) setSaveErr(SAVE_ERRORS[r.error] || "Chưa lưu được. Thử lại.");
+    if (r && r.error) return setSaveErr(SAVE_ERRORS[r.error] || "Chưa lưu được. Thử lại.");
+    setSavedPop(true);
+    toTry.current = setTimeout(goTry, 2600);
+    return undefined;
   };
 
   const still = reduce || (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
@@ -897,6 +908,14 @@ export function Settings() {
       {offer && <LookupOffer app={app} phone={phone} d={d} />}
       {waiting && <LookupWait app={app} phone={phone} d={d} />}
       {choosing && <LookupChoose key={app.lookup.startedAt} app={app} phone={phone} d={d} />}
+      {savedPop && (
+        <Overlay phone={phone}>
+          <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.18em", color: "#4A6B3A" }}>✓ ĐÃ LƯU</span>
+          <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 23 : 26, lineHeight: 1.2 }}>Tuyệt vời! Giờ mình gọi thử Bonia nhé</h2>
+          <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239" }}>Gọi như một vị khách để nghe Bonia trả lời bằng thông tin bạn vừa lưu. Chưa ưng chỗ nào thì quay lại Cài đặt sửa rồi thử lại.</span>
+          <button type="button" className="b-primary" onClick={goTry} style={{ ...CENTER, height: 46, borderRadius: 23, fontSize: 14.5, marginTop: 2 }}>Thử Bonia →</button>
+        </Overlay>
+      )}
     </div>
   );
 }
