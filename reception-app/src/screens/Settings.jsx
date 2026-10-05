@@ -392,7 +392,7 @@ function LookupOffer({ app, phone, d }) {
       <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 23 : 26, lineHeight: 1.2 }}>Để Bonia tự tìm thông tin khách sạn của bạn trên mạng?</h2>
       <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239" }}>Bonia đọc trang web của khách sạn và các trang đặt phòng, rồi điền sẵn vào Cài đặt. Bạn xem lại, sửa chỗ chưa đúng, rồi bấm Lưu.</span>
       {field("Tên khách sạn", name, setName, "Vd: Khách sạn Sân Nhài")}
-      {field("Khu vực", area, setArea, "Vd: Phường Mũi Né, Lâm Đồng")}
+      {field("Khu vực", area, setArea, "Vd: Mũi Né, Lâm Đồng (tên tỉnh cũ cũng được)")}
       {field("Trang web hoặc link Booking (không bắt buộc)", url, setUrl, "https://…", { inputMode: "url" })}
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 2 }}>
         <button type="button" className="b-primary" disabled={!ok} onClick={() => app.startLookup({ name: name.trim(), area: area.trim(), urls: url.trim() ? [url.trim()] : [] })} style={{ ...CENTER, height: 46, borderRadius: 23, fontSize: 14.5, opacity: ok ? 1 : 0.5 }}>Có, tìm giúp tôi</button>
