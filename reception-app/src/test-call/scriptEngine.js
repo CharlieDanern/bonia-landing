@@ -66,6 +66,6 @@ export function scriptReply(settings, history, text) {
     const name = text.trim().split(/\s+/).slice(-1)[0].replace(/[.!?]/g, "");
     return { reply: "Dạ rồi, bên em sẽ nhắn tin xác nhận lại qua số điện thoại này ạ. Em cảm ơn mình.", summary: `Đặt ${r.name} cuối tuần này, 2 đêm.${quotes ? ` Bonia đã báo ${Number(we).toLocaleString("vi-VN")}đ/đêm cuối tuần.` : ""}`, name: name ? `chị ${name.charAt(0).toUpperCase()}${name.slice(1)}` : "", type: "Đặt phòng" };
   }
-  if (/cam on|tam biet|bye|thoi nha|ok em/.test(t)) return { reply: f.closing || "Dạ em cảm ơn mình ạ.", end: true };
+  if (/cam on|tam biet|bye|thoi nha|ok em/.test(t)) return { reply: "Dạ em cảm ơn mình ạ.", end: true };
   return { reply: "Dạ em ghi lại rồi ạ, bên em sẽ báo lại mình.", summary: `${text.replace(/^(em ơi|alo|dạ)[, ]*/i, "")}`.slice(0, 160), type: "Lời nhắn" };
 }

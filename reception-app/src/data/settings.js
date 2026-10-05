@@ -57,7 +57,7 @@ export function defaultSettings() {
     weekendNights: V(["Thứ Sáu", "Thứ Bảy"]),
     extraPerson: V([["Bé dưới 6 tuổi ngủ chung", "Miễn phí, 1 bé/phòng"], ["Trẻ 6–11 tuổi", "100.000đ/đêm"], ["Từ 12 tuổi", "Tính như người lớn"], ["Giường phụ (chỉ Deluxe)", "150.000đ/đêm"]]),
     minNights: V("Tết: tối thiểu 2 đêm"),
-    holidays: V([["30/4–1/5, 2/9", "Tăng 25%"], ["Tết, mùng 1–5", "Tăng 50%, trả trước, không hoàn"]]),
+    holidays: V([["30/4–2/5/2027, 2/9/2026", "Tăng 25%"], ["Tết: 5/2–11/2/2027", "Tăng 50%, trả trước, không hoàn"]]),
     promos: V([]),
     // 05
     children: N("Bé dưới 6 tuổi ngủ chung miễn phí"),
@@ -85,7 +85,6 @@ export function defaultSettings() {
     channels: V([["Gọi điện", "0900 000 300"], ["Booking.com", ""], ["Agoda", ""]]),
     // 08
     greeting: V("Dạ khách sạn Sân Nhài xin nghe ạ."),
-    closing: V("Dạ em cảm ơn mình, chúc mình một ngày vui ạ."),
     voice: V(1),
     english: V(true),
     quote: V("Giá từng đêm"),

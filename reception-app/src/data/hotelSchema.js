@@ -49,11 +49,11 @@ export const FIELDS = {
   roomAmenities: { label: "Tiện nghi có ở mọi phòng", type: "multi", kind: "D", live: 2, opts: ["Máy lạnh", "Quạt", "Wifi", "Nước nóng", "TV", "Tủ lạnh", "Máy sấy tóc", "Ấm siêu tốc", "Nước suối", "Két sắt", "Bàn làm việc"] },
   priceBasis: { label: "Giá tính theo", type: "chips", kind: "D", live: 1, opts: ["Theo phòng", "Theo người"] },
   priceTax: { label: "Thuế, phí dịch vụ", type: "chips", kind: "D", live: 1, opts: ["Giá đã gồm thuế, phí", "Chưa gồm thuế, phí"] },
-  priceIncludes: { label: "Giá đã gồm", type: "tags", kind: "D", live: 1 },
+  priceIncludes: { label: "Giá đã gồm (từng món cụ thể)", type: "tags", kind: "D", live: 1 },
   weekendNights: { label: "Đêm tính giá cuối tuần", type: "multi", kind: "D", live: 1, opts: ["Thứ Sáu", "Thứ Bảy", "Chủ nhật"] },
   extraPerson: { label: "Trẻ em và người thêm", type: "list", kind: "C", live: 2, cols: ["Ai", "Phụ thu"] },
   minNights: { label: "Số đêm tối thiểu", type: "text", kind: "C", live: 2 },
-  holidays: { label: "Ngày lễ, Tết", type: "list", kind: "C", live: 3, cols: ["Dịp", "Giá"] },
+  holidays: { label: "Ngày lễ, Tết (ngày cụ thể)", type: "list", kind: "C", live: 3, cols: ["Ngày, vd 30/4–2/5", "Giá"] },
   promos: { label: "Khuyến mãi, combo", type: "list", kind: "D", live: 2, cols: ["Tên", "Chi tiết, hạn"] },
 
   // 05 · Chính sách
@@ -72,7 +72,7 @@ export const FIELDS = {
   wifi: { label: "Wi-Fi", type: "text", kind: "D", live: 2 },
   breakfast: { label: "Bữa sáng", type: "text", kind: "D", live: 1 },
   dining: { label: "Nhà hàng, đặt món, BBQ", type: "text", kind: "D", live: 2 },
-  activities: { label: "Hoạt động, trải nghiệm", type: "list", kind: "D", live: 2, cols: ["Hoạt động", "Giá"] },
+  activities: { label: "Hoạt động, trải nghiệm", type: "list", kind: "D", live: 2, cols: ["Hoạt động", "Đã gồm trong giá phòng, hay giá"] },
   services: { label: "Dịch vụ có phí", type: "list", kind: "D", live: 3, cols: ["Dịch vụ", "Giá"] },
   housekeeping: { label: "Dọn phòng", type: "text", kind: "D", live: 3 },
   dayVisit: { label: "Khách vãng lai vào chơi", type: "text", kind: "C", live: 3 },
@@ -85,7 +85,6 @@ export const FIELDS = {
 
   // 08 · Cách nghe máy
   greeting: { label: "Khi nhấc máy", type: "text", kind: "Q", live: 1 },
-  closing: { label: "Khi kết thúc", type: "text", kind: "Q", live: 1 },
   voice: { label: "Giọng", type: "voice", kind: "Q", live: 0 },
   english: { label: "Tiếng Anh", type: "toggle", kind: "Q", live: 1, on: "Khách nói tiếng Anh thì Bonia trả lời bằng tiếng Anh" },
   quote: { label: "Báo giá", type: "chips", kind: "Q", live: 1, opts: ["Giá từng đêm", "Tổng tiền", "Không báo giá"] },
@@ -108,7 +107,7 @@ export const SECTIONS = [
   { key: "s5", n: "05", title: "Chính sách", cards: [["Khách", ["children", "pets", "smoking", "houseRules"]], ["Cọc, đổi, hủy", ["deposit", "changeDate", "cancel", "payment", "vat"]]] },
   { key: "s6", n: "06", title: "Tiện nghi & dịch vụ", cards: [["Tiện nghi", ["amenities", "wifi", "housekeeping"]], ["Ăn uống", ["breakfast", "dining"]], ["Hoạt động, dịch vụ", ["activities", "services", "dayVisit", "groups"]]] },
   { key: "s7", n: "07", title: "Nhận yêu cầu đặt phòng", cards: [["Khi khách muốn đặt", ["askFor", "groupSize", "channels"]]] },
-  { key: "s8", n: "08", title: "Cách nghe máy", cards: [["Lời chào", ["greeting", "closing"]], ["Giọng, ngôn ngữ", ["voice", "english"]], ["Bonia được", ["quote", "disclose", "upsell", "wifiPass"]]] },
+  { key: "s8", n: "08", title: "Cách nghe máy", cards: [["Lời chào", ["greeting"]], ["Giọng, ngôn ngữ", ["voice", "english"]], ["Bonia được", ["quote", "disclose", "upsell", "wifiPass"]]] },
   { key: "s9", n: "09", title: "Thông tin khác", cards: [["Thông tin khác", ["extra", "faq"]], ["Đã sửa trong Thử Bonia", ["fixes"]]] },
 ];
 

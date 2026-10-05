@@ -11,7 +11,7 @@ import { playVoice } from "../voice.js";
 
 // Thử Bonia: a free playground (founder 2026-10-04). The owner talks to Bonia
 // from this device about anything, like a real guest; quick settings sit
-// beside it (voice, greeting, closing, English, quoting prices) and apply to
+// beside it (voice, greeting, English, quoting prices) and apply to
 // the next answer. Any answer can be fixed with "Sửa" (saved into Cài đặt ·
 // Đã sửa trong Thử Bonia). Not billed. Speech in/out uses the browser for now; answers
 // come from the demo engine (src/test-call/scriptEngine.js) until the test
@@ -286,10 +286,6 @@ export function TryBonia() {
       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <span style={eyebrow}>LỜI CHÀO</span>
         <textarea rows={2} value={f.greeting} onChange={(e) => app.applyNow("greeting", e.target.value)} style={quickInput} />
-      </label>
-      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <span style={eyebrow}>LỜI KẾT</span>
-        <textarea rows={2} value={f.closing} onChange={(e) => app.applyNow("closing", e.target.value)} style={quickInput} />
       </label>
       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {[
