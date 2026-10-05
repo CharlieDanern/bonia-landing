@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useSearch } from "wouter";
-import { FIELDS, ROOM_FIELDS, SECTIONS, SOURCE_LABEL } from "../data/hotelSchema.js";
+import { FIELDS, ROOM_FIELDS, SECTIONS, SOURCE_LABEL, placeholderOf } from "../data/hotelSchema.js";
+import { upcomingHolidays } from "../data/vnHolidays.js";
 import { VOICE_COUNT, flat, needsFill, pendingList } from "../data/settings.js";
 import { DeskHeader, PhoneTabs, Switch, useLayout } from "../layout.jsx";
 import { Orb } from "../components/Orb.jsx";
@@ -106,6 +108,124 @@ function PromoList({ value, onChange, d, input }) {
   );
 }
 
+const todayVN = () => new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+const dmy = (iso) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
+  return m ? `${+m[3]}/${+m[2]}/${m[1]}` : "";
+};
+/** "4/2 – 10/2/2027", "24/11/2026" */
+const dateRange = (from, to) => {
+  if (!from) return "";
+  if (!to || to === from) return dmy(from);
+  const [a, b] = [dmy(from), dmy(to)];
+  return from.slice(0, 4) === to.slice(0, 4) ? `${a.replace(/\/\d{4}$/, "")} – ${b}` : `${a} – ${b}`;
+};
+
+/** "+ thêm" beside a multi's options (founder 2026-10-05: amenities the list doesn't have). */
+function AddItem({ list, onChange, d, input }) {
+  const [draft, setDraft] = useState("");
+  const add = () => {
+    const t = draft.trim();
+    if (t && !list.includes(t)) onChange([...list, t]);
+    setDraft("");
+  };
+  return (
+    <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} onBlur={add} placeholder="+ thêm" aria-label="Thêm mục khác" style={{ ...input, width: 120, height: d.chip, borderRadius: d.chip / 2, borderStyle: "dashed" }} />
+  );
+}
+
+/**
+ * Ngày lễ, Tết (founder 2026-10-05): we know Vietnam's holidays, so the owner picks
+ * them from a list (data/vnHolidays.js, Tết by the lunar calendar) and sets each
+ * one's price; their own dates too. A past one is never used on a call.
+ */
+function HolidayList({ value, onChange, d, input, host, phone }) {
+  const rows = Array.isArray(value) ? value : [];
+  const [picking, setPicking] = useState(false);
+  const set = (i, patch) => onChange(rows.map((r, k) => (k === i ? { ...r, ...patch } : r)));
+  const today = todayVN();
+  const lab = { display: "flex", flexDirection: "column", gap: 4, minWidth: 0 };
+  const cap = { fontSize: d.fs.tiny, color: "#6E6255" };
+  const add = (picked) => {
+    const all = [...rows, ...picked];
+    // by date, the owner's undated ones last
+    onChange(all.sort((a, b) => (a.from || "9999").localeCompare(b.from || "9999")));
+    setPicking(false);
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {rows.map((r, i) => {
+        const over = r.to && r.to < today;
+        return (
+          <div key={i} style={{ display: "flex", flexDirection: "column", gap: 7, padding: "10px 12px", border: `1px solid ${over ? "#E4DCCB" : "#D9D0BF"}`, borderRadius: 10, background: over ? "#FAF7F1" : "#fff" }}>
+            <label style={lab}>
+              <span style={cap}>Dịp{over ? " · đã qua, Bonia không dùng" : ""}</span>
+              <input value={r.title || ""} onChange={(e) => set(i, { title: e.target.value })} placeholder="Vd: Lễ hội pháo hoa" style={{ ...input, width: "100%", fontWeight: 600 }} />
+            </label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+              <label style={lab}><span style={cap}>Từ ngày</span><input type="date" value={r.from || ""} onChange={(e) => set(i, { from: e.target.value })} style={{ ...input, width: "100%" }} /></label>
+              <label style={lab}><span style={cap}>Tới ngày</span><input type="date" value={r.to || ""} onChange={(e) => set(i, { to: e.target.value })} style={{ ...input, width: "100%" }} /></label>
+            </div>
+            <label style={lab}>
+              <span style={cap}>Giá dịp này</span>
+              <input value={r.price || ""} onChange={(e) => set(i, { price: e.target.value })} placeholder="Vd: tăng 30%, hoặc 1.800.000đ/đêm" style={{ ...input, width: "100%" }} />
+            </label>
+            <button type="button" onClick={() => onChange(rows.filter((_, k) => k !== i))} style={{ alignSelf: "flex-start", height: d.btnSm, padding: "0 4px", fontSize: d.fs.small, color: "#A0412D" }}>Xóa dịp này</button>
+          </div>
+        );
+      })}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <button type="button" className="b-ghost" onClick={() => setPicking(true)} style={{ height: d.btnSm + 2, padding: "0 14px", borderRadius: (d.btnSm + 2) / 2, fontSize: d.fs.small }}>Chọn ngày lễ, Tết</button>
+        <button type="button" onClick={() => onChange([...rows, { title: "", from: "", to: "", price: "" }])} style={{ height: d.btnSm, padding: "0 4px", fontSize: d.fs.small, color: "#7B4A2D" }}>+ Thêm dịp khác</button>
+      </div>
+      {picking && host && createPortal(<HolidayPicker rows={rows} onAdd={add} onClose={() => setPicking(false)} d={d} phone={phone} />, host)}
+    </div>
+  );
+}
+
+function HolidayPicker({ rows, onAdd, onClose, d, phone }) {
+  const today = todayVN();
+  const list = upcomingHolidays(today).sort((a, b) => a.from.localeCompare(b.from));
+  const key = (h) => `${h.id}:${h.from.slice(0, 4)}`;
+  const has = (h) => rows.some((r) => r.title === h.title && (r.from || "").slice(0, 4) === h.from.slice(0, 4));
+  // the official ones not added yet start ticked: most hotels price all of them
+  const [on, setOn] = useState(() => new Set(list.filter((h) => h.official && !has(h)).map(key)));
+  const toggle = (h) => setOn((s0) => { const s1 = new Set(s0); if (s1.has(key(h))) s1.delete(key(h)); else s1.add(key(h)); return s1; });
+  const chosen = list.filter((h) => on.has(key(h)) && !has(h));
+  const group = (title, items) => items.length > 0 && (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.16em", color: "#6E6255" }}>{title}</span>
+      {items.map((h) => {
+        const added = has(h);
+        const ticked = added || on.has(key(h));
+        return (
+          <button key={key(h)} type="button" disabled={added} onClick={() => toggle(h)} style={{ display: "grid", gridTemplateColumns: "22px minmax(0,1fr)", gap: 10, alignItems: "start", textAlign: "left", padding: "9px 12px", border: `1px solid ${ticked ? "#C9BCA5" : "#E4DCCB"}`, borderRadius: 10, background: ticked ? "#FBF8F2" : "#fff", opacity: added ? 0.6 : 1 }}>
+            <span style={{ width: 18, height: 18, marginTop: 1, borderRadius: 5, border: `1.5px solid ${ticked ? "#7B4A2D" : "#C9BCA5"}`, background: ticked ? "#7B4A2D" : "#fff", color: "#fff", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>{ticked ? "✓" : ""}</span>
+            <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+              <span style={{ fontSize: d.fs.body, fontWeight: 600, color: "#1F1B16" }}>{h.title}{added ? " · đã có" : ""}</span>
+              <span style={{ fontFamily: MONO, fontSize: 12, color: "#4A4239" }}>{dateRange(h.from, h.to)}</span>
+              {h.note && <span style={{ fontSize: d.fs.tiny, color: "#6E6255", lineHeight: 1.45 }}>{h.note}</span>}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+  return (
+    <Overlay phone={phone}>
+      <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.18em", color: "#7B4A2D" }}>NGÀY LỄ, TẾT</span>
+      <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 22 : 25, lineHeight: 1.2 }}>Chọn các dịp khách sạn tính giá riêng</h2>
+      <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239" }}>Ngày đã điền sẵn theo lịch nghỉ của nhà nước, Tết theo âm lịch. Thêm xong, bạn ghi giá cho từng dịp và sửa ngày nếu khách sạn tính khác.</span>
+      {group("NGÀY NGHỈ LỄ CHÍNH THỨC", list.filter((h) => h.official))}
+      {group("DỊP ĐÔNG KHÁCH KHÁC", list.filter((h) => !h.official))}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 2 }}>
+        <button type="button" className="b-primary" disabled={!chosen.length} onClick={() => onAdd(chosen.map((h) => ({ title: h.title, from: h.from, to: h.to, price: "" })))} style={{ ...CENTER, height: 46, borderRadius: 23, fontSize: 14.5, opacity: chosen.length ? 1 : 0.5 }}>{chosen.length ? `Thêm ${chosen.length} dịp` : "Chọn ít nhất một dịp"}</button>
+        <button type="button" onClick={onClose} style={{ ...CENTER, height: 40, fontSize: 13.5, color: "#6E6255" }}>Đóng</button>
+      </div>
+    </Overlay>
+  );
+}
+
 function Hours({ value, onChange, d, input }) {
   const h = value || { allDay: false, from: "", to: "" };
   return (
@@ -162,10 +282,10 @@ function VoicePick({ value, onChange, d, greeting }) {
 }
 
 /** One control for a schema field type. */
-function Control({ def, value, onChange, d, input, greeting }) {
+function Control({ def, value, onChange, d, input, greeting, host, phone }) {
   switch (def.type) {
     case "text":
-      return <input value={value ?? ""} onChange={(e) => onChange(e.target.value)} placeholder={def.ph} style={{ ...input, width: "100%" }} />;
+      return <input value={value ?? ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholderOf(def)} style={{ ...input, width: "100%" }} />;
     case "mono":
       return <input value={value ?? ""} onChange={(e) => onChange(e.target.value)} placeholder={def.ph} style={{ ...input, width: 180, maxWidth: "100%", fontFamily: MONO }} />;
     case "time":
@@ -173,7 +293,7 @@ function Control({ def, value, onChange, d, input, greeting }) {
     case "number":
       return <input value={value ?? ""} onChange={(e) => onChange(digits(e.target.value))} inputMode="numeric" style={{ ...input, width: 90, fontFamily: MONO }} />;
     case "area":
-      return <textarea value={value ?? ""} onChange={(e) => onChange(e.target.value)} placeholder={def.ph} rows={3} style={{ ...input, height: "auto", width: "100%", minHeight: 64, padding: "7px 10px", lineHeight: 1.5, resize: "vertical" }} />;
+      return <textarea value={value ?? ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholderOf(def)} rows={def.rows || 3} style={{ ...input, height: "auto", width: "100%", minHeight: 22 * (def.rows || 3) - 2, padding: "7px 10px", lineHeight: 1.5, resize: "vertical" }} />;
     case "hours":
       return <Hours value={value} onChange={onChange} d={d} input={input} />;
     case "toggle":
@@ -194,7 +314,7 @@ function Control({ def, value, onChange, d, input, greeting }) {
     case "chips":
       return (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-          {def.opts.map((o) => <Chip key={o} d={d} on={value === o} onClick={() => onChange(o)}>{o}</Chip>)}
+          {[...def.opts, ...(value && !def.opts.includes(value) ? [value] : [])].map((o) => <Chip key={o} d={d} on={value === o} onClick={() => onChange(o)}>{o}</Chip>)}
         </div>
       );
     case "multi": {
@@ -206,6 +326,7 @@ function Control({ def, value, onChange, d, input, greeting }) {
             const on = list.includes(o);
             return <Chip key={o} d={d} filled on={on} onClick={() => onChange(on ? list.filter((x) => x !== o) : [...list, o])}>{o}</Chip>;
           })}
+          {def.more && <AddItem list={list} onChange={onChange} d={d} input={input} />}
         </div>
       );
     }
@@ -215,6 +336,8 @@ function Control({ def, value, onChange, d, input, greeting }) {
       return <ListRows value={value} onChange={onChange} cols={def.cols} d={d} input={input} />;
     case "promos":
       return <PromoList value={value} onChange={onChange} d={d} input={input} />;
+    case "holidays":
+      return <HolidayList value={value} onChange={onChange} d={d} input={input} host={host} phone={phone} />;
     case "voice":
       return <VoicePick value={value} onChange={onChange} d={d} greeting={greeting} />;
     default:
@@ -222,16 +345,18 @@ function Control({ def, value, onChange, d, input, greeting }) {
   }
 }
 
-function FieldRow({ k, x, app, d, phone, greeting }) {
+const TOP_ALIGNED = ["list", "area", "promos", "holidays"];
+
+function FieldRow({ k, x, app, d, phone, greeting, host }) {
   const def = FIELDS[k];
   const conflict = x.st === "conflict";
-  const fill = needsFill(x);
+  const fill = needsFill(x, k);
   const warn = conflict || fill;
   const input = { height: d.input, minWidth: 0, border: "1px solid #D9D0BF", borderRadius: 8, padding: "0 10px", fontSize: d.fs.body, background: "#fff", color: "#1F1B16" };
   const border = `1px ${warn || x.st !== "ok" ? "dashed" : "solid"} ${warn ? "#A0412D" : x.st === "ok" ? "#EFE9DD" : "#C9BCA5"}`;
   return (
-    <div data-f={k} style={{ display: "grid", gridTemplateColumns: phone ? "minmax(0,1fr)" : "170px minmax(0,1fr)", gap: phone ? 5 : 12, alignItems: def.type === "list" || def.type === "area" || def.type === "promos" ? "start" : "center", padding: "6px 8px", borderRadius: 8, border, background: warn ? "#FBF8F2" : "#fff" }}>
-      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", paddingTop: def.type === "list" || def.type === "area" || def.type === "promos" ? 7 : 0 }}>
+    <div data-f={k} style={{ display: "grid", gridTemplateColumns: phone ? "minmax(0,1fr)" : "170px minmax(0,1fr)", gap: phone ? 5 : 12, alignItems: TOP_ALIGNED.includes(def.type) ? "start" : "center", padding: "6px 8px", borderRadius: 8, border, background: warn ? "#FBF8F2" : "#fff" }}>
+      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", paddingTop: TOP_ALIGNED.includes(def.type) ? 7 : 0 }}>
         <span style={{ fontSize: d.fs.small, color: "#4A4239", lineHeight: 1.4 }}>{def.label}</span>
         {fill && <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: "0.12em", padding: "2px 5px", borderRadius: 4, background: "#F6E7E1", color: "#A0412D" }}>CẦN BẠN ĐIỀN</span>}
       </div>
@@ -246,7 +371,7 @@ function FieldRow({ k, x, app, d, phone, greeting }) {
             ))}
           </div>
         ) : (
-          <Control def={def} value={x.v} onChange={(v) => app.setVal(k, v)} d={d} input={input} greeting={greeting} />
+          <Control def={def} value={x.v} onChange={(v) => app.setVal(k, v)} d={d} input={input} greeting={greeting} host={host} phone={phone} />
         )}
         {!conflict && x.st === "new" && (x.alts || []).length > 0 && (
           <span style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", fontSize: d.fs.tiny, color: "#6E6255" }}>
@@ -275,7 +400,7 @@ function FieldRow({ k, x, app, d, phone, greeting }) {
 // ── a room type ───────────────────────────────────────────────────────────
 
 const MODES = [
-  { key: "daily", l: "Theo ngày", inputs: [["Ngày thường", "wd", "đ"], ["Cuối tuần", "we", "đ"]] },
+  { key: "daily", l: "Theo ngày (để Bonia báo tham khảo)", inputs: [["Ngày thường", "wd", "đ"], ["Cuối tuần", "we", "đ"]] },
   { key: "overnight", l: "Qua đêm", inputs: [["Giá", "price", "đ"], ["Từ", "from", ""], ["Tới", "to", ""]] },
   { key: "hourly", l: "Theo giờ", inputs: [["2 giờ đầu", "h2", "đ"], ["Mỗi giờ sau", "hn", "đ"]] },
   { key: "monthly", l: "Theo tháng", inputs: [["Giá", "price", "đ"]] },
@@ -316,12 +441,12 @@ function RoomCard({ r, i, open, onToggle, app, d, phone }) {
             })}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: phone ? "minmax(0,1fr)" : "140px minmax(0,1fr)", gap: "7px 12px", alignItems: "center" }}>
-            <span style={{ fontSize: d.fs.tiny, color: "#6E6255" }}>{ROOM_FIELDS.bath.label}</span>
-            <div style={{ display: "flex", gap: 5 }}>{ROOM_FIELDS.bath.opts.map((o) => <Chip key={o} d={d} on={r.bath === o} onClick={() => set({ bath: o })}>{o}</Chip>)}</div>
             <span style={{ fontSize: d.fs.tiny, color: "#6E6255" }}>{ROOM_FIELDS.aliases.label}</span>
             <Tags value={r.aliases} onChange={(v) => set({ aliases: v })} d={d} input={input} />
             <span style={{ fontSize: d.fs.tiny, color: "#6E6255" }}>{ROOM_FIELDS.extras.label}</span>
             <Tags value={r.extras} onChange={(v) => set({ extras: v })} d={d} input={input} />
+            <span style={{ fontSize: d.fs.tiny, color: "#6E6255", alignSelf: "start", paddingTop: 8 }}>{ROOM_FIELDS.notes.label}</span>
+            <textarea value={r.notes ?? ""} onChange={(e) => set({ notes: e.target.value })} rows={2} placeholder="Điều riêng của loại phòng này. Để trống nếu không có" style={{ ...input, height: "auto", width: "100%", minHeight: 46, padding: "7px 10px", lineHeight: 1.5, resize: "vertical" }} />
           </div>
           {MODES.map((m) => {
             const mode = r[m.key] || { on: false };
@@ -330,7 +455,6 @@ function RoomCard({ r, i, open, onToggle, app, d, phone }) {
                 <button type="button" onClick={() => set({ [m.key]: { ...mode, on: !mode.on } })} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: d.fs.body, fontWeight: 600, color: mode.on ? "#1F1B16" : "#6E6255", minHeight: 26, width: "max-content" }}>
                   <Switch on={!!mode.on} />
                   {m.l}
-                  <span style={{ fontWeight: 400, fontSize: d.fs.small, color: "#6E6255" }}>{mode.on ? "" : "· tắt"}</span>
                 </button>
                 {mode.on && (
                   <div style={{ display: "grid", gridTemplateColumns: m.inputs.length === 3 ? (phone ? "1fr 1fr" : "1.4fr 1fr 1fr") : m.inputs.length === 2 ? "1fr 1fr" : "minmax(0,200px)", gap: 7 }}>
@@ -487,9 +611,12 @@ const SAVE_ERRORS = {
 
 export function Settings() {
   const app = useApp();
-  const { phone } = useLayout();
+  const { phone, reduce } = useLayout();
   const d = dims(phone);
   const [, navigate] = useLocation();
+  // the page's root: where the holiday picker opens (over the page, not inside the scrolling list)
+  const [host, setHost] = useState(null);
+  const lastNext = useRef(null);
   const search = useSearch();
   const { values, rooms } = app.settings;
   const greeting = flat(app.settings).greeting;
@@ -508,7 +635,7 @@ export function Settings() {
 
   const pend = pendingList(app.settings);
   const pendN = pend.length;
-  const fillN = pend.filter(([, fk]) => !fk.startsWith("room:") && needsFill(values[fk])).length;
+  const fillN = pend.filter(([, fk]) => !fk.startsWith("room:") && needsFill(values[fk], fk)).length;
   const review = fromSetup || pendN > 0;
   const onSave = async () => {
     setSaving(true);
@@ -518,7 +645,8 @@ export function Settings() {
     if (r && r.error) setSaveErr(SAVE_ERRORS[r.error] || "Chưa lưu được. Thử lại.");
   };
 
-  const jump = (sec, fk) => {
+  const still = reduce || (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
+  const jump = (sec, fk, light = false) => {
     if (fk && fk.startsWith("room:")) setOpenRoom(Number(fk.split(":")[1]));
     setTimeout(() => {
       const sc = scRef.current;
@@ -526,7 +654,25 @@ export function Settings() {
       const el = (fk && sc.querySelector(`[data-f="${fk}"]`)) || sc.querySelector(`[data-sec="${sec}"]`);
       if (!el) return;
       const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - (phone ? 110 : 20);
-      sc.scrollTo({ top, behavior: "smooth" });
+      sc.scrollTo({ top, behavior: still ? "auto" : "smooth" });
+      if (!light || !el.animate) return;
+      // founder 2026-10-05: the item lights up once the page arrives, then fades out
+      let done = false;
+      const glow = () => {
+        if (done) return;
+        done = true;
+        const bg = getComputedStyle(el).backgroundColor;
+        el.animate(
+          [
+            { backgroundColor: bg, boxShadow: "0 0 0 0 rgba(201,138,58,0)" },
+            { backgroundColor: "#FFF1D9", boxShadow: "0 0 0 4px rgba(201,138,58,0.38)", offset: 0.18 },
+            { backgroundColor: bg, boxShadow: "0 0 0 0 rgba(201,138,58,0)" },
+          ],
+          { duration: still ? 900 : 1700, easing: "ease-out" },
+        );
+      };
+      sc.addEventListener("scrollend", glow, { once: true });
+      setTimeout(glow, still ? 0 : 650);
     }, 40);
   };
 
@@ -572,7 +718,7 @@ export function Settings() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "0 2px 3px", minHeight: 28 }}>
             <span style={{ fontSize: d.fs.title, fontWeight: 600 }}>{title}</span>
           </div>
-          {keys.filter((k) => values[k]).map((k) => <FieldRow key={k} k={k} x={values[k]} app={app} d={d} phone={phone} greeting={greeting} />)}
+          {keys.filter((k) => values[k]).map((k) => <FieldRow key={k} k={k} x={values[k]} app={app} d={d} phone={phone} greeting={greeting} host={host} />)}
         </div>
       );
     });
@@ -593,16 +739,26 @@ export function Settings() {
     // never saved yet (first visit, before or after "Tôi tự điền"): nothing to tick
     return { k: s.key, num: s.n, l: s.title, mark: c ? `${c} mục chưa lưu` : firstRun ? "" : "✓ Đã lưu", mc: c ? "#7B4A2D" : "#4A6B3A", badge: c ? String(c) : firstRun ? "" : "✓", go: () => { setActive(s.key); jump(s.key); } };
   });
+  // "Tới mục tiếp theo": the next unsaved item after the one shown last (or below where the owner scrolled), then round
+  // to the top. Items stay unsaved until Lưu, so always going to the first one never moved (founder 2026-10-05).
   const revGo = () => {
-    if (pendN) {
-      const [sec, fk] = pend[0];
-      setActive(sec);
-      jump(sec, fk);
-    } else navigate("/thu-bonia");
+    if (!pendN) return navigate("/thu-bonia");
+    const sc = scRef.current;
+    const offset = phone ? 110 : 20;
+    const pos = (fk) => {
+      const el = sc?.querySelector(`[data-f="${fk}"]`);
+      return el ? el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop : -1;
+    };
+    const after = Math.max((sc?.scrollTop || 0) + offset + 8, lastNext.current && pend.some(([, fk]) => fk === lastNext.current) ? pos(lastNext.current) + 1 : 0);
+    const next = pend.find(([, fk]) => pos(fk) >= after) || pend[0];
+    lastNext.current = next[1];
+    setActive(next[0]);
+    jump(next[0], next[1], true);
+    return undefined;
   };
 
   return (
-    <div style={{ position: "absolute", inset: 0, background: "#F2EEE6", overflow: "hidden" }}>
+    <div ref={setHost} style={{ position: "absolute", inset: 0, background: "#F2EEE6", overflow: "hidden" }}>
       {!phone && <DeskHeader active={2} solid />}
       {review && (
         <div style={{ position: "absolute", left: 0, right: 0, top: topH, height: revH, zIndex: 3, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: `0 ${phone ? 16 : 48}px`, background: pendN ? "#FBF5EC" : "#EEF0E6", borderBottom: "1px solid #D9D0BF" }}>

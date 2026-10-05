@@ -4,7 +4,7 @@
 // Sample: Khách sạn Sân Nhài (fictional), with a few values the "AI" found and
 // the owner hasn't confirmed yet, so the review mode shows.
 
-import { FIELDS, SECTIONS, hotelValue as V, isEmpty } from "./hotelSchema.js";
+import { FIELDS, ROOM_FIELDS, SECTIONS, hotelValue as V, isEmpty } from "./hotelSchema.js";
 
 export { FIELDS, SECTIONS };
 export const VOICE_COUNT = 6; // Giọng 1…6 (the engine's own names stay hidden; 6 = cedar, founder 2026-10-05)
@@ -15,7 +15,7 @@ const gmaps = { t: "site" };
 const N = (v, src = site) => V(v, "new", src);
 
 const room = (o) => ({
-  aliases: [], count: "", bed: "", maxAdults: "", maxChildren: "", size: "", view: "", bath: "Riêng", floor: "", extras: [], extraBed: "",
+  aliases: [], count: "", bed: "", maxAdults: "", maxChildren: "", size: "", view: "", floor: "", extras: [], extraBed: "", notes: "",
   daily: { on: true, wd: "", we: "" }, overnight: { on: false, price: "", from: "22:00", to: "12:00" }, hourly: { on: false, h2: "", hn: "" }, monthly: { on: false, price: "" },
   st: "ok", ...o,
 });
@@ -48,28 +48,31 @@ export function defaultSettings() {
     checkinDeposit: V(""),
     luggage: V(true),
     // 04
-    roomAmenities: V(["Máy lạnh", "Wifi", "Nước nóng", "TV", "Tủ lạnh", "Ấm siêu tốc", "Nước suối"]),
+    roomAmenities: V(["Máy lạnh", "Nước nóng", "TV", "Tủ lạnh", "Ấm siêu tốc", "Nước suối"]),
     priceBasis: V("Theo phòng"),
     priceTax: N("Giá đã gồm thuế, phí", booking),
     priceIncludes: V([]),
     weekendNights: V(["Thứ Sáu", "Thứ Bảy"]),
     extraPerson: V([["Bé dưới 6 tuổi ngủ chung", "Miễn phí, 1 bé/phòng"], ["Trẻ 6–11 tuổi", "100.000đ/đêm"], ["Từ 12 tuổi", "Tính như người lớn"], ["Giường phụ (chỉ Deluxe)", "150.000đ/đêm"]]),
     minNights: V("Tết: tối thiểu 2 đêm"),
-    holidays: V([["30/4–2/5/2027, 2/9/2026", "Tăng 25%"], ["Tết: 5/2–11/2/2027", "Tăng 50%, trả trước, không hoàn"]]),
+    holidays: V([
+      { title: "Tết Nguyên đán Đinh Mùi", from: "2027-02-04", to: "2027-02-10", price: "Tăng 50%, trả trước, không hoàn" },
+      { title: "Lễ 30/4 – 1/5", from: "2027-04-30", to: "2027-05-02", price: "Tăng 25%" },
+    ]),
     promos: V([{ title: "Ở 3 đêm tặng 1 đêm", from: "2026-11-01", to: "2026-11-30", details: "Phòng Deluxe ban công, nhận phòng Chủ nhật tới thứ Năm", price: "2.250.000đ cho 4 đêm" }]),
     // 05
     children: N("Bé dưới 6 tuổi ngủ chung miễn phí"),
     pets: V(null, "new"),
-    smoking: V("Không hút trong phòng"),
+    smoking: V(["Không hút trong phòng"]),
     houseRules: V("Giữ yên lặng sau 22:00. Không tổ chức tiệc trong phòng."),
+    policyOther: V(""),
     deposit: N("Cọc 1 đêm khi đặt qua điện thoại, chuyển khoản trong 24 giờ; khách sạn nhắn thông tin chuyển khoản từ số của khách sạn."),
     changeDate: V("Đổi ngày miễn phí nếu báo trước 24 giờ, tùy phòng trống."),
     cancel: N("Hủy miễn phí trước 24 giờ, hoàn cọc qua chuyển khoản trong 3 ngày. Không đến thì mất cọc. Lễ Tết không hoàn."),
     payment: V(["Tiền mặt", "Chuyển khoản"]),
     vat: V(true),
     // 06
-    amenities: N(["Thang máy", "Giặt ủi", "Đưa đón sân bay", "Thuê xe máy"], booking),
-    wifi: V("Miễn phí, mọi phòng và sảnh"),
+    amenities: N(["Wi-Fi miễn phí", "Thang máy", "Giặt ủi", "Đưa đón sân bay", "Thuê xe máy"], booking),
     housekeeping: V("Dọn phòng mỗi ngày 9:00–15:00, hoặc khi khách yêu cầu"),
     breakfast: V("Không gồm trong giá; quán cà phê đối diện, khoảng 60.000đ"),
     dining: V(""),
@@ -104,7 +107,7 @@ export function defaultSettings() {
   return { values, rooms };
 }
 
-const EMPTY = { text: "", mono: "", area: "", time: "", number: "", chips: null, multi: [], tags: [], toggle: null, list: [], promos: [], voice: 1 };
+const EMPTY = { text: "", mono: "", area: "", time: "", number: "", chips: null, multi: [], tags: [], toggle: null, list: [], promos: [], holidays: [], voice: 1 };
 const emptyOf = (type) => (type === "hours" ? { allDay: false, from: "", to: "" } : EMPTY[type] ?? null);
 
 /** A blank Cài đặt (nothing found or "Tôi tự điền"): empty fields, the owner's permissions at their defaults. */
@@ -113,6 +116,8 @@ export function blankSettings(name = "") {
   for (const [k, f] of Object.entries(FIELDS)) values[k] = V(emptyOf(f.type));
   Object.assign(values, {
     name: V(name),
+    // founder 2026-10-05: every hotel has Wi-Fi; the owner unticks it if not
+    amenities: V(["Wi-Fi miễn phí"]),
     askFor: V(["Tên", "Ngày nhận phòng", "Số đêm", "Số người lớn", "Trẻ em và tuổi"]),
     groupSize: V("10"),
     greeting: V(name ? `Dạ ${name} xin nghe ạ.` : ""),
@@ -122,10 +127,26 @@ export function blankSettings(name = "") {
   return { values, rooms: [] };
 }
 
-/** A saved or looked-up profile over the blank form, so every field of the schema is there. */
+/** A value saved before its field changed shape (2026-10-05), in the field's current shape. */
+function upgrade(k, x) {
+  const f = FIELDS[k];
+  if (!x || !f) return x;
+  if (f.type === "multi" && typeof x.v === "string") return { ...x, v: x.v ? [x.v] : [] };
+  if (f.type === "holidays" && Array.isArray(x.v)) return { ...x, v: x.v.map((r) => (Array.isArray(r) ? { title: r[0] || "", from: "", to: "", price: r[1] || "" } : r)) };
+  return x;
+}
+
+/** A saved or looked-up profile over the blank form, so every field of the schema is there (and only those). */
 export function withAllFields(p, name = "") {
   const B = blankSettings(name);
-  return { values: { ...B.values, ...(p?.values || {}) }, rooms: Array.isArray(p?.rooms) ? p.rooms : [] };
+  const values = { ...B.values };
+  for (const [k, x] of Object.entries(p?.values || {})) if (FIELDS[k]) values[k] = upgrade(k, x);
+  // the old Wi-Fi field: Wi-Fi is one of Tiện nghi chung now
+  const wifi = p?.values?.wifi?.v;
+  if (wifi && Array.isArray(values.amenities.v) && !values.amenities.v.includes("Wi-Fi miễn phí")) values.amenities = { ...values.amenities, v: ["Wi-Fi miễn phí", ...values.amenities.v] };
+  const roomKeys = new Set([...Object.keys(ROOM_FIELDS), "daily", "overnight", "hourly", "monthly", "st", "src"]);
+  const rooms = (Array.isArray(p?.rooms) ? p.rooms : []).map((r) => Object.fromEntries(Object.entries({ notes: "", ...r }).filter(([k]) => roomKeys.has(k))));
+  return { values, rooms };
 }
 
 /** Plain { key: value } view of the profile, for screens and the demo engine. */
@@ -141,5 +162,5 @@ export function pendingList({ values, rooms }) {
   return out;
 }
 
-/** "Cần bạn điền": nothing found, nothing typed. */
-export const needsFill = (x) => !!x && x.st === "new" && isEmpty(x.v);
+/** "Cần bạn điền": nothing found, nothing typed (a field that is often empty never asks). */
+export const needsFill = (x, k) => !!x && x.st === "new" && isEmpty(x.v) && !FIELDS[k]?.opt;

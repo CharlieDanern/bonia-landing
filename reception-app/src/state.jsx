@@ -46,8 +46,11 @@ function loadSettings() {
   try {
     const P = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "null");
     if (P && P.values && P.rooms) {
-      const cur = { values: { ...D.values, ...P.values }, rooms: P.rooms };
-      return { ...cur, saved: P.saved || snapshot(cur) };
+      // stored before a field changed shape: read in today's shape (the saved copy too, or everything looks unsaved)
+      const up = (x) => withAllFields({ values: { ...D.values, ...x.values }, rooms: x.rooms });
+      const cur = up(P);
+      const was = P.saved ? JSON.parse(P.saved) : null;
+      return { ...cur, saved: was && was.values ? snapshot(up(was)) : snapshot(cur) };
     }
   } catch {
     // private mode or bad JSON: start from the defaults
@@ -375,7 +378,7 @@ export function AppStateProvider({ children }) {
         const prof = data && data.profile ? data.profile : data;
         if (!prof || !prof.values || !prof.rooms) return false;
         const D = defaultSettings();
-        const next = { values: { ...D.values, ...prof.values }, rooms: prof.rooms };
+        const next = withAllFields({ values: { ...D.values, ...prof.values }, rooms: prof.rooms });
         setSettings({ ...next, saved: snapshot(next) });
         return true;
       },
