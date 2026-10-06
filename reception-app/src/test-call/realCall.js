@@ -1,9 +1,16 @@
 // The real test call (founder 2026-10-05): Thử Bonia talks to the same receptionist as the phone line, on the
 // Cài đặt on screen. The browser plays the phone: the mic goes up as 8 kHz PCM, Bonia's voice comes down the same
 // way (voice agent lab/web-call.js, mod_audio_stream's protocol), with the transcript and the requests she records.
-// Local test for now: the call server listens on the voice-agent box and is reached through an ssh tunnel.
+// The backend hands out the call: a one-use ticket and the call server's address (production: the voice agent's own
+// test-call server, wss://api.bonia.net/reception/webcall; the local mock: the lab server through an ssh tunnel).
 
-export const WEBCALL_URL = import.meta.env.VITE_WEBCALL_URL || (typeof location !== "undefined" && location.hostname === "localhost" ? "ws://localhost:5291" : "");
+// what a refusal from the call server means for the owner
+const REFUSED = {
+  busy: "Đang có nhiều cuộc gọi thử. Thử lại sau ít phút.",
+  ticket_used: "Phiên gọi thử đã hết hạn. Bấm gọi lại.",
+  no_ticket: "Phiên gọi thử đã hết hạn. Bấm gọi lại.",
+  no_profile: "Chưa đọc được Cài đặt. Kiểm tra lại Cài đặt rồi gọi lại.",
+};
 
 // mic → 8 kHz 16-bit frames of 20 ms (box-filtered when the context runs faster than 8 kHz), with the input level
 const WORKLET = `
@@ -32,11 +39,12 @@ registerProcessor("up8k", Up8k);
 `;
 
 /**
- * Starts a call with the Cài đặt on screen and the Hôm nay note (or null). on: { state(phase: connecting | speaking | listening), ready(), level(rms), transcript(who, text),
+ * Starts a call: url + ticket from the backend (POST /reception/web/test-call); without a ticket (the local lab
+ * server) the Cài đặt on screen and the Hôm nay note go with the start. on: { state(phase: connecting | speaking | listening), ready(), level(rms), transcript(who, text),
  * request({ id, card, withdrawn }), end(), error(message) }. Resolves to { stop }. "connecting" lasts until Bonia's
  * greeting is ready (the server's 'ready'), so the call starts with her greeting; the mic goes up only from then.
  */
-export async function startRealCall({ profile, today, on }) {
+export async function startRealCall({ url, ticket, profile, today, on }) {
   let ac;
   try {
     ac = new AudioContext({ sampleRate: 8000 });
@@ -55,7 +63,7 @@ export async function startRealCall({ profile, today, on }) {
   await ac.audioWorklet.addModule(blob);
   URL.revokeObjectURL(blob);
 
-  const ws = new WebSocket(WEBCALL_URL);
+  const ws = new WebSocket(url);
   ws.binaryType = "arraybuffer";
   const src = ac.createMediaStreamSource(stream);
   const up = new AudioWorkletNode(ac, "up8k");
@@ -132,7 +140,7 @@ export async function startRealCall({ profile, today, on }) {
   };
 
   // today: the Hôm nay note in force (handoff 14), at the top of Bonia's prompts like on the phone line
-  ws.onopen = () => ws.send(JSON.stringify({ type: "start", profile, ...(today ? { today } : {}) }));
+  ws.onopen = () => ws.send(JSON.stringify(ticket ? { type: "start", ticket } : { type: "start", profile, ...(today ? { today } : {}) }));
   ws.onmessage = (e) => {
     if (typeof e.data !== "string") {
       stats.got += 1;
@@ -146,6 +154,7 @@ export async function startRealCall({ profile, today, on }) {
     } else if (m.type === "clearAudio") clear();
     else if (m.type === "transcript") on.transcript?.(m.who, m.text);
     else if (m.type === "request") on.request?.(m);
+    else if (m.type === "error") on.error?.(REFUSED[m.error] || "Không kết nối được tới Bonia. Thử lại sau ít phút.");
     return undefined;
   };
   ws.onerror = () => { if (!stopped) on.error?.("Không kết nối được tới Bonia. Thử lại sau ít phút."); };

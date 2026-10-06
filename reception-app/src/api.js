@@ -62,6 +62,8 @@ export const api = {
   saveToday: (note) => call("PUT", "/reception/web/today", note),
   clearToday: () => call("DELETE", "/reception/web/today"),
   tipSeen: () => call("POST", "/reception/web/tip-seen", {}),
+  // Thử Bonia: one test call on the Cài đặt on screen → { ticket, url }
+  testCall: (profile) => call("POST", "/reception/web/test-call", { profile }),
   // Cần xử lý: what Bonia recorded on the business's calls
   requests: (days = 7) => call("GET", `/reception/web/requests?days=${days}`),
   doneRequest: (id, done = true) => call("POST", `/reception/web/requests/${encodeURIComponent(id)}/done`, { done }),

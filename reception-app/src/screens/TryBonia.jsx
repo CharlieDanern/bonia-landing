@@ -4,7 +4,8 @@ import { Orb } from "../components/Orb.jsx";
 import { Bubble, RequestCard } from "../components/Request.jsx";
 import { VOICE_GROUPS, flat } from "../data/settings.js";
 import { scriptReply } from "../test-call/scriptEngine.js";
-import { WEBCALL_URL, startRealCall } from "../test-call/realCall.js";
+import { startRealCall } from "../test-call/realCall.js";
+import { api } from "../api.js";
 import { DeskHeader, PhoneTabs, Switch, useLayout } from "../layout.jsx";
 import { hm, useApp } from "../state.jsx";
 import { EASE, MONO, SERIF, dims } from "../ui.js";
@@ -45,7 +46,8 @@ export function TryBonia() {
 
   const patch = (p) => setSt((s) => ({ ...s, ...(typeof p === "function" ? p(s) : p) }));
 
-  const real = !app.demo && !!WEBCALL_URL;
+  // signed in: always the real Bonia (the backend hands out the call); the demo keeps its own engine
+  const real = !app.demo;
   const teardown = () => {
     const r = R.current;
     r.call?.stop();
@@ -194,8 +196,19 @@ export function TryBonia() {
     const last = { B: 0, K: 0 };
     try {
       const cur = settingsRef.current;
+      const profile = { values: cur.values, rooms: cur.rooms };
+      let ticket;
+      try {
+        ticket = await api.testCall(profile);
+      } catch (e) {
+        patch({ err: e?.error === "too_many" ? "Hôm nay bạn đã gọi thử nhiều lần. Mai thử tiếp nhé." : "Không kết nối được tới Bonia. Thử lại sau ít phút." });
+        setTimeout(finish, 2200);
+        return;
+      }
       R.current.call = await startRealCall({
-        profile: { values: cur.values, rooms: cur.rooms },
+        url: ticket.url,
+        ticket: ticket.ticket,
+        profile,
         today: app.biz.today,
         on: {
           state: (phase) => { if (S.current.live && S.current.phase !== phase) patch({ phase }); },
