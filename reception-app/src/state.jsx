@@ -54,13 +54,15 @@ const fromRequest = (x) => ({
   id: x.id, name: x.customer_name || null, room: x.room || null, number: x.caller_number || "", type: x.type, urgent: !!x.urgent,
   day: daysAgo(x.date), at: x.hm, len: null, summary: x.summary, status: x.status === "done" ? "done" : "open",
   doneBy: x.done_by || "", doneAt: x.done_hm || "", transcript: [],
+  // the confirmation SMS, built by the backend from the owner's choices (bookings, changes, cancellations)
+  sms: x.sms || null,
 });
 const BIZ_KEY = "tt4.biz";
 const BLANK_BIZ = { active: false, activatedAt: null, today: null, tipSeen: false, sector: null };
 // the demo hotel has been answering for a while; its state lives in this browser
 const DEMO_BIZ = { active: true, activatedAt: "2026-09-01T02:00:00.000Z", today: null, tipSeen: true, sector: "lodging" };
 /** The backend's state → the page's. */
-const fromState = (x) => ({ active: !!x.active, activatedAt: x.activated_at || null, today: x.today || null, tipSeen: !!x.tip_seen, sector: x.sector || null });
+const fromState = (x) => ({ active: !!x.active, activatedAt: x.activated_at || null, today: x.today || null, tipSeen: !!x.tip_seen, sector: x.sector || null, service: x.service || null });
 
 function loadDemoBiz() {
   try {
@@ -556,7 +558,9 @@ export function AppStateProvider({ children }) {
 
   const value = {
     demo, account, signIn, signOut, reloadAccount: loadAccount, lookup, startLookup, pickCandidate, startBlank, dismissLookup: () => setLookup(null),
-    reqs, calls, now, pickups, offline, focus, copied, settings, unpaid: demo && !INVOICE.paid,
+    // offline: the demo's unpaid month, or (a real account) the trial over and nothing paid: calls are refused
+    reqs, calls, now, pickups, offline: demo ? offline : biz.service?.ok === false, trialEnded: !demo && biz.service?.ok === false,
+    focus, copied, settings, unpaid: demo ? !INVOICE.paid : biz.service?.ok === false,
     biz: { ...biz, today: liveNote(biz.today) }, setActive, readback, saveToday, clearToday, dismissTip,
     days: demo ? DAYS : dayLabels(REQUEST_DAYS),
     startCall, listen, later, markDone, copy, resetDemo, toggleOffline, setFocus,

@@ -4,7 +4,8 @@ import { ACCOUNT, BILLING_INFO, DEVICES, INVOICE, PAY_HISTORY, PLAN, USAGE } fro
 import { decimal, groupVnd, vnd } from "../lib/format.js";
 import { vietQrPayload } from "../lib/vietqr.js";
 import { DeskHeader, PhoneTabs, useLayout } from "../layout.jsx";
-import { copyToClipboard } from "../state.jsx";
+import { copyToClipboard, useApp } from "../state.jsx";
+import { flat } from "../data/settings.js";
 import { MONO, SERIF, dims } from "../ui.js";
 
 // Tài khoản & thanh toán: its own page (founder 2026-10-04; it was Cài đặt
@@ -12,8 +13,95 @@ import { MONO, SERIF, dims } from "../ui.js";
 // invoice details, payment history, the login and the devices signed in.
 
 const VCB_BIN = "970436"; // Vietcombank
+const TRIAL_DAYS = 14;
+const ddmm = (iso) => { const d = new Date(new Date(iso).getTime() + 7 * 3600e3); return `${d.getUTCDate()}/${d.getUTCMonth() + 1}`; };
+const localPhone = (n) => { const d = String(n || "").replace(/\D/g, ""); const l = d.startsWith("84") ? `0${d.slice(2)}` : d; return /^0\d{9}$/.test(l) ? `${l.slice(0, 4)} ${l.slice(4, 7)} ${l.slice(7)}` : String(n || ""); };
+
+/**
+ * A real account (handoff 14 A11, founder 2026-10-06): who is signed in, the 14-day trial that starts at the first
+ * Bật Bonia (after it, unpaid, calls are refused), and Đăng xuất. Payment is arranged with Bonia until it is in the
+ * app; the demo keeps its sample plan, invoice and devices.
+ */
+function RealAccount() {
+  const app = useApp();
+  const { phone } = useLayout();
+  const d = dims(phone);
+  const s = app.biz.service || {};
+  const card = { background: "#fff", border: "1px solid #E4DCCB", borderRadius: 12, padding: phone ? "13px 14px" : "14px 16px", display: "flex", flexDirection: "column", gap: 8 };
+  const muted = { color: "#6E6255" };
+  const row = (l, v, mono) => (
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, minHeight: 34, alignItems: "center", borderTop: "1px solid #EFE9DD", fontSize: d.fs.body }}>
+      <span style={muted}>{l}</span><span style={{ fontFamily: mono ? MONO : undefined, textAlign: "right" }}>{v}</span>
+    </div>
+  );
+  const paid = s.paid_until && new Date(s.paid_until).getTime() > Date.now();
+  const ended = s.ok === false;
+  const started = !!s.trial_ends_at;
+  const left = s.days_left || 0;
+  const plan = (
+    <div style={{ ...card, borderColor: ended ? "#EBCFC4" : "#E4DCCB" }}>
+      <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.18em", color: "#6E6255" }}>GÓI</span>
+      {paid ? (
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: d.fs.title }}>
+          <span style={{ fontWeight: 600 }}>{PLAN.name}</span><span style={{ color: "#4A6B3A" }}>đã thanh toán tới {ddmm(s.paid_until)}</span>
+        </div>
+      ) : ended ? (
+        <>
+          <span style={{ fontSize: d.fs.title, fontWeight: 600, color: "#A0412D" }}>Hết dùng thử ngày {ddmm(s.trial_ends_at)}</span>
+          <span style={{ fontSize: d.fs.small, lineHeight: 1.55, color: "#4A4239" }}>Bonia đang từ chối cuộc gọi chuyển tới. Thanh toán {groupVnd(PLAN.price)}đ/tháng để Bonia nghe máy lại.</span>
+        </>
+      ) : started ? (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: d.fs.title }}>
+            <span style={{ fontWeight: 600 }}>Dùng thử miễn phí</span><span style={{ color: "#4A6B3A", fontWeight: 600 }}>còn {left} ngày</span>
+          </div>
+          <div style={{ height: 5, borderRadius: 3, background: "#E4DCCB", overflow: "hidden" }}>
+            <div style={{ width: `${Math.min(100, ((TRIAL_DAYS - left) / TRIAL_DAYS) * 100)}%`, height: "100%", background: "#4A6B3A" }} />
+          </div>
+          <span style={{ fontSize: d.fs.small, color: "#4A4239" }}>Hết dùng thử ngày {ddmm(s.trial_ends_at)}, sau đó {groupVnd(PLAN.price)}đ/tháng.</span>
+        </>
+      ) : (
+        <>
+          <span style={{ fontSize: d.fs.title, fontWeight: 600 }}>Dùng thử miễn phí {TRIAL_DAYS} ngày</span>
+          <span style={{ fontSize: d.fs.small, lineHeight: 1.55, color: "#4A4239" }}>Bắt đầu khi bạn bật Bonia. Sau đó {groupVnd(PLAN.price)}đ/tháng, chưa gồm VAT, gồm {PLAN.minutes} phút.</span>
+        </>
+      )}
+      {!paid && (started || ended) && <span style={{ fontSize: d.fs.small, color: "#4A4239", lineHeight: 1.5 }}>Thanh toán: gọi hoặc nhắn Bonia ở số đã hỗ trợ bạn cài đặt, hoặc để lại số tại <a href="https://bonia.vn/reception" target="_blank" rel="noreferrer">bonia.vn/reception</a>.</span>}
+    </div>
+  );
+  const who = (
+    <div style={{ ...card, gap: 0 }}>
+      <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.18em", color: "#6E6255", paddingBottom: 6 }}>TÀI KHOẢN</span>
+      {row("Tên", flat(app.settings).name || "—")}
+      {row("Số điện thoại", localPhone(app.account.phone), true)}
+      {row("Lĩnh vực", app.biz.sector === "other" ? "Khác" : "Lưu trú")}
+    </div>
+  );
+  const out = <button type="button" className="b-ghost" onClick={app.signOut} style={{ height: d.btn + 4, borderRadius: (d.btn + 4) / 2, fontSize: d.fs.body, color: "#A0412D", textAlign: "center" }}>Đăng xuất</button>;
+  const body = (
+    <div style={{ maxWidth: 640, margin: "0 auto", padding: phone ? "8px 16px 24px" : "28px 0 48px", display: "flex", flexDirection: "column", gap: 12 }}>
+      <span style={{ fontFamily: SERIF, fontSize: d.fs.h1 }}>Tài khoản</span>
+      {who}
+      {plan}
+      {out}
+    </div>
+  );
+  return (
+    <div style={{ position: "absolute", inset: 0, background: "#F2EEE6", overflow: "hidden" }}>
+      {!phone && <DeskHeader active={4} />}
+      <div style={{ position: "absolute", left: 0, right: 0, top: phone ? "var(--tt-top)" : 56, bottom: phone ? "calc(57px + var(--tt-bot))" : 0, overflow: "auto" }}>{body}</div>
+      {phone && <PhoneTabs active={4} />}
+    </div>
+  );
+}
 
 export function Account() {
+  const app = useApp();
+  return app.demo ? <DemoAccount /> : <RealAccount />;
+}
+
+/** The demo's Tài khoản: sample plan, invoice, history and devices. */
+function DemoAccount() {
   const { phone } = useLayout();
   const d = dims(phone);
   const [payCopied, setPayCopied] = useState(false);

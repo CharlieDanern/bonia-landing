@@ -9,6 +9,7 @@ import { Orb } from "../components/Orb.jsx";
 import { useApp } from "../state.jsx";
 import { EASE, MONO, SERIF, dims } from "../ui.js";
 import { playVoice } from "../voice.js";
+import { SMS_DEFAULT, SMS_PARTS, composeSms, sampleBooking } from "../lib/sms.js";
 
 // Cài đặt: the hotel profile (HOTEL_SETTINGS_FIELDS.md v2), nine sections
 // drawn from data/hotelSchema.js. First visit (founder 2026-10-05): Bonia
@@ -332,8 +333,50 @@ function VoicePick({ value, onChange, d, greeting }) {
   );
 }
 
+/**
+ * Tin nhắn xác nhận (founder 2026-10-06): what the confirmation SMS says. The app writes it after a booking, change
+ * or cancellation; the owner sends it from their own phone. A preview on a sample booking follows every change.
+ */
+function SmsField({ value, onChange, d, input, profile }) {
+  const v = { ...SMS_DEFAULT, ...(value || {}) };
+  const set = (p) => onChange({ ...v, ...p });
+  const name = flat(profile).name || "Khách sạn";
+  const preview = composeSms(v, sampleBooking(profile.rooms), { hotel: name, customerName: "anh Duy" });
+  const label = { fontSize: d.fs.tiny, color: "#6E6255" };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 9, minWidth: 0 }}>
+      <span style={{ fontSize: d.fs.small, color: "#4A4239", lineHeight: 1.5 }}>Sau mỗi yêu cầu đặt, đổi hoặc hủy phòng, ứng dụng soạn sẵn tin này để bạn gửi cho khách từ số của bạn. Bonia không tự gửi.</span>
+      <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <span style={label}>Mở đầu</span>
+        <input value={v.opening} onChange={(e) => set({ opening: e.target.value })} placeholder={`${name} xác nhận:`} style={{ ...input, width: "100%" }} />
+      </label>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <span style={label}>Gồm</span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+          {SMS_PARTS.map(([k, l]) => {
+            const on = v.parts.includes(k);
+            return <Chip key={k} d={d} filled on={on} onClick={() => set({ parts: on ? v.parts.filter((x) => x !== k) : [...v.parts, k] })}>{l}</Chip>;
+          })}
+        </div>
+      </div>
+      <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <span style={label}>Thêm câu (không bắt buộc)</span>
+        <textarea value={v.extra} onChange={(e) => set({ extra: e.target.value })} rows={2} placeholder="Vd: Bên em sẽ gọi lại về tiền cọc." style={{ ...input, height: "auto", width: "100%", minHeight: 42, padding: "7px 10px", lineHeight: 1.5, resize: "vertical" }} />
+      </label>
+      <button type="button" onClick={() => set({ thanks: !v.thanks })} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: d.fs.body, color: "#1F1B16", textAlign: "left", minHeight: d.row }}>
+        <Switch on={!!v.thanks} />
+        Cảm ơn khách ở cuối tin
+      </button>
+      <div style={{ padding: "10px 12px", borderRadius: 10, background: "#F7F3EC", border: "1px solid #EFE9DD", display: "flex", flexDirection: "column", gap: 4 }}>
+        <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: "0.16em", color: "#6E6255" }}>XEM TRƯỚC · VÍ DỤ MỘT ĐẶT PHÒNG</span>
+        <span style={{ fontSize: d.fs.body, lineHeight: 1.55, color: "#1F1B16" }}>{preview}</span>
+      </div>
+    </div>
+  );
+}
+
 /** One control for a schema field type. */
-function Control({ def, value, onChange, d, input, greeting, host, phone }) {
+function Control({ def, value, onChange, d, input, greeting, host, phone, profile }) {
   switch (def.type) {
     case "text":
       return <input value={value ?? ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholderOf(def)} style={{ ...input, width: "100%" }} />;
@@ -395,12 +438,14 @@ function Control({ def, value, onChange, d, input, greeting, host, phone }) {
       return <HolidayList value={value} onChange={onChange} d={d} input={input} host={host} phone={phone} />;
     case "voice":
       return <VoicePick value={value} onChange={onChange} d={d} greeting={greeting} />;
+    case "sms":
+      return <SmsField value={value} onChange={onChange} d={d} input={input} profile={profile} />;
     default:
       return null;
   }
 }
 
-const TOP_ALIGNED = ["list", "area", "promos", "holidays", "phones", "priced"];
+const TOP_ALIGNED = ["list", "area", "promos", "holidays", "phones", "priced", "sms"];
 
 function FieldRow({ k, x, app, d, phone, greeting, host }) {
   const def = FIELDS[k];
@@ -426,7 +471,7 @@ function FieldRow({ k, x, app, d, phone, greeting, host }) {
             ))}
           </div>
         ) : (
-          <Control def={def} value={x.v} onChange={(v) => app.setVal(k, v)} d={d} input={input} greeting={greeting} host={host} phone={phone} />
+          <Control def={def} value={x.v} onChange={(v) => app.setVal(k, v)} d={d} input={input} greeting={greeting} host={host} phone={phone} profile={app.settings} />
         )}
         {!conflict && x.st === "new" && (x.alts || []).length > 0 && (
           <span style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", fontSize: d.fs.tiny, color: "#6E6255" }}>

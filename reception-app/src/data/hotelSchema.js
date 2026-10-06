@@ -9,7 +9,8 @@
 //           promos ([{ title, from, to, details, price }]: dates YYYY-MM-DD) ·
 //           holidays ([{ title, from, to, price }]: dates YYYY-MM-DD; Vietnam's holidays offered in a picker) ·
 //           phones (string[]: one number per box) · priced ([{ name, included, price, note }]: included in the
-//           room price (a note), or its own price)
+//           room price (a note), or its own price) · sms ({ opening, parts, extra, thanks }: the confirmation SMS
+//           the app writes after a booking, change or cancellation; the owner sends it)
 //   kind    D fact · C business policy · Q permission (what Bonia may say/do)
 //   live    1 always in the call prompt · 2 if the budget allows, else a one-line
 //           summary + backend · 3 backend lookup only · 0 not part of any prompt
@@ -96,6 +97,8 @@ export const FIELDS = {
   askFor: { label: "Hỏi khách khi đặt", type: "multi", kind: "Q", live: 1, opts: ["Tên", "Ngày nhận phòng", "Số đêm", "Số người lớn", "Trẻ em và tuổi", "Giờ tới", "Yêu cầu riêng", "Email"] },
   groupSize: { label: "Số lượng khách đặt cần quản lý tư vấn trực tiếp", type: "number", kind: "Q", live: 1 },
   channels: { label: "Kênh đặt phòng", type: "list", kind: "D", live: 3, opt: true, cols: ["Kênh", "Đường dẫn"] },
+  // founder 2026-10-06: the owner picks what the confirmation SMS says; never in Bonia's prompts
+  smsConfirm: { label: "Tin nhắn xác nhận", type: "sms", kind: "Q", live: 0, opt: true },
 
   // 08 · Cách nghe máy
   greeting: { label: "Khi nhấc máy", type: "text", kind: "Q", live: 1 },
@@ -115,7 +118,7 @@ export const SECTIONS = [
   { key: "s4", n: "04", title: "Phòng & giá", cards: [["Chung cho mọi phòng", ["roomAmenities", "priceBasis", "priceTax", "priceIncludes", "weekendNights", "extraPerson", "minNights"]]], rooms: true },
   { key: "s5", n: "05", title: "Chính sách", cards: [["Khách", ["children", "pets", "smoking", "houseRules", "policyOther"]], ["Cọc, đổi, hủy", ["deposit", "changeDate", "cancel", "payment", "vat"]]] },
   { key: "s6", n: "06", title: "Tiện nghi & dịch vụ", cards: [["Tiện nghi", ["amenities", "housekeeping"]], ["Ăn uống", ["breakfast", "dining"]], ["Hoạt động, dịch vụ", ["activities", "services", "dayVisit", "groups"]]] },
-  { key: "s7", n: "07", title: "Nhận yêu cầu đặt phòng", cards: [["Khi khách muốn đặt", ["askFor", "groupSize", "channels"]]] },
+  { key: "s7", n: "07", title: "Nhận yêu cầu đặt phòng", cards: [["Khi khách muốn đặt", ["askFor", "groupSize", "channels"]], ["Tin nhắn xác nhận", ["smsConfirm"]]] },
   { key: "s8", n: "08", title: "Cách nghe máy", cards: [["Lời chào", ["greeting"]], ["Giọng, ngôn ngữ", ["voice", "english"]]] },
   { key: "s9", n: "09", title: "Thông tin khác", cards: [["Thông tin khác", ["extra", "faq"]]] },
   // founder 2026-10-05: last, because promotions change every so often

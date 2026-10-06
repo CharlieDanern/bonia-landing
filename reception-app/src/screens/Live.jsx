@@ -148,11 +148,11 @@ function DoneRow({ r, now, selected, onOpen, phone }) {
   );
 }
 
-function OfflineNote() {
+function OfflineNote({ trial }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textAlign: "center" }}>
-      <span style={{ fontSize: 15, fontWeight: 600, color: "#A0412D" }}>Offline</span>
-      <span style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.14em", color: "#6E6255" }}>CHƯA THANH TOÁN THÁNG 9 · BONIA KHÔNG NHẬN CUỘC GỌI</span>
+      <span style={{ fontSize: 15, fontWeight: 600, color: "#A0412D" }}>{trial ? "Hết dùng thử" : "Offline"}</span>
+      <span style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.14em", color: "#6E6255" }}>{trial ? "HẾT 14 NGÀY DÙNG THỬ · CUỘC GỌI CHUYỂN TỚI ĐANG BỊ TỪ CHỐI" : "CHƯA THANH TOÁN THÁNG 9 · BONIA KHÔNG NHẬN CUỘC GỌI"}</span>
       <Link href="/tai-khoan" className="b-primary" style={{ height: 34, padding: "0 18px", borderRadius: 17, fontSize: 12.5, display: "flex", alignItems: "center", marginTop: 6 }}>Thanh toán</Link>
     </div>
   );
@@ -236,7 +236,7 @@ function DeskLive({ m, detShown, detail, cardProps, openId, setOpenId, sw }) {
             {m.tip && <OrbTip onDone={app.dismissTip} style={{ left: "calc(100% + 16px)", top: "50%", transform: "translateY(-62%)" }} />}
           </div>
           {app.offline ? (
-            <div style={{ pointerEvents: "auto" }}><OfflineNote /></div>
+            <div style={{ pointerEvents: "auto" }}><OfflineNote trial={app.trialEnded} /></div>
           ) : (
             <span style={{ opacity: count ? 0 : 1, transition: "opacity 400ms ease", display: "flex" }}><OnOffStatus on={!m.off} calls={handled} /></span>
           )}

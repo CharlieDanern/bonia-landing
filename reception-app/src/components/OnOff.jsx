@@ -7,6 +7,7 @@ import { MONO, SERIF } from "../ui.js";
 
 export const SWITCH_ERRORS = {
   no_profile: "Lưu Cài đặt trước khi bật Bonia.",
+  trial_ended: "Hết 14 ngày dùng thử. Thanh toán để bật lại Bonia (Tài khoản).",
   network: "Không kết nối được. Kiểm tra mạng rồi thử lại.",
 };
 

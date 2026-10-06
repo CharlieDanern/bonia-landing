@@ -1,4 +1,5 @@
-import React from "react";
+import { copyToClipboard } from "../state.jsx";
+import React, { useState } from "react";
 import { title as titleOf } from "../data/sample.js";
 import { useLayout } from "../layout.jsx";
 import { MONO, dims } from "../ui.js";
@@ -85,6 +86,20 @@ export function Bubble({ who, text, urgent = false, op = 1 }) {
 }
 
 /** The full request: Bonia's summary, the recording, the transcript. */
+function SmsBlock({ text, phone, line }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 6, borderBottom: line }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+        <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: "0.18em", color: "#6E6255" }}>TIN NHẮN XÁC NHẬN</span>
+        <button type="button" className="b-ghost" onClick={() => { copyToClipboard(text); setCopied(true); setTimeout(() => setCopied(false), 1600); }} style={{ height: 28, padding: "0 12px", borderRadius: 14, fontSize: 12 }}>{copied ? "Đã chép" : "Sao chép"}</button>
+      </div>
+      <p style={{ margin: 0, padding: "8px 10px", borderRadius: 8, background: "#F7F3EC", fontSize: phone ? 14 : 13.5, lineHeight: 1.55 }}>{text}</p>
+      <span style={{ fontSize: 11.5, color: "#6E6255" }}>Gửi từ số điện thoại của bạn. Sửa nội dung trong Cài đặt → Tin nhắn xác nhận.</span>
+    </div>
+  );
+}
+
 export function RequestDetail({ r, when, radius = 14, copied, onClose, onCopy, onDone }) {
   const { phone } = useLayout();
   const d = dims(phone);
@@ -112,6 +127,8 @@ export function RequestDetail({ r, when, radius = 14, copied, onClose, onCopy, o
           <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: "0.18em", color: "#6E6255" }}>BONIA ĐÃ GHI</span>
           <p style={{ margin: 0, fontSize: phone ? 14 : 13.5, lineHeight: 1.55 }}>{r.summary}</p>
         </div>
+        {/* the confirmation SMS (founder 2026-10-06): the owner's choices in Cài đặt; sent from the owner's own phone */}
+        {r.sms && <SmsBlock text={r.sms} phone={phone} line={line} />}
         {/* the demo's recording row; a real request has none here yet (the call's recording is in the app) */}
         {r.len && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", borderBottom: line }}>
