@@ -31,12 +31,13 @@ export function History() {
   const [openId, setOpenId] = useState(null);
   const base = app.reqs.filter((r) => !q || fold(titleOf(r) + r.number + r.summary).includes(fold(q)));
   const list = base.filter(TEST[filter]);
-  const groups = DAYS.map((day, i) => ({ day, rows: list.filter((r) => r.day === i).sort((a, b) => b.at.localeCompare(a.at)) })).filter((g) => g.rows.length);
+  const days = app.days || DAYS;
+  const groups = days.map((day, i) => ({ day, rows: list.filter((r) => r.day === i).sort((a, b) => b.at.localeCompare(a.at)) })).filter((g) => g.rows.length);
   const or = app.reqs.find((r) => r.id === openId) || null;
   const detail = (radius) => (
     <RequestDetail
       r={or}
-      when={or ? `${DAYS[or.day]} ${or.at}` : ""}
+      when={or ? `${days[or.day]} ${or.at}` : ""}
       radius={radius}
       copied={or && app.copied === or.id}
       onClose={() => setOpenId(null)}

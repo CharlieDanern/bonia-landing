@@ -4,7 +4,8 @@ import { defaultSettings, blankSettings, withAllFields } from "./data/settings.j
 import { INVOICE } from "./data/account.js";
 import { api, token } from "./api.js";
 import { isDemo } from "./demo.js";
-import { demoReadback, liveNote, vnDate } from "./lib/today.js";
+import { dayLabels, daysAgo, demoReadback, liveNote, vnDate } from "./lib/today.js";
+import { DAYS } from "./data/sample.js";
 
 // One store for the whole app: requests (Trực tiếp + Lịch sử share them), the
 // scripted live calls of the demo, the Offline state, and Cài đặt.
@@ -46,7 +47,14 @@ const DEMO_CANDIDATES = [
   { name: "Sân Nhài Homestay", address: "14 Hoa Hồng, phường 2, Đà Lạt", phone: "", url: "https://www.agoda.com/san-nhai-homestay", source: "agoda" },
 ];
 const LOOKUP_POLL_MS = 2000;
-const STATE_POLL_MS = 15_000;
+const STATE_POLL_MS = 10_000; // Bonia's switch and Cần xử lý: a request from a call shows within ~10 s
+const REQUEST_DAYS = 8;
+/** A request from the backend → the shape Trực tiếp and Lịch sử show (the demo's). */
+const fromRequest = (x) => ({
+  id: x.id, name: x.customer_name || null, room: x.room || null, number: x.caller_number || "", type: x.type, urgent: !!x.urgent,
+  day: daysAgo(x.date), at: x.hm, len: null, summary: x.summary, status: x.status === "done" ? "done" : "open",
+  doneBy: x.done_by || "", doneAt: x.done_hm || "", transcript: [],
+});
 const BIZ_KEY = "tt4.biz";
 const BLANK_BIZ = { active: false, activatedAt: null, today: null, tipSeen: false, sector: null };
 // the demo hotel has been answering for a while; its state lives in this browser
@@ -211,7 +219,12 @@ export function AppStateProvider({ children }) {
     setReqs((rs) => rs.map((r) => (r.id === id ? { ...r, status: "done", doneBy: device, doneAt: hm(), doneFlash: t } : r)));
     setNow(t);
     ensureTick();
-  }, [ensureTick]);
+    // a real account: stored, with this computer as who did it; a refusal puts it back in Cần xử lý
+    if (!demo) {
+      api.doneRequest(id).then((x) => setReqs((rs) => rs.map((r) => (r.id === id ? { ...r, doneBy: x.request.done_by || r.doneBy, doneAt: x.request.done_hm || r.doneAt } : r))))
+        .catch(() => setReqs((rs) => rs.map((r) => (r.id === id ? { ...r, status: "open", doneBy: "", doneAt: "", doneFlash: null } : r))));
+    }
+  }, [ensureTick, demo]);
 
   const copy = useCallback((r) => {
     copyToClipboard(copyText(r));
@@ -252,7 +265,28 @@ export function AppStateProvider({ children }) {
   useEffect(() => { loadAccount(); }, [loadAccount]);
 
   const signIn = useCallback(async (t) => { token.set(t); await loadAccount(); }, [loadAccount]);
-  const signOut = useCallback(() => { token.set(null); setLookup(null); setSettings(withSaved(blankSettings())); setBiz(BLANK_BIZ); setAccount({ status: "out" }); }, []);
+  const signOut = useCallback(() => { token.set(null); setLookup(null); setSettings(withSaved(blankSettings())); setBiz(BLANK_BIZ); setReqs([]); setAccount({ status: "out" }); }, []);
+
+  // ── Cần xử lý for a real account: what Bonia recorded on the calls (backend), refreshed with the switch ──
+  const reqsLoaded = useRef(false);
+  const loadRequests = useCallback(async () => {
+    try {
+      const { requests } = await api.requests(REQUEST_DAYS);
+      const t = Date.now();
+      setReqs((prev) => {
+        const known = new Map(prev.map((r) => [r.id, r]));
+        return requests.map(fromRequest).filter((r) => r.day >= 0 && r.day < REQUEST_DAYS).map((r) => {
+          const was = known.get(r.id);
+          // a request that arrived since the last look flashes in, as on the demo desk
+          return was ? { ...r, addedAt: was.addedAt, doneFlash: was.doneFlash } : reqsLoaded.current ? { ...r, addedAt: t } : r;
+        });
+      });
+      if (reqsLoaded.current) { setNow(t); ensureTick(); }
+      reqsLoaded.current = true;
+    } catch {
+      // the network blinked: next time
+    }
+  }, [ensureTick]);
 
   // ── Bonia on/off, Hôm nay, the Orb tip (handoff 14) ─────────────────────
   // the phone may switch Bonia or change the note: ask again every 15 s and when the page comes back
@@ -262,7 +296,10 @@ export function AppStateProvider({ children }) {
       if (document.visibilityState !== "visible") return;
       const seq = bizSeq.current;
       api.state().then((x) => { if (seq === bizSeq.current) setBiz((b) => ({ ...b, ...fromState(x), sector: b.sector || x.sector || null })); }).catch(() => {});
+      loadRequests();
     };
+    reqsLoaded.current = false;
+    loadRequests();
     const iv = setInterval(pull, STATE_POLL_MS);
     window.addEventListener("focus", pull);
     document.addEventListener("visibilitychange", pull);
@@ -271,7 +308,7 @@ export function AppStateProvider({ children }) {
       window.removeEventListener("focus", pull);
       document.removeEventListener("visibilitychange", pull);
     };
-  }, [demo, account.status]);
+  }, [demo, account.status, loadRequests]);
 
   useEffect(() => {
     if (!demo) return;
@@ -521,6 +558,7 @@ export function AppStateProvider({ children }) {
     demo, account, signIn, signOut, reloadAccount: loadAccount, lookup, startLookup, pickCandidate, startBlank, dismissLookup: () => setLookup(null),
     reqs, calls, now, pickups, offline, focus, copied, settings, unpaid: demo && !INVOICE.paid,
     biz: { ...biz, today: liveNote(biz.today) }, setActive, readback, saveToday, clearToday, dismissTip,
+    days: demo ? DAYS : dayLabels(REQUEST_DAYS),
     startCall, listen, later, markDone, copy, resetDemo, toggleOffline, setFocus,
     elapsed, ...settingsApi,
   };

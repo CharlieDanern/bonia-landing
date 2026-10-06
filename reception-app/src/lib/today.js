@@ -16,6 +16,12 @@ export function dayLabel(now = Date.now()) {
   return `${WEEKDAYS[d.getUTCDay()]} ${d.getUTCDate()}/${d.getUTCMonth() + 1}`;
 }
 
+/** Lịch sử's day headings for a real account: Hôm nay, Hôm qua, then "Thứ Ba 6/10" (n days back). */
+export const dayLabels = (n = 8, now = Date.now()) => Array.from({ length: n }, (_, i) => (i === 0 ? "Hôm nay" : i === 1 ? "Hôm qua" : dayLabel(now - i * 86_400_000)));
+
+/** Whole days between a YYYY-MM-DD (Việt Nam) and today. */
+export const daysAgo = (date, now = Date.now()) => Math.round((Date.parse(`${vnDate(now)}T00:00:00Z`) - Date.parse(`${date}T00:00:00Z`)) / 86_400_000);
+
 /** The note in force now, or null. */
 export function liveNote(n, now = Date.now()) {
   if (!n || typeof n.text !== "string" || !n.text.trim()) return null;

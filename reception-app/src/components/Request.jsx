@@ -112,11 +112,14 @@ export function RequestDetail({ r, when, radius = 14, copied, onClose, onCopy, o
           <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: "0.18em", color: "#6E6255" }}>BONIA ĐÃ GHI</span>
           <p style={{ margin: 0, fontSize: phone ? 14 : 13.5, lineHeight: 1.55 }}>{r.summary}</p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", borderBottom: line }}>
-          <span style={{ width: 26, height: 26, borderRadius: 13, background: "#7B4A2D", color: "#fff", fontSize: 9, display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>▶</span>
-          <span style={{ fontSize: d.fs.small, color: "#4A4239" }}>Ghi âm</span>
-          <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: d.fs.tiny, color: "#6E6255" }}>{r.len}</span>
-        </div>
+        {/* the demo's recording row; a real request has none here yet (the call's recording is in the app) */}
+        {r.len && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", borderBottom: line }}>
+            <span style={{ width: 26, height: 26, borderRadius: 13, background: "#7B4A2D", color: "#fff", fontSize: 9, display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>▶</span>
+            <span style={{ fontSize: d.fs.small, color: "#4A4239" }}>Ghi âm</span>
+            <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: d.fs.tiny, color: "#6E6255" }}>{r.len}</span>
+          </div>
+        )}
         <div style={{ display: "flex", flexDirection: "column", gap: 7, padding: "12px 14px" }}>
           {r.transcript.map(([w, text], i) => <Bubble key={i} who={w} text={text} urgent={r.urgent} />)}
         </div>
