@@ -3,12 +3,13 @@ import { Link } from "wouter";
 import { Orb } from "../components/Orb.jsx";
 import { RequestCard, RequestDetail } from "../components/Request.jsx";
 import { LiveCallCard, callVm } from "../components/LiveCall.jsx";
+import { OnOffStatus, OrbTip, SwitchDialog } from "../components/OnOff.jsx";
+import { TodayBar, TodaySheet } from "../components/Today.jsx";
 import { title as titleOf } from "../data/sample.js";
-import { PLAN, USAGE } from "../data/account.js";
 import { flat } from "../data/settings.js";
 import { BONIA_MARK } from "../lib/assets.js";
 import { DEMO_LABEL_SHORT } from "../lib/clock.js";
-import { decimal } from "../lib/format.js";
+import { dayLabel } from "../lib/today.js";
 import { DeskHeader, PhoneTabs, useLayout, useRefWidth } from "../layout.jsx";
 import { hm, useApp } from "../state.jsx";
 import { EASE, MONO, SERIF } from "../ui.js";
@@ -19,6 +20,10 @@ import { EASE, MONO, SERIF } from "../ui.js";
 // Đã xong hôm nay on the right, both compact. A call slides its card in from
 // the right (a second call on the left), the desk turns soft green (soft brick
 // when urgent), and when it ends the card folds and drops into Cần xử lý.
+// Handoff 14 (founder 2026-10-06): the Orb is the on/off switch (click,
+// confirm); off it turns red and the desk pink, and forwarded calls are
+// rejected. The Hôm nay bar sits under it. The Orb keeps its place in the
+// middle of the desk (founder: not where the handoff moved it).
 
 const SIDE = 48; // page margin
 const LEFT_W = 340; // Cần xử lý
@@ -31,6 +36,8 @@ function useLiveModel() {
   const app = useApp();
   const { phone, reduce, device } = useLayout();
   const { reqs, calls, now, offline, focus } = app;
+  // the owner switched Bonia off (or never switched her on): forwarded calls are rejected
+  const off = !app.biz.active;
   const vms = calls.map((c) => callVm(c, now, app.listen)).filter((v) => v.phase !== "gone").sort((a, b) => a.slot - b.slot);
   const live = vms.filter((v) => v.phase === "live");
   const count = vms.length;
@@ -41,22 +48,41 @@ function useLiveModel() {
   if (offline) {
     mood = "off";
     tone = "muted";
+  } else if (off) {
+    tone = "urgent";
   } else if (focusV) {
     mood = focusV.mood;
     tone = anyUrgent ? "urgent" : "green";
   }
-  const bg = offline ? "#ECE9E3" : anyUrgent ? "#F6E6DE" : live.length ? "#EEF0E6" : "#F2EEE6";
+  const bg = offline ? "#ECE9E3" : off ? "#F4ECE7" : anyUrgent ? "#F6E6DE" : live.length ? "#EEF0E6" : "#F2EEE6";
   const trCard = reduce ? "opacity 200ms linear" : `transform 650ms ${EASE}, opacity 450ms ease, height 450ms ${EASE}`;
   const today = reqs.filter((r) => r.day === 0);
   const open = today.filter((r) => r.status === "open").sort((a, b) => (b.urgent - a.urgent) || b.at.localeCompare(a.at));
   const done = today.filter((r) => r.status !== "open").sort((a, b) => (b.doneAt || b.at).localeCompare(a.doneAt || a.at));
-  return { app, phone, reduce, device, vms, live, count, focusV, mood, tone, bg, trCard, open, done, today, now };
+  // W6: the tip, once, the first time Trực tiếp opens after Bật Bonia
+  const tip = !off && !offline && !!app.biz.activatedAt && !app.biz.tipSeen && !count;
+  return { app, phone, reduce, device, vms, live, count, focusV, mood, tone, bg, trCard, open, done, today, now, off, tip };
 }
 
 export function Live() {
   const m = useLiveModel();
   const [openId, setOpenId] = useState(null);
   const { app } = m;
+  // the Orb's confirm dialog (W7) and the Hôm nay sheet (W9)
+  const [ask, setAsk] = useState(null);
+  const [todayOpen, setTodayOpen] = useState(false);
+  const tapOrb = () => {
+    if (app.offline) return; // unpaid: Thanh toán, not the switch
+    if (m.tip) app.dismissTip();
+    setAsk({ busy: false, error: "" });
+  };
+  const confirm = async () => {
+    setAsk((a) => ({ ...a, busy: true, error: "" }));
+    const r = await app.setActive(m.off);
+    if (r.ok) setAsk(null);
+    else setAsk({ busy: false, error: r.error });
+  };
+  const sw = { tapOrb, openToday: () => setTodayOpen(true) };
   const or = app.reqs.find((r) => r.id === openId) || null;
   const detShown = !!or && !m.count;
   const detail = (radius) => (
@@ -88,8 +114,14 @@ export function Live() {
       if (openId === r.id) setOpenId(null);
     },
   });
-  const props = { m, detShown, detail, cardProps, openId, setOpenId };
-  return m.phone ? <PhoneLive {...props} /> : <DeskLive {...props} />;
+  const props = { m, detShown, detail, cardProps, openId, setOpenId, sw };
+  return (
+    <>
+      {m.phone ? <PhoneLive {...props} /> : <DeskLive {...props} />}
+      {ask && <SwitchDialog on={!m.off} name={flat(app.settings).name} busy={ask.busy} error={ask.error} phone={m.phone} onCancel={() => setAsk(null)} onConfirm={confirm} />}
+      <TodaySheet open={todayOpen} onClose={() => setTodayOpen(false)} phone={m.phone} />
+    </>
+  );
 }
 
 function DoneRow({ r, now, selected, onOpen, phone }) {
@@ -126,6 +158,15 @@ function OfflineNote() {
   );
 }
 
+/** Off: why the desk is quiet, and how to switch Bonia back on (before the first Bật Bonia: via Thử Bonia). */
+function OffNote({ never }) {
+  return (
+    <span style={{ fontSize: 13.5, lineHeight: 1.5, color: "#4A4239", textAlign: "center", pointerEvents: "auto" }}>
+      {never ? <>Cuộc gọi chuyển tới đang bị từ chối · <Link href="/thu-bonia">gọi thử rồi bật Bonia</Link></> : "Cuộc gọi chuyển tới đang bị từ chối · bấm Orb để bật lại"}
+    </span>
+  );
+}
+
 function ColumnHead({ title, n, color, muted }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flex: "none", paddingBottom: 2 }}>
@@ -137,7 +178,7 @@ function ColumnHead({ title, n, color, muted }) {
 
 // ── desktop ─────────────────────────────────────────────────────────────
 
-function DeskLive({ m, detShown, detail, cardProps, openId, setOpenId }) {
+function DeskLive({ m, detShown, detail, cardProps, openId, setOpenId, sw }) {
   const [ref, width] = useRefWidth();
   const { app, count, reduce, trCard } = m;
   // The free space for the orb: between Cần xử lý and Đã xong when idle,
@@ -169,7 +210,7 @@ function DeskLive({ m, detShown, detail, cardProps, openId, setOpenId }) {
   const handled = m.today.length;
   return (
     <div ref={ref} style={{ position: "absolute", inset: 0, background: m.bg, transition: "background-color 900ms ease", overflow: "hidden" }}>
-      <DeskHeader active={0} right={`${DEMO_LABEL_SHORT} · ${hm()}`} />
+      <DeskHeader active={0} right={`${app.demo ? DEMO_LABEL_SHORT : dayLabel().toUpperCase()} · ${hm()}`} />
       <div style={{ position: "absolute", left: 0, right: 0, top: 56, bottom: 0 }}>
         {/* Cần xử lý */}
         <div style={{ position: "absolute", left: SIDE, top: 36, bottom: 0, width: LEFT_W, display: "flex", flexDirection: "column", gap: 10, opacity: count === 2 ? 0 : 1, transition: "opacity 400ms ease" }}>
@@ -186,17 +227,27 @@ function DeskLive({ m, detShown, detail, cardProps, openId, setOpenId }) {
         </div>
         {/* the orb, centred in the free space */}
         <div style={{ position: "absolute", left: leftEdge, right: rightEdge, top: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, transition: `right 650ms ${EASE}`, pointerEvents: "none" }}>
-          <div style={{ width: ORB * scale, height: ORB * scale, transition: `width 800ms ${EASE}, height 800ms ${EASE}`, display: "flex", alignItems: "center", justifyContent: "center", marginTop: -48 }}>
+          <div style={{ position: "relative", width: ORB * scale, height: ORB * scale, transition: `width 800ms ${EASE}, height 800ms ${EASE}`, display: "flex", alignItems: "center", justifyContent: "center", marginTop: -48 }}>
+            {/* the Orb is the switch (W7): click, then confirm */}
+            <button type="button" onClick={sw.tapOrb} disabled={app.offline} aria-label={m.off ? "Bật Bonia" : "Tắt Bonia"} title={m.off ? "Bật Bonia" : "Tắt Bonia"} style={{ position: "absolute", inset: "8%", borderRadius: "50%", pointerEvents: "auto", cursor: app.offline ? "default" : "pointer", zIndex: 1 }} />
             <div style={{ transform: `scale(${scale})`, transition: `transform 800ms ${EASE}`, flex: "none" }}>
               <Orb size={ORB} mood={m.mood} tone={m.tone} pickup={app.pickups} reduce={reduce} lively={m.live.length > 0} />
             </div>
+            {m.tip && <OrbTip onDone={app.dismissTip} style={{ left: "calc(100% + 16px)", top: "50%", transform: "translateY(-62%)" }} />}
           </div>
           {app.offline ? (
             <div style={{ pointerEvents: "auto" }}><OfflineNote /></div>
           ) : (
-            <span style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.18em", color: "#6E6255", opacity: count ? 0 : 1, transition: "opacity 400ms ease", textAlign: "center" }}>
-              ĐANG TRỰC MÁY · {handled} CUỘC HÔM NAY · {decimal(USAGE.used)} / {PLAN.minutes} PHÚT
-            </span>
+            <span style={{ opacity: count ? 0 : 1, transition: "opacity 400ms ease", display: "flex" }}><OnOffStatus on={!m.off} calls={handled} /></span>
+          )}
+          {/* under the line, out of the flow: the Orb stays where it was */}
+          {!app.offline && (
+            <div style={{ position: "relative", width: "100%", height: 0, marginTop: -4 /* cancels the column's gap */ }}>
+              <div style={{ position: "absolute", left: 0, right: 0, top: 6, display: "flex", flexDirection: "column", alignItems: "center", gap: 14, opacity: count ? 0 : 1, transition: "opacity 400ms ease", pointerEvents: count ? "none" : "auto" }}>
+                {m.off && <OffNote never={!app.biz.activatedAt} />}
+                <TodayBar note={app.biz.today} onOpen={sw.openToday} width={Math.min(440, room - 24)} />
+              </div>
+            </div>
           )}
         </div>
         {/* live calls */}
@@ -216,7 +267,7 @@ function DeskLive({ m, detShown, detail, cardProps, openId, setOpenId }) {
 
 // ── phone ───────────────────────────────────────────────────────────────
 
-function PhoneLive({ m, detShown, detail, cardProps, setOpenId }) {
+function PhoneLive({ m, detShown, detail, cardProps, setOpenId, sw }) {
   const { app, count, reduce, trCard } = m;
   const [expanded, setExpanded] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
@@ -248,12 +299,20 @@ function PhoneLive({ m, detShown, detail, cardProps, setOpenId }) {
       </div>
       <div style={{ position: "absolute", left: 0, right: 0, top: "calc(var(--tt-top) + 48px)", bottom: "calc(57px + var(--tt-bot))", overflow: "auto" }}>
         <div style={{ maxWidth: 640, margin: "0 auto" }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", height: count ? 200 : 140, transition: `height 700ms ${EASE}` }}>
-            <div style={{ transform: count ? "scale(0.86)" : "scale(0.56)", transformOrigin: "50% 0", transition: `transform 700ms ${EASE}` }}>
+          <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", height: count ? 200 : 140, transition: `height 700ms ${EASE}` }}>
+            <div style={{ position: "relative", transform: count ? "scale(0.86)" : "scale(0.56)", transformOrigin: "50% 0", transition: `transform 700ms ${EASE}` }}>
               <Orb size={210} mood={m.mood} tone={m.tone} pickup={app.pickups} reduce={reduce} lively={m.live.length > 0} />
+              <button type="button" onClick={sw.tapOrb} disabled={app.offline} aria-label={m.off ? "Bật Bonia" : "Tắt Bonia"} style={{ position: "absolute", inset: "12%", borderRadius: "50%" }} />
             </div>
-            {!count && !app.offline && <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.18em", color: "#6E6255", marginTop: -84 }}>ĐANG TRỰC MÁY · {m.today.length} CUỘC HÔM NAY</span>}
+            {!count && !app.offline && <span style={{ marginTop: -84, display: "flex" }}><OnOffStatus on={!m.off} calls={m.today.length} size={9} /></span>}
+            {m.tip && <OrbTip arrow="up" onDone={app.dismissTip} style={{ top: 132, left: "calc(50% - 125px)" }} />}
           </div>
+          {!count && !app.offline && (
+            <div style={{ padding: "0 16px 14px", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+              {m.off && <OffNote never={!app.biz.activatedAt} />}
+              <TodayBar note={app.biz.today} onOpen={sw.openToday} width="100%" />
+            </div>
+          )}
           <div style={{ padding: "0 16px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
             <ColumnHead title="Cần xử lý" n={m.open.length} color="#7B4A2D" />
             {!m.open.length && <div style={{ padding: "8px 2px", fontSize: 13, color: "#6E6255" }}>Không còn việc nào.</div>}

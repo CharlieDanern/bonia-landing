@@ -32,11 +32,11 @@ registerProcessor("up8k", Up8k);
 `;
 
 /**
- * Starts a call. on: { state(phase: connecting | speaking | listening), ready(), level(rms), transcript(who, text),
+ * Starts a call with the Cài đặt on screen and the Hôm nay note (or null). on: { state(phase: connecting | speaking | listening), ready(), level(rms), transcript(who, text),
  * request({ id, card, withdrawn }), end(), error(message) }. Resolves to { stop }. "connecting" lasts until Bonia's
  * greeting is ready (the server's 'ready'), so the call starts with her greeting; the mic goes up only from then.
  */
-export async function startRealCall({ profile, on }) {
+export async function startRealCall({ profile, today, on }) {
   let ac;
   try {
     ac = new AudioContext({ sampleRate: 8000 });
@@ -131,7 +131,8 @@ export async function startRealCall({ profile, on }) {
     ac.close().catch(() => {});
   };
 
-  ws.onopen = () => ws.send(JSON.stringify({ type: "start", profile }));
+  // today: the Hôm nay note in force (handoff 14), at the top of Bonia's prompts like on the phone line
+  ws.onopen = () => ws.send(JSON.stringify({ type: "start", profile, ...(today ? { today } : {}) }));
   ws.onmessage = (e) => {
     if (typeof e.data !== "string") {
       stats.got += 1;

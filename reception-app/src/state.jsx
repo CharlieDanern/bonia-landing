@@ -4,12 +4,18 @@ import { defaultSettings, blankSettings, withAllFields } from "./data/settings.j
 import { INVOICE } from "./data/account.js";
 import { api, token } from "./api.js";
 import { isDemo } from "./demo.js";
+import { demoReadback, liveNote, vnDate } from "./lib/today.js";
 
 // One store for the whole app: requests (Trực tiếp + Lịch sử share them), the
 // scripted live calls of the demo, the Offline state, and Cài đặt.
 // Demo mode: sample data, Cài đặt persisted per browser. Otherwise (founder
 // 2026-10-05): the owner logs in with a code pushed to the Bonia app, and Cài
 // đặt is the hotel's profile on the backend; saving confirms everything.
+// Handoff 14 (founder 2026-10-06): Bonia on/off for the business (forwarded
+// calls are rejected while off, and until the first Bật Bonia), the Hôm nay
+// note, the one-time Orb tip and the sector. One value per business, shared
+// with the phone app and the voice agent: the page asks again every 15 s, so
+// a switch made on the phone shows here.
 
 const AppState = createContext(null);
 export const useApp = () => useContext(AppState);
@@ -40,6 +46,23 @@ const DEMO_CANDIDATES = [
   { name: "Sân Nhài Homestay", address: "14 Hoa Hồng, phường 2, Đà Lạt", phone: "", url: "https://www.agoda.com/san-nhai-homestay", source: "agoda" },
 ];
 const LOOKUP_POLL_MS = 2000;
+const STATE_POLL_MS = 15_000;
+const BIZ_KEY = "tt4.biz";
+const BLANK_BIZ = { active: false, activatedAt: null, today: null, tipSeen: false, sector: null };
+// the demo hotel has been answering for a while; its state lives in this browser
+const DEMO_BIZ = { active: true, activatedAt: "2026-09-01T02:00:00.000Z", today: null, tipSeen: true, sector: "lodging" };
+/** The backend's state → the page's. */
+const fromState = (x) => ({ active: !!x.active, activatedAt: x.activated_at || null, today: x.today || null, tipSeen: !!x.tip_seen, sector: x.sector || null });
+
+function loadDemoBiz() {
+  try {
+    const b = JSON.parse(localStorage.getItem(BIZ_KEY) || "null");
+    if (b && typeof b.active === "boolean") return { ...DEMO_BIZ, ...b };
+  } catch {
+    // private mode or bad JSON
+  }
+  return DEMO_BIZ;
+}
 
 function loadSettings() {
   const D = defaultSettings();
@@ -103,6 +126,12 @@ export function AppStateProvider({ children }) {
   const [focus, setFocus] = useState(null);
   const [copied, setCopied] = useState(null);
   const [settings, setSettings] = useState(() => (demo ? loadSettings() : withSaved(blankSettings())));
+  const [biz, setBiz] = useState(() => (demo ? loadDemoBiz() : BLANK_BIZ));
+  const bizRef = useRef(biz);
+  bizRef.current = biz;
+  // a local change wins over a state poll that was already on its way; the sector picked at the lookup
+  // stays the page's until Cài đặt is saved (polls never replace it)
+  const bizSeq = useRef(0);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
   const accountRef = useRef(account);
@@ -155,7 +184,8 @@ export function AppStateProvider({ children }) {
   }, []);
 
   const startCall = useCallback((kind) => {
-    if (stateRef.current.offline) return;
+    // unpaid, or the owner switched Bonia off: the call is rejected, nothing shows
+    if (stateRef.current.offline || !bizRef.current.active) return;
     const t = Date.now();
     const used = stateRef.current.calls.map((c) => c.slot);
     const slot = [0, 1].find((i) => !used.includes(i));
@@ -196,6 +226,7 @@ export function AppStateProvider({ children }) {
     setCalls([]);
     setReqs(REQUESTS.map((r) => ({ ...r })));
     setOffline(false);
+    setBiz(DEMO_BIZ);
     setNow(Date.now());
   }, []);
 
@@ -211,6 +242,8 @@ export function AppStateProvider({ children }) {
     try {
       const me = await api.me();
       setSettings(withSaved(withAllFields(me.profile)));
+      bizSeq.current++;
+      setBiz(fromState(me));
       setAccount({ status: "in", phone: me.phone, version: me.version, firstRun: !me.profile });
     } catch (e) {
       setAccount(e.status === 401 ? { status: "out" } : { status: "error", error: e.error || "network" });
@@ -219,14 +252,108 @@ export function AppStateProvider({ children }) {
   useEffect(() => { loadAccount(); }, [loadAccount]);
 
   const signIn = useCallback(async (t) => { token.set(t); await loadAccount(); }, [loadAccount]);
-  const signOut = useCallback(() => { token.set(null); setLookup(null); setSettings(withSaved(blankSettings())); setAccount({ status: "out" }); }, []);
+  const signOut = useCallback(() => { token.set(null); setLookup(null); setSettings(withSaved(blankSettings())); setBiz(BLANK_BIZ); setAccount({ status: "out" }); }, []);
+
+  // ── Bonia on/off, Hôm nay, the Orb tip (handoff 14) ─────────────────────
+  // the phone may switch Bonia or change the note: ask again every 15 s and when the page comes back
+  useEffect(() => {
+    if (demo || account.status !== "in") return undefined;
+    const pull = () => {
+      if (document.visibilityState !== "visible") return;
+      const seq = bizSeq.current;
+      api.state().then((x) => { if (seq === bizSeq.current) setBiz((b) => ({ ...b, ...fromState(x), sector: b.sector || x.sector || null })); }).catch(() => {});
+    };
+    const iv = setInterval(pull, STATE_POLL_MS);
+    window.addEventListener("focus", pull);
+    document.addEventListener("visibilitychange", pull);
+    return () => {
+      clearInterval(iv);
+      window.removeEventListener("focus", pull);
+      document.removeEventListener("visibilitychange", pull);
+    };
+  }, [demo, account.status]);
+
+  useEffect(() => {
+    if (!demo) return;
+    try {
+      localStorage.setItem(BIZ_KEY, JSON.stringify(biz));
+    } catch {
+      // storage blocked: the demo's switch lasts this page only
+    }
+  }, [demo, biz]);
+
+  /** Bonia on or off (Orb, Bật Bonia). Resolves to { ok } or { error }; a refusal puts the switch back. */
+  const setActive = useCallback(async (on) => {
+    const before = bizRef.current;
+    bizSeq.current++;
+    setBiz((b) => ({ ...b, active: on, activatedAt: b.activatedAt || (on ? new Date().toISOString() : null) }));
+    if (!on) setCalls([]);
+    if (demo) return { ok: true };
+    try {
+      const x = await api.setActive(on);
+      bizSeq.current++;
+      setBiz((b) => ({ ...b, ...fromState(x), sector: b.sector || x.sector || null }));
+      return { ok: true };
+    } catch (e) {
+      bizSeq.current++;
+      setBiz(before);
+      return { error: e.error || "network" };
+    }
+  }, [demo]);
+
+  /** What Bonia understood from a note: { clear, instruction, unclear }; throws { error } when it could not ask. */
+  const readback = useCallback(async (text, until) => {
+    if (demo) {
+      await new Promise((r) => { timeouts.current.push(setTimeout(r, 700)); });
+      return demoReadback(text, until);
+    }
+    return api.readback(text, until);
+  }, [demo]);
+
+  /** Save the note with the read-back the owner saw. Resolves to { ok } or { error }. */
+  const saveToday = useCallback(async (note) => {
+    bizSeq.current++;
+    if (demo) {
+      setBiz((b) => ({ ...b, today: { ...note, date: vnDate(), saved_at: new Date().toISOString() } }));
+      return { ok: true };
+    }
+    try {
+      const x = await api.saveToday(note);
+      bizSeq.current++;
+      setBiz((b) => ({ ...b, ...fromState(x), sector: b.sector || x.sector || null }));
+      return { ok: true };
+    } catch (e) {
+      return { error: e.error || "network" };
+    }
+  }, [demo]);
+
+  const clearToday = useCallback(async () => {
+    const before = bizRef.current;
+    bizSeq.current++;
+    setBiz((b) => ({ ...b, today: null }));
+    if (demo) return { ok: true };
+    try {
+      await api.clearToday();
+      return { ok: true };
+    } catch (e) {
+      setBiz(before);
+      return { error: e.error || "network" };
+    }
+  }, [demo]);
+
+  /** "Đã hiểu" on the Orb tip: never again for this account. */
+  const dismissTip = useCallback(() => {
+    setBiz((b) => ({ ...b, tipSeen: true }));
+    if (!demo) api.tipSeen().catch(() => {});
+  }, [demo]);
 
   /** Store a profile on the backend; the answer (every value confirmed) becomes the saved form. */
   const persist = useCallback(async (profile) => {
     const a = accountRef.current;
     try {
-      const r = await api.saveProfile({ values: profile.values, rooms: profile.rooms }, a.version);
+      const r = await api.saveProfile({ values: profile.values, rooms: profile.rooms }, a.version, bizRef.current.sector);
       setAccount((x) => ({ ...x, version: r.version, firstRun: false }));
+      if (r.sector) setBiz((b) => ({ ...b, sector: r.sector }));
       return { ok: true, profile: withAllFields(r.profile) };
     } catch (e) {
       return { error: e.error || "network" };
@@ -279,10 +406,11 @@ export function AppStateProvider({ children }) {
     }
   }, [demo, pollLookup]);
 
-  /** The owner's place: the full lookup reads only about it. */
-  const pickCandidate = useCallback(async (i) => {
+  /** The owner's place and sector (W4): the full lookup reads only about it. */
+  const pickCandidate = useCallback(async (i, sector) => {
     const l = lookupRef.current;
     if (!l || l.status !== "choose") return;
+    if (sector) setBiz((b) => ({ ...b, sector }));
     const base = { name: l.name, area: l.area, picked: l.candidates[i], startedAt: Date.now() };
     setLookup({ ...base, status: "running" });
     if (demo) {
@@ -392,6 +520,7 @@ export function AppStateProvider({ children }) {
   const value = {
     demo, account, signIn, signOut, reloadAccount: loadAccount, lookup, startLookup, pickCandidate, startBlank, dismissLookup: () => setLookup(null),
     reqs, calls, now, pickups, offline, focus, copied, settings, unpaid: demo && !INVOICE.paid,
+    biz: { ...biz, today: liveNote(biz.today) }, setActive, readback, saveToday, clearToday, dismissTip,
     startCall, listen, later, markDone, copy, resetDemo, toggleOffline, setFocus,
     elapsed, ...settingsApi,
   };

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Orb } from "../components/Orb.jsx";
 import { Bubble, RequestCard } from "../components/Request.jsx";
 import { VOICE_GROUPS, flat } from "../data/settings.js";
@@ -9,6 +9,7 @@ import { DeskHeader, PhoneTabs, Switch, useLayout } from "../layout.jsx";
 import { hm, useApp } from "../state.jsx";
 import { EASE, MONO, SERIF, dims } from "../ui.js";
 import { playVoice } from "../voice.js";
+import { SWITCH_ERRORS } from "../components/OnOff.jsx";
 
 // Thử Bonia: a free playground (founder 2026-10-04). The owner talks to Bonia
 // from this device about anything, like a real guest; quick settings sit
@@ -18,12 +19,18 @@ import { playVoice } from "../voice.js";
 // real call with the receptionist of the phone line on the Cài đặt on screen
 // (test-call/realCall.js, founder 2026-10-05); the demo keeps the browser's
 // speech and the demo engine (test-call/scriptEngine.js).
+// Handoff 14 W5 (founder 2026-10-06): until Bonia is on, a Bật Bonia block
+// sits under Cài đặt nhanh; it switches her on and opens Trực tiếp, where
+// the Orb is the switch from then on. The test call also follows the Hôm
+// nay note.
 const VI = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
 const VOICES = [[1.12, 1.02], [0.8, 0.98], [1.18, 1.0], [0.74, 0.95], [1.28, 1.06], [0.86, 1.0]]; // the demo's browser stand-ins for Giọng 1–6: women (1, 3, 5) higher, men (2, 4, 6) lower
 
 export function TryBonia() {
   const app = useApp();
   const { phone, reduce } = useLayout();
+  const [, navigate] = useLocation();
+  const [turning, setTurning] = useState({ busy: false, error: "" });
   const [st, setSt] = useState({ live: false, phase: "idle", turns: [], interim: "", out: null, err: "", t0: 0, level: 0 });
   const [now, setNow] = useState(Date.now());
   const [pickups, setPickups] = useState(0);
@@ -189,6 +196,7 @@ export function TryBonia() {
       const cur = settingsRef.current;
       R.current.call = await startRealCall({
         profile: { values: cur.values, rooms: cur.rooms },
+        today: app.biz.today,
         on: {
           state: (phase) => { if (S.current.live && S.current.phase !== phase) patch({ phase }); },
           // the call's clock starts when Bonia picks up (her greeting is ready)
@@ -353,6 +361,22 @@ export function TryBonia() {
     </div>
   );
 
+  // W5: switch Bonia on from here once the owner is happy with the test calls; then Trực tiếp
+  const turnOn = async () => {
+    setTurning({ busy: true, error: "" });
+    const r = await app.setActive(true);
+    if (r.ok) return navigate("/");
+    return setTurning({ busy: false, error: r.error });
+  };
+  const switchOn = !app.biz.active && !app.offline && (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, ...(phone ? {} : { paddingTop: 22, borderTop: "1px solid #E4DCCB" }) }}>
+      <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239" }}>Nếu bạn đã hài lòng với cài đặt, bật Bonia để bắt đầu nghe máy cho khách.</span>
+      <button type="button" disabled={turning.busy} onClick={turnOn} style={{ height: 44, borderRadius: 22, background: "#4A6B3A", color: "#fff", fontSize: 14.5, fontWeight: 500, display: "flex", alignItems: "center", justifyContent: "center", opacity: turning.busy ? 0.6 : 1 }}>{turning.busy ? "Đang bật…" : "Bật Bonia"}</button>
+      {turning.error && <span role="alert" style={{ fontSize: 12.5, lineHeight: 1.5, color: "#A0412D" }}>{SWITCH_ERRORS[turning.error] || SWITCH_ERRORS.network}{turning.error === "no_profile" && <> <Link href="/cai-dat">Mở Cài đặt</Link></>}</span>}
+      <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: "0.12em", lineHeight: 1.7, color: "#A0412D" }}>{app.biz.activatedAt ? "BONIA ĐANG TẮT" : "BONIA CHƯA BẬT"} · CUỘC GỌI CHUYỂN TỚI ĐANG BỊ TỪ CHỐI</span>
+    </div>
+  );
+
   const recent = runs.length > 0 && (
     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <span style={{ ...eyebrow, paddingBottom: 4 }}>LẦN THỬ GẦN ĐÂY</span>
@@ -437,6 +461,7 @@ export function TryBonia() {
               <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.16em", color: "#6E6255" }}>NÓI GÌ CŨNG ĐƯỢC · KHÔNG TÍNH PHÚT</span>
             </div>
             <div style={{ background: "#fff", border: "1px solid #E4DCCB", borderRadius: 12, padding: "12px 14px" }}>{quick}</div>
+            {switchOn && <div style={{ background: "#fff", border: "1px solid #E4DCCB", borderRadius: 12, padding: "14px" }}>{switchOn}</div>}
             {recent}
           </div>
         </div>
@@ -452,6 +477,7 @@ export function TryBonia() {
       <DeskHeader active={3} />
       <div style={{ position: "absolute", left: 48, top: 56 + 28, width: 320, bottom: 24, overflow: "auto", display: "flex", flexDirection: "column", gap: 24 }}>
         {quick}
+        {switchOn}
         {recent}
       </div>
       <div style={{ position: "absolute", left: 48 + 320 + 40, right: 48 + 400 + 40, top: 56, bottom: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>

@@ -7,7 +7,7 @@ import { Account } from "./screens/Account.jsx";
 import { History } from "./screens/History.jsx";
 import { Live } from "./screens/Live.jsx";
 import { Settings } from "./screens/Settings.jsx";
-import { Start, StartLink } from "./screens/Start.jsx";
+import { QrLanding, Start, StartLink } from "./screens/Start.jsx";
 import { TryBonia } from "./screens/TryBonia.jsx";
 
 // Bonia Tiếp tân v3 (Claude Design handoff 13 + the founder's 2026-10-04
@@ -46,8 +46,9 @@ export default function App() {
             <Route path="/tai-khoan"><Gate><Account /></Gate></Route>
             <Route path="/bat-dau/:step?">{(p) => <Start step={p.step || ""} />}</Route>
             <Route path="/start/:code">{(p) => <StartLink code={p.code} />}</Route>
+            <Route path="/qr/:id" component={QrLanding} />
             <Route path="/dang-nhap">
-              <Redirect to="/bat-dau" replace />
+              <Redirect to="/bat-dau/dang-nhap" replace />
             </Route>
             <Route>
               <Redirect to="/" replace />

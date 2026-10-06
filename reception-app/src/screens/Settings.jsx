@@ -621,45 +621,62 @@ function LookupWait({ app, phone, d }) {
   );
 }
 
-/** "Có phải khách sạn của bạn không?" — always asked, even with one match; a look-alike is never filled in. */
+/** W4 "Đây có phải cơ sở của bạn?" — always asked, even with one match (a look-alike is never filled in);
+ *  then the sector, pre-selected by Bonia, which the owner confirms or changes (handoff 14). */
+const SECTORS = [["lodging", "Lưu trú"], ["other", "Khác"]];
+const SECTOR_GUESS = "lodging"; // the lookup searches places to stay
+
 function LookupChoose({ app, phone, d }) {
   const l = app.lookup;
   const none = l.status === "none";
   const [other, setOther] = useState(none);
   const [url, setUrl] = useState("");
+  const [pick, setPick] = useState(0);
+  const [sector, setSector] = useState(app.biz.sector || SECTOR_GUESS);
   const okUrl = /^https?:\/\/\S+\.\S+/.test(url.trim());
   const host = (u) => {
     try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; }
   };
+  const card = (on) => ({ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3, textAlign: "left", padding: on ? "11px 15px" : "12px 16px", border: on ? "2px solid #7B4A2D" : "1px solid #D9D0BF", borderRadius: 12, background: on ? "#FBF5EC" : "#fff", color: "#1F1B16" });
   return (
     <Overlay phone={phone}>
-      <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.18em", color: "#7B4A2D" }}>XÁC NHẬN KHÁCH SẠN</span>
-      <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 23 : 26, lineHeight: 1.2 }}>{none ? `Bonia chưa thấy ${l.name} trên mạng` : l.candidates.length === 1 ? "Có phải khách sạn của bạn không?" : "Khách sạn của bạn là chỗ nào?"}</h2>
-      <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239" }}>{none ? "Dán link trang web, Google Maps hoặc Booking của khách sạn để Bonia tìm lại, hoặc bạn tự điền." : "Bonia chỉ điền thông tin của đúng chỗ bạn chọn. Chỗ trùng hoặc gần giống tên sẽ bị bỏ qua."}</span>
+      <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 400, fontSize: phone ? 26 : 34, lineHeight: 1.15, letterSpacing: "-0.01em" }}>{none ? `Bonia chưa thấy ${l.name} trên mạng` : "Đây có phải cơ sở của bạn?"}</h2>
+      {none && <span style={{ fontSize: 14, lineHeight: 1.55, color: "#4A4239" }}>Dán link trang web, Google Maps hoặc Booking của cơ sở để Bonia tìm lại, hoặc bạn tự điền.</span>}
       {!none && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {l.candidates.map((c, i) => (
-            <button key={i} type="button" onClick={() => app.pickCandidate(i)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3, textAlign: "left", padding: "12px 14px", border: "1px solid #D9D0BF", borderRadius: 12, background: "#FBF8F2", color: "#1F1B16" }}>
-              <span style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.3 }}>{c.name}</span>
-              {c.address && <span style={{ fontSize: 13, lineHeight: 1.45, color: "#4A4239" }}>{c.address}</span>}
-              <span style={{ fontSize: d.fs.tiny, color: "#6E6255", lineHeight: 1.5 }}>{[c.phone, host(c.url) || SOURCE_LABEL[c.source]].filter(Boolean).join(" · ")}</span>
-              <span style={{ marginTop: 4, fontSize: 13, color: "#7B4A2D", fontWeight: 600 }}>Đúng, chỗ này →</span>
-            </button>
-          ))}
-        </div>
+        <>
+          <div role="radiogroup" aria-label="Cơ sở" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {l.candidates.map((c, i) => (
+              <button key={i} type="button" role="radio" aria-checked={pick === i} onClick={() => setPick(i)} style={card(pick === i)}>
+                <span style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{c.name}</span>
+                {c.address && <span style={{ fontSize: 13.5, lineHeight: 1.45, color: "#4A4239" }}>{c.address}</span>}
+                {(c.phone || c.url) && <span style={{ fontSize: d.fs.tiny, color: "#6E6255", lineHeight: 1.5 }}>{[c.phone, host(c.url) || SOURCE_LABEL[c.source]].filter(Boolean).join(" · ")}</span>}
+              </button>
+            ))}
+          </div>
+          <span style={{ fontSize: 14, color: "#4A4239", paddingTop: 2 }}>Lĩnh vực</span>
+          <div role="radiogroup" aria-label="Lĩnh vực" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {SECTORS.map(([k, label]) => (
+              <button key={k} type="button" role="radio" aria-checked={sector === k} onClick={() => setSector(k)} style={{ ...card(sector === k), minHeight: 58, justifyContent: "center", gap: 1 }}>
+                <span style={{ fontSize: 15, fontWeight: 600 }}>{label}</span>
+                {k === SECTOR_GUESS && <span style={{ fontSize: 12, color: "#6E6255" }}>Bonia đoán</span>}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="b-primary" onClick={() => app.pickCandidate(pick, sector)} style={{ ...CENTER, height: phone ? 50 : 54, borderRadius: 27, fontSize: 15.5 }}>Đúng, điền giúp tôi</button>
+        </>
       )}
       {other ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span style={{ fontSize: 13, color: "#4A4239" }}>Link trang web, Google Maps hoặc Booking của khách sạn</span>
+            <span style={{ fontSize: 13, color: "#4A4239" }}>Link trang web, Google Maps hoặc Booking của cơ sở</span>
             <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" inputMode="url" style={{ height: 44, border: "1px solid #D9D0BF", borderRadius: 10, padding: "0 12px", fontSize: 14.5, background: "#fff", color: "#1F1B16" }} />
           </label>
           <button type="button" className="b-primary" disabled={!okUrl} onClick={() => app.startLookup({ name: l.name, area: l.area || "", urls: [url.trim()] })} style={{ ...CENTER, height: 46, borderRadius: 23, fontSize: 14.5, opacity: okUrl ? 1 : 0.5 }}>Tìm lại với link này</button>
         </div>
       ) : (
-        <button type="button" className="b-ghost" onClick={() => setOther(true)} style={{ ...CENTER, height: 44, borderRadius: 22, fontSize: 14 }}>Không có trong danh sách</button>
+        <button type="button" onClick={() => setOther(true)} style={{ ...CENTER, height: 36, fontSize: 13.5, color: "#7B4A2D" }}>Không có trong danh sách</button>
       )}
-      <button type="button" onClick={() => app.startBlank(l.name)} style={{ ...CENTER, height: 40, fontSize: 13.5, color: "#6E6255" }}>Tôi tự điền</button>
+      <button type="button" onClick={() => app.startBlank(l.name)} style={{ ...CENTER, height: 36, fontSize: 13.5, color: "#6E6255" }}>Tôi tự điền</button>
     </Overlay>
   );
 }
