@@ -164,7 +164,7 @@ export function TodaySheet({ open, onClose, phone }) {
             <span style={{ fontFamily: SERIF, fontSize: phone ? 23 : 26 }}>Hôm nay</span>
             <span style={{ fontSize: 13, color: "#6E6255" }}>{date}</span>
           </div>
-          <button type="button" onClick={onClose} aria-label="Đóng" className="h-line" style={{ width: 44, height: 44, borderRadius: 22, fontSize: 16, color: "#4A4239" }}>✕</button>
+          <button type="button" onClick={onClose} aria-label="Đóng" className="h-line" style={{ width: 44, height: 44, borderRadius: 22, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, lineHeight: 1, color: "#4A4239", flex: "none" }}>✕</button>
         </div>
         <div style={{ flex: 1, minHeight: 0, overflow: "auto", padding: phone ? "16px 18px" : "18px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
           <textarea
