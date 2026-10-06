@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useLocation, useSearch } from "wouter";
 import { FIELDS, ROOM_FIELDS, SECTIONS, SOURCE_LABEL, placeholderOf } from "../data/hotelSchema.js";
 import { upcomingHolidays } from "../data/vnHolidays.js";
-import { VOICE_COUNT, flat, needsFill, pendingList } from "../data/settings.js";
+import { VOICE_GROUPS, flat, needsFill, pendingList } from "../data/settings.js";
 import { DeskHeader, PhoneTabs, Switch, useLayout } from "../layout.jsx";
 import { Orb } from "../components/Orb.jsx";
 import { useApp } from "../state.jsx";
@@ -291,38 +291,43 @@ function Hours({ value, onChange, d, input }) {
   );
 }
 
+/** Giọng: by gender (founder 2026-10-06), a row of women's voices then a row of men's, each with a preview. */
 function VoicePick({ value, onChange, d, greeting }) {
   const [playing, setPlaying] = useState(null);
   const stop = useRef(null);
   useEffect(() => () => stop.current?.(), []);
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-      {Array.from({ length: VOICE_COUNT }, (_, j) => j + 1).map((i) => {
-        const on = value === i;
-        return (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, height: d.chip + 4, padding: "0 3px 0 10px", borderRadius: (d.chip + 4) / 2, border: `1px solid ${on ? "#7B4A2D" : "#E4DCCB"}`, background: on ? "#FBF5EC" : "#fff" }}>
-            <button type="button" onClick={() => onChange(i)} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: d.fs.small, color: "#1F1B16", height: "100%" }}>
-              <span style={{ width: 13, height: 13, borderRadius: 7, border: on ? "4px solid #7B4A2D" : "1.5px solid #C9BCA5", flex: "none" }} />
-              Giọng {i}
-            </button>
-            <button
-              type="button"
-              aria-label={`Nghe thử giọng ${i}`}
-              className="h-line"
-              onClick={() => {
-                stop.current?.();
-                if (playing === i) return setPlaying(null);
-                setPlaying(i);
-                stop.current = playVoice(i, greeting || "Dạ xin nghe ạ.", () => setPlaying(null));
-                return undefined;
-              }}
-              style={{ width: d.chip - 4, height: d.chip - 4, borderRadius: (d.chip - 4) / 2, fontSize: 10, color: "#7B4A2D" }}
-            >
-              {playing === i ? "■" : "▶"}
-            </button>
-          </div>
-        );
-      })}
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {VOICE_GROUPS.map((group) => (
+        <div key={group[0][1]} style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {group.map(([i, label]) => {
+            const on = value === i;
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, height: d.chip + 4, padding: "0 3px 0 10px", borderRadius: (d.chip + 4) / 2, border: `1px solid ${on ? "#7B4A2D" : "#E4DCCB"}`, background: on ? "#FBF5EC" : "#fff" }}>
+                <button type="button" onClick={() => onChange(i)} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: d.fs.small, color: "#1F1B16", height: "100%" }}>
+                  <span style={{ width: 13, height: 13, borderRadius: 7, border: on ? "4px solid #7B4A2D" : "1.5px solid #C9BCA5", flex: "none" }} />
+                  {label}
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Nghe thử ${label.toLowerCase()}`}
+                  className="h-line"
+                  onClick={() => {
+                    stop.current?.();
+                    if (playing === i) return setPlaying(null);
+                    setPlaying(i);
+                    stop.current = playVoice(i, greeting || "Dạ xin nghe ạ.", () => setPlaying(null));
+                    return undefined;
+                  }}
+                  style={{ width: d.chip - 4, height: d.chip - 4, borderRadius: (d.chip - 4) / 2, fontSize: 10, color: "#7B4A2D" }}
+                >
+                  {playing === i ? "■" : "▶"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 }

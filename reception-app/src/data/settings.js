@@ -8,6 +8,13 @@ import { FIELDS, ROOM_FIELDS, SECTIONS, hotelValue as V, isEmpty } from "./hotel
 
 export { FIELDS, SECTIONS };
 export const VOICE_COUNT = 6; // Giọng 1…6 (the engine's own names stay hidden; 6 = cedar, founder 2026-10-05)
+// The stored value stays 1–6 (the engine's bossa, vesper, willow, stone, gleam, cedar); the owner sees each by its
+// gender (founder 2026-10-06), women first: Nữ 1–3 = 1, 3, 5 · Nam 1–3 = 2, 4, 6.
+export const VOICE_GROUPS = [
+  [[1, "Giọng Nữ 1"], [3, "Giọng Nữ 2"], [5, "Giọng Nữ 3"]],
+  [[2, "Giọng Nam 1"], [4, "Giọng Nam 2"], [6, "Giọng Nam 3"]],
+];
+export const voiceLabel = (i) => VOICE_GROUPS.flat().find(([n]) => n === i)?.[1] || `Giọng ${i}`;
 
 const site = { t: "site", url: "https://sannhai.example" };
 const booking = { t: "booking", url: "https://www.booking.com/hotel/vn/san-nhai.html" };

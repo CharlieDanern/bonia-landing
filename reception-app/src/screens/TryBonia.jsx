@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { Orb } from "../components/Orb.jsx";
 import { Bubble, RequestCard } from "../components/Request.jsx";
-import { VOICE_COUNT, flat } from "../data/settings.js";
+import { VOICE_GROUPS, flat } from "../data/settings.js";
 import { scriptReply } from "../test-call/scriptEngine.js";
 import { WEBCALL_URL, startRealCall } from "../test-call/realCall.js";
 import { DeskHeader, PhoneTabs, Switch, useLayout } from "../layout.jsx";
@@ -19,7 +19,7 @@ import { playVoice } from "../voice.js";
 // (test-call/realCall.js, founder 2026-10-05); the demo keeps the browser's
 // speech and the demo engine (test-call/scriptEngine.js).
 const VI = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
-const VOICES = [[1.12, 1.02], [1.0, 1.0], [0.86, 0.98], [1.28, 1.06], [0.74, 0.95], [0.92, 1.0]]; // browser stand-ins for Giọng 1–6
+const VOICES = [[1.12, 1.02], [0.8, 0.98], [1.18, 1.0], [0.74, 0.95], [1.28, 1.06], [0.86, 1.0]]; // the demo's browser stand-ins for Giọng 1–6: women (1, 3, 5) higher, men (2, 4, 6) lower
 
 export function TryBonia() {
   const app = useApp();
@@ -307,31 +307,33 @@ export function TryBonia() {
       <span style={{ fontFamily: SERIF, fontSize: phone ? 18 : 20 }}>Cài đặt nhanh</span>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <span style={eyebrow}>GIỌNG</span>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-          {Array.from({ length: VOICE_COUNT }, (_, j) => j + 1).map((i) => {
-            const on = f.voice === i;
-            return (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 2, height: d.chip, padding: "0 2px 0 10px", borderRadius: d.chip / 2, border: `1px solid ${on ? "#7B4A2D" : "#D9D0BF"}`, background: on ? "#FBF5EC" : "#fff" }}>
-                <button type="button" onClick={() => app.applyNow("voice", i)} style={{ fontSize: d.fs.small, color: on ? "#7B4A2D" : "#1F1B16", height: "100%" }}>Giọng {i}</button>
-                <button
-                  type="button"
-                  aria-label={`Nghe thử giọng ${i}`}
-                  className="h-line"
-                  onClick={() => {
-                    stopPlay.current?.();
-                    if (playing === i) return setPlaying(null);
-                    setPlaying(i);
-                    stopPlay.current = playVoice(i, f.greeting || "Dạ xin nghe ạ.", () => setPlaying(null));
-                    return undefined;
-                  }}
-                  style={{ width: d.chip - 6, height: d.chip - 6, borderRadius: (d.chip - 6) / 2, fontSize: 9, color: "#7B4A2D" }}
-                >
-                  {playing === i ? "■" : "▶"}
-                </button>
-              </div>
-            );
-          })}
-        </div>
+        {VOICE_GROUPS.map((group) => (
+          <div key={group[0][1]} style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+            {group.map(([i, label]) => {
+              const on = f.voice === i;
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 2, height: d.chip, padding: "0 2px 0 10px", borderRadius: d.chip / 2, border: `1px solid ${on ? "#7B4A2D" : "#D9D0BF"}`, background: on ? "#FBF5EC" : "#fff" }}>
+                  <button type="button" onClick={() => app.applyNow("voice", i)} style={{ fontSize: d.fs.small, color: on ? "#7B4A2D" : "#1F1B16", height: "100%" }}>{label}</button>
+                  <button
+                    type="button"
+                    aria-label={`Nghe thử ${label.toLowerCase()}`}
+                    className="h-line"
+                    onClick={() => {
+                      stopPlay.current?.();
+                      if (playing === i) return setPlaying(null);
+                      setPlaying(i);
+                      stopPlay.current = playVoice(i, f.greeting || "Dạ xin nghe ạ.", () => setPlaying(null));
+                      return undefined;
+                    }}
+                    style={{ width: d.chip - 6, height: d.chip - 6, borderRadius: (d.chip - 6) / 2, fontSize: 9, color: "#7B4A2D" }}
+                  >
+                    {playing === i ? "■" : "▶"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <span style={eyebrow}>LỜI CHÀO</span>
