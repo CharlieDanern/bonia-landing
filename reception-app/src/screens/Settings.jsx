@@ -361,7 +361,7 @@ function SmsField({ value, onChange, d, input, profile }) {
       </div>
       <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         <span style={label}>Thêm câu (không bắt buộc)</span>
-        <textarea value={v.extra} onChange={(e) => set({ extra: e.target.value })} rows={2} placeholder="Vd: Bên em sẽ gọi lại về tiền cọc." style={{ ...input, height: "auto", width: "100%", minHeight: 42, padding: "7px 10px", lineHeight: 1.5, resize: "vertical" }} />
+        <textarea value={v.extra} onChange={(e) => set({ extra: e.target.value })} rows={2} placeholder="Để trống nếu không cần" style={{ ...input, height: "auto", width: "100%", minHeight: 42, padding: "7px 10px", lineHeight: 1.5, resize: "vertical" }} />
       </label>
       <button type="button" onClick={() => set({ thanks: !v.thanks })} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: d.fs.body, color: "#1F1B16", textAlign: "left", minHeight: d.row }}>
         <Switch on={!!v.thanks} />
