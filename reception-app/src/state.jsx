@@ -342,6 +342,17 @@ export function AppStateProvider({ children }) {
     return hist.map((c) => callRow(c, byCall)).filter((r) => r.day >= 0 && r.day < REQUEST_DAYS);
   }, [demo, hist, reqs]);
 
+  // A request opens its whole call (founder 2026-10-07): the transcript and the recording come from the call it
+  // was recorded on, wherever the request is opened (Trực tiếp, Lịch sử)
+  const reqsFull = useMemo(() => {
+    if (demo) return reqs;
+    const byCall = new Map(hist.map((c) => [c.call_uuid, c]));
+    return reqs.map((r) => {
+      const c = r.callUuid ? byCall.get(r.callUuid) : null;
+      return c ? { ...r, callId: c.id, len: lenOf(c.duration_ms), transcript: (c.transcript || []).map((m) => [m.role === "assistant" ? "B" : "K", m.content]) } : r;
+    });
+  }, [demo, reqs, hist]);
+
   // ── Trực tiếp: the live-call feed (founder 2026-10-07), the same one the apps get ──
   const onLive = useCallback((m) => {
     const t = Date.now();
@@ -678,7 +689,7 @@ export function AppStateProvider({ children }) {
   const value = {
     demo, account, signIn, signOut, reloadAccount: loadAccount, lookup, startLookup, pickCandidate, startBlank, dismissLookup: () => setLookup(null),
     // offline: the demo's unpaid month, or (a real account) the trial over and nothing paid: calls are refused
-    reqs, histRows, calls, now, pickups, offline: demo ? offline : biz.service?.ok === false, trialEnded: !demo && biz.service?.ok === false,
+    reqs: reqsFull, histRows, calls, now, pickups, offline: demo ? offline : biz.service?.ok === false, trialEnded: !demo && biz.service?.ok === false,
     focus, copied, settings, unpaid: demo ? !INVOICE.paid : biz.service?.ok === false,
     biz: { ...biz, today: liveNote(biz.today) }, setActive, readback, saveToday, clearToday, dismissTip,
     days: demo ? DAYS : dayLabels(REQUEST_DAYS),
