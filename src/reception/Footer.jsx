@@ -2,8 +2,9 @@ import { C, F, contentMax } from "./tokens.js";
 
 /* Footer (handoff v6): company + MST, links, divider, copyright. The links
  * are v6's row of sections (Nghe thử · Cài đặt · Giá · Dùng thử), then the
- * Bonia home and the legal pages. v6 also links "Bonia Business" (/business);
- * that page is the bank product, and the founder took it off this footer on
+ * Bonia home and the legal pages (Điều khoản is Bonia Tiếp tân's own,
+ * /terms-reception.html). v6 also links "Bonia Business" (/business); that
+ * page is the bank product, and the founder took it off this footer on
  * 2026-09-29, so it stays off. */
 
 const LINKS = [
@@ -13,7 +14,7 @@ const LINKS = [
   ["Dùng thử", "#demo"],
   ["Trang chủ Bonia", "/"], // the home chooser (2026-10-01)
   ["Chính sách bảo mật", "/privacy.html"],
-  ["Điều khoản", "/terms.html"],
+  ["Điều khoản", "/terms-reception.html"],
 ];
 
 export default function Footer() {
