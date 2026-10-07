@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { C, F, eyebrow, h2, accent, appear } from "./tokens.js";
 import { usePageWidth, useReducedMotion } from "./hooks.js";
-import { LK, STEPS, T, sourcesOf } from "./lookup-data.js";
+import { HOTEL as d, STEPS, T, sourcesOf } from "./lookup-data.js";
 import Orb from "./Orb.jsx";
 
 /* § 02 · Dễ cài, dễ sửa (#cai-dat), handoff v6: the receptionist app's
@@ -17,7 +17,8 @@ import Orb from "./Orb.jsx";
  *   14 s +    04 the rest confirmed, one value edited inline, saved, and what
  *                Bonia will say on the next call
  *
- * The sample business follows the page's sector (lookup-data.js).
+ * The sample is one fictional hotel on every sector: the app's lookup reads
+ * places to stay only (lookup-data.js).
  *
  * Visitors can pick a tile and press "Đúng hết". Two additions to the
  * prototype, whose clock runs on regardless: once a visitor has touched a
@@ -58,7 +59,7 @@ const clock = (t) => {
 };
 
 // Everything the window shows at second t (the prototype's lkVals).
-function stage(d, t, ok, pick) {
+function stage(t, ok, pick) {
   const edit = t >= T.edit;
   const [ei, ev] = d.edit;
   const rows = d.rows.map(([l, v, src, opts, fill], i) => {
@@ -157,7 +158,7 @@ function StepCards({ step, cols, onGo }) {
 const caret = (on) => ({ width: 1.5, height: 18, background: C.clay, marginLeft: 1, opacity: on ? 1 : 0 });
 
 // 01: the first-run card, filling itself in.
-function Offer({ d, t }) {
+function Offer({ t }) {
   const nameOn = t < 1.95;
   const areaOn = t >= 1.95 && t < 3.2;
   const pressed = t >= 3.4;
@@ -169,7 +170,7 @@ function Offer({ d, t }) {
           Để Bonia tự tìm thông tin {d.noun} của bạn trên mạng?
         </span>
         <div style={col(6)}>
-          <span style={{ fontSize: 13, color: C.ink3 }}>Tên cơ sở</span>
+          <span style={{ fontSize: 13, color: C.ink3 }}>Tên khách sạn</span>
           <span style={{ ...field, border: `1px solid ${nameOn ? C.clay : C.line}` }}>
             {typed(d.name, t, 0.3, 1.8)}
             <span style={caret(t >= 0.2 && nameOn)} />
@@ -206,8 +207,10 @@ function Offer({ d, t }) {
 }
 
 // 02: the wait, reading each source in turn.
-function Wait({ d, t }) {
-  const sources = sourcesOf(d);
+const SOURCES = sourcesOf(d);
+
+function Wait({ t }) {
+  const sources = SOURCES;
   const per = (T.review - T.search - 0.4) / sources.length;
   return (
     <div
@@ -223,7 +226,7 @@ function Wait({ d, t }) {
     >
       <Orb size={130} thinking />
       <span style={{ fontFamily: F.serif, fontSize: "clamp(20px,2.2vw,24px)", lineHeight: 1.25, maxWidth: "22em" }}>
-        Bonia đang đọc thông tin của {d.short}…
+        Bonia đang đọc thông tin của {d.name}…
       </span>
       <span style={{ fontFamily: F.mono, fontSize: 20, color: C.clay }}>{clock(t)}</span>
       <div style={col(0, { width: "100%", maxWidth: 380, borderTop: `1px solid ${C.line2}`, marginTop: 4 })}>
@@ -402,8 +405,7 @@ function Fields({ s, rowCols, onPick, onOkAll, onSave, listRef }) {
   );
 }
 
-export default function Lookup({ sector }) {
-  const d = LK[sector] || LK["phong-kham"];
+export default function Lookup() {
   const w = usePageWidth();
   const reduce = useReducedMotion();
   const noIO = typeof window === "undefined" || typeof window.IntersectionObserver === "undefined";
@@ -484,13 +486,7 @@ export default function Lookup({ sector }) {
 
   useEffect(() => stop, []);
 
-  // Picks belong to one sample business.
-  useEffect(() => {
-    setOk({});
-    setPick({});
-  }, [sector]);
-
-  const s = stage(d, t, ok, pick);
+  const s = stage(t, ok, pick);
   s.sayText = d.edit[2];
 
   // Bonia's line is the point of step 04: bring it into the window.
@@ -498,7 +494,7 @@ export default function Lookup({ sector }) {
     const el = listRef.current;
     if (!s.say || !el || el.scrollHeight <= el.clientHeight) return;
     el.scrollTo({ top: el.scrollHeight, behavior: reduce ? "auto" : "smooth" });
-  }, [s.say, sector, reduce]);
+  }, [s.say, reduce]);
 
   const onPick = (i, v) => {
     touch();
@@ -612,9 +608,9 @@ export default function Lookup({ sector }) {
             </div>
 
             {t < T.search ? (
-              <Offer d={d} t={t} />
+              <Offer t={t} />
             ) : t < T.review ? (
-              <Wait d={d} t={t} />
+              <Wait t={t} />
             ) : (
               <Fields
                 s={s}

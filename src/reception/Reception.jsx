@@ -19,8 +19,8 @@ import Footer from "./Footer.jsx";
  * lives at /reception/app and isn't linked from here.
  *
  * `sector` (from ?nganh=, else Phòng khám) is the one piece of shared state:
- * picking a call-demo tile selects its sector, and §01's phone, §02's example
- * and the form's Lĩnh vực follow it. `initSector` is the load-time sector;
+ * picking a call-demo tile selects its sector, and §01's phone and the form's
+ * Lĩnh vực follow it (§02 always shows a hotel). `initSector` is the load-time sector;
  * it fixes the tile order (that sector's tile first) for the whole visit. */
 export default function Reception() {
   const [sector, setSector] = useState(readSector);
@@ -36,7 +36,7 @@ export default function Reception() {
         <Hero />
         <CallDemo sector={sector} initSector={initSector} onSector={pickSector} />
         <NoSetup sector={sector} />
-        <Lookup sector={sector} />
+        <Lookup />
         <Price />
         <Start sector={sector} />
       </main>

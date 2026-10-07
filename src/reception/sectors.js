@@ -1,6 +1,6 @@
 /* The three sectors the page speaks to (spa removed 2026-10-01, founder) (handoff v5 `SECTORS`, the fields the
  * page shows). The selected sector drives the call-demo tile highlight, the
- * business in §01's phone, the §02 settings example and the form's Lĩnh vực.
+ * business in §01's phone and the form's Lĩnh vực (§02 always shows a hotel).
  *
  * Sales deep-link a sector with ?nganh=<key>; an unknown or missing value
  * falls back to Phòng khám. Clicking a call-demo tile selects its sector and
