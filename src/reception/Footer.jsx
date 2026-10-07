@@ -12,6 +12,7 @@ const LINKS = [
   ["Cài đặt", "#cai-dat"],
   ["Giá", "#gia"],
   ["Dùng thử", "#demo"],
+  ["Đăng nhập", "/reception/app"], // the receptionist app (founder 2026-10-07)
   ["Trang chủ Bonia", "/"], // the home chooser (2026-10-01)
   ["Chính sách bảo mật", "/privacy.html"],
   ["Điều khoản", "/terms-reception.html"],

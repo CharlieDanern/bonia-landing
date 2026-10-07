@@ -3,14 +3,15 @@ import { C, F } from "./tokens.js";
 import { usePageWidth } from "./hooks.js";
 
 /* Sticky nav (handoff v5, "Nav"). Logo + "TIẾP TÂN" on the left; the in-page
- * links Nghe thử · Cài đặt · Giá and the amber "Nhận tư vấn" pill (to the
- * §04 contact form) on the right. v6 still labels the middle link "Lĩnh vực",
+ * links Nghe thử · Cài đặt · Giá, the outlined "Nhận tư vấn" (to the §04
+ * contact form) and, at the far right in amber, "Đăng nhập" (to the app,
+ * /reception/app). v6 still labels the middle link "Lĩnh vực",
  * but in v6 its target is §02's settings demo, not the sectors, so it reads
  * "Cài đặt" like the footer's link to the same place (2026-10-07).
  *
  * The links show only when the page is at least 640 px wide (the prototype
  * switches on its measured width, not a media query); below that the row is
- * logo + pill, which fits down to 320 px. No hamburger, no Đăng nhập.
+ * logo + the two buttons (the TIẾP TÂN label hides below 380 px). No hamburger.
  *
  * Over the hero it is part of the hero, like bonia.vn/business: the hero
  * slides up underneath it (Hero.jsx, using --rnav-h, the nav's measured
@@ -25,12 +26,13 @@ const link = {
   whiteSpace: "nowrap",
 };
 
-const pill = {
+// The two buttons (founder 2026-10-07): "Nhận tư vấn" outlined, then "Đăng nhập" in amber at the far right, the
+// owners' way into the receptionist app. Colours and hover come from .r-btn-line / .r-btn-amber (reception.css), so
+// a:hover never darkens the label. Both show at every width.
+const button = {
   fontSize: 13,
   fontWeight: 500,
-  background: C.amber,
-  color: C.onClay,
-  padding: "11px 18px",
+  padding: "10px 16px",
   borderRadius: 999,
   whiteSpace: "nowrap",
 };
@@ -85,18 +87,21 @@ export default function Nav() {
           height="40"
           style={{ height: "clamp(28px,4vw,40px)", width: "auto", display: "block" }}
         />
-        <span
-          style={{
-            fontFamily: F.mono,
-            fontSize: 11,
-            letterSpacing: "0.22em",
-            textTransform: "uppercase",
-            color: C.ink3,
-            whiteSpace: "nowrap",
-          }}
-        >
-          Tiếp tân
-        </span>
+        {/* below 380 px the two buttons need the room: the logo alone */}
+        {w >= 380 && (
+          <span
+            style={{
+              fontFamily: F.mono,
+              fontSize: 11,
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              color: C.ink3,
+              whiteSpace: "nowrap",
+            }}
+          >
+            Tiếp tân
+          </span>
+        )}
       </a>
       <span style={{ flex: 1 }} />
       {w >= 640 && (
@@ -112,8 +117,11 @@ export default function Nav() {
           </a>
         </div>
       )}
-      <a href="#demo" style={pill}>
+      <a href="#demo" className="r-btn r-btn-line" style={button}>
         Nhận tư vấn
+      </a>
+      <a href="/reception/app" className="r-btn r-btn-amber" style={{ ...button, border: "1px solid transparent" }}>
+        Đăng nhập
       </a>
     </nav>
   );
