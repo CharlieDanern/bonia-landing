@@ -10,6 +10,7 @@ import { useApp } from "../state.jsx";
 import { EASE, MONO, SERIF, dims } from "../ui.js";
 import { playVoice } from "../voice.js";
 import { SMS_DEFAULT, SMS_PARTS, composeSms, sampleBooking } from "../lib/sms.js";
+import PlayGlyph, { playCircle } from "../components/PlayGlyph.jsx";
 
 // Cài đặt: the hotel profile (HOTEL_SETTINGS_FIELDS.md v2), nine sections
 // drawn from data/hotelSchema.js. First visit (founder 2026-10-05): Bonia
@@ -320,9 +321,9 @@ function VoicePick({ value, onChange, d, greeting }) {
                     stop.current = playVoice(i, greeting || "Dạ xin nghe ạ.", () => setPlaying(null));
                     return undefined;
                   }}
-                  style={{ width: d.chip - 4, height: d.chip - 4, borderRadius: (d.chip - 4) / 2, fontSize: 10, color: "#7B4A2D" }}
+                  style={playCircle(d.chip - 4)}
                 >
-                  {playing === i ? "■" : "▶"}
+                  <PlayGlyph playing={playing === i} size={10} />
                 </button>
               </div>
             );

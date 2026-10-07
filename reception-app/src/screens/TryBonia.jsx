@@ -11,6 +11,7 @@ import { hm, useApp } from "../state.jsx";
 import { EASE, MONO, SERIF, dims } from "../ui.js";
 import { playVoice } from "../voice.js";
 import { SWITCH_ERRORS } from "../components/OnOff.jsx";
+import PlayGlyph, { playCircle } from "../components/PlayGlyph.jsx";
 
 // Thử Bonia: a free playground (founder 2026-10-04). The owner talks to Bonia
 // from this device about anything, like a real guest; quick settings sit
@@ -346,9 +347,9 @@ export function TryBonia() {
                       stopPlay.current = playVoice(i, f.greeting || "Dạ xin nghe ạ.", () => setPlaying(null));
                       return undefined;
                     }}
-                    style={{ width: d.chip - 6, height: d.chip - 6, borderRadius: (d.chip - 6) / 2, fontSize: 9, color: "#7B4A2D" }}
+                    style={playCircle(d.chip - 6)}
                   >
-                    {playing === i ? "■" : "▶"}
+                    <PlayGlyph playing={playing === i} size={9} />
                   </button>
                 </div>
               );
