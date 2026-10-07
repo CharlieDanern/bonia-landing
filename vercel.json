@@ -1,5 +1,23 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Content-Security-Policy", "value": "frame-ancestors 'none'" },
+        { "key": "Permissions-Policy", "value": "microphone=(), camera=(), geolocation=(), payment=()" }
+      ]
+    },
+    {
+      "source": "/reception/app/(.*)",
+      "headers": [
+        { "key": "Permissions-Policy", "value": "microphone=(self), camera=(), geolocation=(), payment=()" }
+      ]
+    }
+  ],
   "redirects": [
     { "source": "/reception/", "destination": "/reception", "permanent": true },
     { "source": "/retail/", "destination": "/retail", "permanent": true },
