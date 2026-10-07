@@ -29,11 +29,13 @@ export function History() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("all");
   const [openId, setOpenId] = useState(null);
-  const base = app.reqs.filter((r) => !q || fold(titleOf(r) + r.number + r.summary).includes(fold(q)));
+  // a real account lists every call (founder 2026-10-07); the demo lists its requests
+  const source = app.histRows || app.reqs;
+  const base = source.filter((r) => !q || fold(titleOf(r) + r.number + r.summary).includes(fold(q)));
   const list = base.filter(TEST[filter]);
   const days = app.days || DAYS;
   const groups = days.map((day, i) => ({ day, rows: list.filter((r) => r.day === i).sort((a, b) => b.at.localeCompare(a.at)) })).filter((g) => g.rows.length);
-  const or = app.reqs.find((r) => r.id === openId) || null;
+  const or = source.find((r) => r.id === openId) || null;
   const detail = (radius) => (
     <RequestDetail
       r={or}

@@ -16,7 +16,38 @@ function elapsedOf(c, now) {
   return Math.min(raw, stop ? (stop - c.start) / 1000 : sc.end);
 }
 
+/**
+ * A real call from the live feed (founder 2026-10-07): the transcript as it arrives, the caller's number, how long
+ * it has run. No rolling summary or Nghe máy on the website yet; the call lands in Lịch sử when it ends.
+ */
+export function realCallVm(c, now) {
+  let phase = "live";
+  if (c.endAt) {
+    const d = now - c.endAt;
+    phase = d < 1600 ? "summary" : d < 2300 ? "fly" : "gone";
+  }
+  const last = c.turns[c.turns.length - 1];
+  const tsec = Math.max(0, Math.floor(((c.endAt || now) - c.start) / 1000));
+  const title = c.name || c.number || "Số ẩn";
+  return {
+    id: c.id, slot: c.slot, urgent: false, phase, mood: !last ? "idle" : last[0] === "B" ? "bonia" : "guest",
+    bubbles: c.turns.slice(-8).map(([w, text]) => ({ w, text })),
+    summaryNow: "",
+    activity: !last ? "Bonia vừa nhấc máy" : last[0] === "K" ? "Khách đang nói" : "Bonia đang trả lời",
+    actColor: "#4A4239", ringing: false, handed: false, canListen: false, listen: () => {},
+    statusText: "Bonia đang nghe máy", accent: "#4A6B3A", headBg: "#F1F3EA", headLine: "#E2E6D6", border: "#D9D0BF",
+    typeLabel: "CUỘC GỌI", typeBg: "transparent", typeColor: "#4A4239", typeBorder: "#D9D0BF",
+    uStyle: "dashed", uBorder: "#C9BCA5",
+    timer: `${Math.floor(tsec / 60)}:${String(tsec % 60).padStart(2, "0")}`,
+    title, sub: title === c.number ? "" : c.number,
+    isSummary: phase === "summary" || phase === "fly", isFull: phase === "live",
+    summary: `${title} · cuộc gọi đã xong, xem ở Lịch sử`,
+    otherText: title,
+  };
+}
+
 export function callVm(c, now, listen) {
+  if (c.real) return realCallVm(c, now);
   const sc = SCRIPTS[c.kind];
   const raw = ((c.endAt && !c.handedAt ? Math.min(now, c.endAt) : now) - c.start) / 1000;
   const el = elapsedOf(c, now);

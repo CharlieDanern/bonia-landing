@@ -1,5 +1,7 @@
 import { copyToClipboard } from "../state.jsx";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { recordingUrl } from "../api.js";
+import PlayGlyph from "./PlayGlyph.jsx";
 import { title as titleOf } from "../data/sample.js";
 import { useLayout } from "../layout.jsx";
 import { MONO, dims } from "../ui.js";
@@ -100,6 +102,57 @@ function SmsBlock({ text, phone, line }) {
   );
 }
 
+/** A real call's recording: fetched with the login on the first tap (kept 30 days), then play / pause. */
+function Recording({ id, len, line, d }) {
+  const [st, setSt] = useState("idle"); // idle | loading | ready | none
+  const [playing, setPlaying] = useState(false);
+  const audio = useRef(null);
+  const url = useRef(null);
+  useEffect(() => () => {
+    audio.current?.pause();
+    if (url.current) URL.revokeObjectURL(url.current);
+    audio.current = null;
+    url.current = null;
+  }, [id]);
+  useEffect(() => {
+    setSt("idle");
+    setPlaying(false);
+  }, [id]);
+  const toggle = async () => {
+    if (st === "loading" || st === "none") return;
+    try {
+      if (!audio.current) {
+        setSt("loading");
+        url.current = await recordingUrl(id);
+        audio.current = new Audio(url.current);
+        audio.current.onended = () => setPlaying(false);
+        setSt("ready");
+      }
+      if (playing) {
+        audio.current.pause();
+        setPlaying(false);
+      } else {
+        await audio.current.play();
+        setPlaying(true);
+      }
+    } catch {
+      setSt("none");
+      setPlaying(false);
+    }
+  };
+  const label = st === "loading" ? "Đang tải ghi âm…" : st === "none" ? "Không còn ghi âm" : "Ghi âm";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", borderBottom: line }}>
+      <button type="button" onClick={toggle} disabled={st === "none"} aria-label={playing ? "Tạm dừng ghi âm" : "Nghe ghi âm"}
+        style={{ width: 26, height: 26, borderRadius: 13, background: st === "none" ? "#C9BCA5" : "#7B4A2D", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
+        <PlayGlyph playing={playing} size={9} />
+      </button>
+      <span style={{ fontSize: d.fs.small, color: "#4A4239" }}>{label}</span>
+      <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: d.fs.tiny, color: "#6E6255" }}>{len}</span>
+    </div>
+  );
+}
+
 export function RequestDetail({ r, when, radius = 14, copied, onClose, onCopy, onDone }) {
   const { phone } = useLayout();
   const d = dims(phone);
@@ -129,10 +182,12 @@ export function RequestDetail({ r, when, radius = 14, copied, onClose, onCopy, o
         </div>
         {/* the confirmation SMS (founder 2026-10-06): the owner's choices in Cài đặt; sent from the owner's own phone */}
         {r.sms && <SmsBlock text={r.sms} phone={phone} line={line} />}
-        {/* the demo's recording row; a real request has none here yet (the call's recording is in the app) */}
-        {r.len && (
+        {/* the call's recording: a real call plays it (Lịch sử, founder 2026-10-07); the demo shows the row */}
+        {r.callId ? (
+          <Recording id={r.callId} len={r.len} line={line} d={d} />
+        ) : r.len && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", borderBottom: line }}>
-            <span style={{ width: 26, height: 26, borderRadius: 13, background: "#7B4A2D", color: "#fff", fontSize: 9, display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>▶</span>
+            <span style={{ width: 26, height: 26, borderRadius: 13, background: "#7B4A2D", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}><PlayGlyph playing={false} size={9} /></span>
             <span style={{ fontSize: d.fs.small, color: "#4A4239" }}>Ghi âm</span>
             <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: d.fs.tiny, color: "#6E6255" }}>{r.len}</span>
           </div>

@@ -67,4 +67,21 @@ export const api = {
   // Cần xử lý: what Bonia recorded on the business's calls
   requests: (days = 7) => call("GET", `/reception/web/requests?days=${days}`),
   doneRequest: (id, done = true) => call("POST", `/reception/web/requests/${encodeURIComponent(id)}/done`, { done }),
+  // Lịch sử: every call of the last days (founder 2026-10-07)
+  calls: (days = 8) => call("GET", `/reception/web/calls?days=${days}`),
+  // Trực tiếp: a one-use ticket for the live-call feed → { ticket, url }
+  liveTicket: () => call("POST", "/reception/web/live-ticket", {}),
 };
+
+/** A call's recording as a playable URL: fetched with the login (an <audio> tag can't send it), kept as a Blob. */
+export async function recordingUrl(id) {
+  const t = token.get();
+  let res;
+  try {
+    res = await fetch(`${BASE}/reception/web/calls/${encodeURIComponent(id)}/recording`, { headers: t ? { Authorization: `Bearer ${t}` } : {} });
+  } catch {
+    throw { status: 0, error: "network" };
+  }
+  if (!res.ok) throw { status: res.status, error: res.status === 404 ? "no_recording" : "failed" };
+  return URL.createObjectURL(await res.blob());
+}

@@ -69,7 +69,6 @@ export const FIELDS = {
   promos: { label: "Khuyến mãi, combo", type: "promos", kind: "D", live: 2, opt: true },
 
   // 05 · Chính sách
-  children: { label: "Trẻ em", type: "text", kind: "C", live: 2 },
   pets: { label: "Thú cưng", type: "chips", kind: "C", live: 1, opts: ["Không nhận", "Nhận, có phụ thu", "Nhận miễn phí"] },
   smoking: { label: "Hút thuốc", type: "multi", kind: "C", live: 2, opts: ["Không hút trong phòng", "Có khu hút thuốc", "Có phòng hút thuốc"] },
   deposit: { label: "Đặt cọc khi đặt phòng", type: "area", kind: "C", live: 2, note: "Bonia không đọc số tài khoản, không nói đã nhận tiền" },
@@ -116,7 +115,7 @@ export const SECTIONS = [
   { key: "s2", n: "02", title: "Vị trí & đường đi", cards: [["Địa chỉ", ["address", "addressOld", "landmark", "directions", "parking"]], ["Quanh đây", ["sights", "transport", "nearby"]]] },
   { key: "s3", n: "03", title: "Nhận & trả phòng", cards: [["Giờ giấc", ["checkin", "checkout", "earlyLate"]], ["Khi nhận phòng", ["idDocs", "minAge", "checkinDeposit", "luggage"]]] },
   { key: "s4", n: "04", title: "Phòng & giá", cards: [["Chung cho mọi phòng", ["roomAmenities", "priceBasis", "priceTax", "priceIncludes", "weekendNights", "extraPerson", "minNights"]]], rooms: true },
-  { key: "s5", n: "05", title: "Chính sách", cards: [["Khách", ["children", "pets", "smoking", "houseRules", "policyOther"]], ["Cọc, đổi, hủy", ["deposit", "changeDate", "cancel", "payment", "vat"]]] },
+  { key: "s5", n: "05", title: "Chính sách", cards: [["Khách", ["pets", "smoking", "houseRules", "policyOther"]], ["Cọc, đổi, hủy", ["deposit", "changeDate", "cancel", "payment", "vat"]]] },
   { key: "s6", n: "06", title: "Tiện nghi & dịch vụ", cards: [["Tiện nghi", ["amenities", "housekeeping"]], ["Ăn uống", ["breakfast", "dining"]], ["Hoạt động, dịch vụ", ["activities", "services", "dayVisit", "groups"]]] },
   { key: "s7", n: "07", title: "Nhận yêu cầu đặt phòng", cards: [["Khi khách muốn đặt", ["askFor", "groupSize", "channels"]], ["Tin nhắn xác nhận", ["smsConfirm"]]] },
   { key: "s8", n: "08", title: "Cách nghe máy", cards: [["Lời chào", ["greeting"]], ["Giọng, ngôn ngữ", ["voice", "english"]]] },

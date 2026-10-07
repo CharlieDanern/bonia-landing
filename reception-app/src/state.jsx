@@ -51,12 +51,42 @@ const STATE_POLL_MS = 10_000; // Bonia's switch and Cần xử lý: a request fr
 const REQUEST_DAYS = 8;
 /** A request from the backend → the shape Trực tiếp and Lịch sử show (the demo's). */
 const fromRequest = (x) => ({
-  id: x.id, name: x.customer_name || null, room: x.room || null, number: x.caller_number || "", type: x.type, urgent: !!x.urgent,
+  id: x.id, callUuid: x.call_uuid || null, name: x.customer_name || null, room: x.room || null, number: x.caller_number || "", type: x.type, urgent: !!x.urgent,
   day: daysAgo(x.date), at: x.hm, len: null, summary: x.summary, status: x.status === "done" ? "done" : "open",
   doneBy: x.done_by || "", doneAt: x.done_hm || "", transcript: [],
   // the confirmation SMS, built by the backend from the owner's choices (bookings, changes, cancellations)
   sms: x.sms || null,
 });
+/** "0900 000 362" from +84900000362 or 0900000362; anything else as it came. */
+const localPhone = (n) => {
+  const d = String(n || "").replace(/\D/g, "");
+  const l = d.startsWith("84") && d.length >= 11 ? `0${d.slice(2)}` : d;
+  return /^0\d{9}$/.test(l) ? `${l.slice(0, 4)} ${l.slice(4, 7)} ${l.slice(7)}` : String(n || "");
+};
+const lenOf = (ms) => { const s = Math.round((ms || 0) / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+/**
+ * A call from the backend → a Lịch sử row (founder 2026-10-07: every call, not only those with a request), in the
+ * shape of a request so the same list and panel show it. A call with a request takes that request's id, title and
+ * status (so Đã xử lý and the SMS work); one without is "Bonia tự xong".
+ */
+const callRow = (c, reqsByCall) => {
+  const rs = reqsByCall.get(c.call_uuid) || [];
+  const r0 = rs.find((r) => r.status === "open") || rs[0] || null;
+  return {
+    id: r0 ? r0.id : `call:${c.id}`, callId: c.id, name: r0?.name || c.contact_name || null, room: r0?.room || null,
+    number: c.caller_number || "", type: c.tag || r0?.type || "Cuộc gọi", urgent: c.tag === "Gấp" || !!r0?.urgent,
+    day: daysAgo(c.date), at: c.hm, len: lenOf(c.duration_ms), summary: r0?.summary || c.summary || "Không có nội dung.",
+    status: r0 ? r0.status : "auto", doneBy: r0?.doneBy || "", doneAt: r0?.doneAt || "", sms: r0?.sms || null,
+    transcript: (c.transcript || []).map((m) => [m.role === "assistant" ? "B" : "K", m.content]),
+  };
+};
+/** A live-feed call (founder 2026-10-07) → the page's live call, drawn by realCallVm. */
+const liveCallOf = (x, slot) => ({
+  id: x.call_id, real: true, slot, start: Date.parse(x.started_at) || Date.now(),
+  number: localPhone(x.caller_number), name: x.is_known_contact && x.contact_name ? x.contact_name : null,
+  turns: (x.turns || []).map((t) => [t.role === "assistant" ? "B" : "K", t.content]), lastSeq: Math.max(0, ...(x.turns || []).map((t) => t.seq || 0)),
+});
+const freeSlot = (cs) => [0, 1].find((i) => !cs.some((c) => c.slot === i));
 const BIZ_KEY = "tt4.biz";
 const BLANK_BIZ = { active: false, activatedAt: null, today: null, tipSeen: false, sector: null };
 // the demo hotel has been answering for a while; its state lives in this browser
@@ -130,6 +160,8 @@ export function AppStateProvider({ children }) {
   lookupRef.current = lookup;
   const [reqs, setReqs] = useState(() => (demo ? REQUESTS.map((r) => ({ ...r })) : []));
   const [calls, setCalls] = useState([]);
+  // Lịch sử for a real account: every call of the last days, from the backend
+  const [hist, setHist] = useState([]);
   const [now, setNow] = useState(Date.now());
   const [pickups, setPickups] = useState(0);
   const [offline, setOffline] = useState(false);
@@ -160,6 +192,7 @@ export function AppStateProvider({ children }) {
     let newReqs = rs;
     const next = cs
       .map((c) => {
+        if (c.real) return c;
         const sc = SCRIPTS[c.kind];
         const c2 = { ...c };
         if (c2.ringAt && !c2.handedAt && t - c2.ringAt > 2600) c2.handedAt = t;
@@ -173,7 +206,9 @@ export function AppStateProvider({ children }) {
         }
         return c2;
       })
-      .filter((c) => !(c.endAt && t - c.endAt > 2400));
+      .filter((c) => !(c.endAt && t - c.endAt > 2400))
+      // a real call that had no place (two already on the desk) takes the first one free
+      .map((c, i, all) => (c.real && c.slot == null && !c.endAt && freeSlot(all) != null ? { ...c, slot: freeSlot(all) } : c));
     const flashing = newReqs.some((r) => (r.addedAt && t - r.addedAt < 3000) || (r.doneFlash && t - r.doneFlash < 3000));
     setCalls(next);
     if (newReqs !== rs) setReqs(newReqs);
@@ -290,6 +325,88 @@ export function AppStateProvider({ children }) {
     }
   }, [ensureTick]);
 
+  const loadCalls = useCallback(async () => {
+    try {
+      const { calls: cs } = await api.calls(REQUEST_DAYS);
+      setHist(cs);
+    } catch {
+      // the network blinked: next time
+    }
+  }, []);
+
+  // Lịch sử's rows: every call, joined to the requests Bonia recorded on it
+  const histRows = useMemo(() => {
+    if (demo) return null;
+    const byCall = new Map();
+    for (const r of reqs) if (r.callUuid) byCall.set(r.callUuid, [...(byCall.get(r.callUuid) || []), r]);
+    return hist.map((c) => callRow(c, byCall)).filter((r) => r.day >= 0 && r.day < REQUEST_DAYS);
+  }, [demo, hist, reqs]);
+
+  // ── Trực tiếp: the live-call feed (founder 2026-10-07), the same one the apps get ──
+  const onLive = useCallback((m) => {
+    const t = Date.now();
+    if (m.type === "snapshot") {
+      const ids = new Set((m.live_calls || []).map((x) => x.call_id));
+      setCalls((cs) => {
+        // a call that ended while the page was away is gone; one still live is redrawn from the snapshot
+        let next = cs.filter((c) => !c.real || ids.has(c.id) || c.endAt);
+        for (const x of m.live_calls || []) {
+          const was = next.find((c) => c.id === x.call_id);
+          next = was ? next.map((c) => (c.id === x.call_id ? { ...liveCallOf(x, c.slot), endAt: c.endAt } : c)) : [...next, liveCallOf(x, freeSlot(next) ?? null)];
+        }
+        return next;
+      });
+    } else if (m.type === "call_started") {
+      setCalls((cs) => (cs.some((c) => c.id === m.call_id) ? cs : [...cs, liveCallOf(m, freeSlot(cs) ?? null)]));
+      setPickups((p) => p + 1);
+      setFocus(m.call_id);
+    } else if (m.type === "turn") {
+      setCalls((cs) => cs.map((c) => (c.id === m.call_id && c.real && (m.seq || 0) > c.lastSeq
+        ? { ...c, lastSeq: m.seq, turns: [...c.turns, [m.role === "assistant" ? "B" : "K", m.content]] } : c)));
+    } else if (m.type === "call_ended") {
+      setCalls((cs) => cs.map((c) => (c.id === m.call_id && !c.endAt ? { ...c, endAt: t } : c)));
+      // the call's record, tag and requests land a few seconds after it ends
+      for (const ms of [4000, 15000]) setTimeout(() => { loadCalls(); loadRequests(); }, ms);
+    } else {
+      return;
+    }
+    setNow(t);
+    ensureTick();
+  }, [ensureTick, loadCalls, loadRequests]);
+
+  useEffect(() => {
+    if (demo || account.status !== "in") return undefined;
+    let ws = null;
+    let stop = false;
+    let retry = 0;
+    let timer = null;
+    const again = () => {
+      if (!stop) timer = setTimeout(open, Math.min(30_000, 2000 * 2 ** retry++));
+    };
+    async function open() {
+      if (stop) return;
+      try {
+        const { ticket, url } = await api.liveTicket();
+        if (stop) return;
+        ws = new WebSocket(`${url}?ticket=${encodeURIComponent(ticket)}`);
+        ws.onopen = () => { retry = 0; };
+        ws.onmessage = (e) => {
+          try { onLive(JSON.parse(e.data)); } catch { /* not ours */ }
+        };
+        ws.onclose = () => { ws = null; again(); };
+      } catch {
+        again();
+      }
+    }
+    open();
+    return () => {
+      stop = true;
+      clearTimeout(timer);
+      if (ws) { ws.onclose = null; ws.close(); }
+      setCalls((cs) => cs.filter((c) => !c.real));
+    };
+  }, [demo, account.status, onLive]);
+
   // ── Bonia on/off, Hôm nay, the Orb tip (handoff 14) ─────────────────────
   // the phone may switch Bonia or change the note: ask again every 15 s and when the page comes back
   useEffect(() => {
@@ -299,9 +416,11 @@ export function AppStateProvider({ children }) {
       const seq = bizSeq.current;
       api.state().then((x) => { if (seq === bizSeq.current) setBiz((b) => ({ ...b, ...fromState(x), sector: b.sector || x.sector || null })); }).catch(() => {});
       loadRequests();
+      loadCalls();
     };
     reqsLoaded.current = false;
     loadRequests();
+    loadCalls();
     const iv = setInterval(pull, STATE_POLL_MS);
     window.addEventListener("focus", pull);
     document.addEventListener("visibilitychange", pull);
@@ -310,7 +429,7 @@ export function AppStateProvider({ children }) {
       window.removeEventListener("focus", pull);
       document.removeEventListener("visibilitychange", pull);
     };
-  }, [demo, account.status, loadRequests]);
+  }, [demo, account.status, loadRequests, loadCalls]);
 
   useEffect(() => {
     if (!demo) return;
@@ -559,7 +678,7 @@ export function AppStateProvider({ children }) {
   const value = {
     demo, account, signIn, signOut, reloadAccount: loadAccount, lookup, startLookup, pickCandidate, startBlank, dismissLookup: () => setLookup(null),
     // offline: the demo's unpaid month, or (a real account) the trial over and nothing paid: calls are refused
-    reqs, calls, now, pickups, offline: demo ? offline : biz.service?.ok === false, trialEnded: !demo && biz.service?.ok === false,
+    reqs, histRows, calls, now, pickups, offline: demo ? offline : biz.service?.ok === false, trialEnded: !demo && biz.service?.ok === false,
     focus, copied, settings, unpaid: demo ? !INVOICE.paid : biz.service?.ok === false,
     biz: { ...biz, today: liveNote(biz.today) }, setActive, readback, saveToday, clearToday, dismissTip,
     days: demo ? DAYS : dayLabels(REQUEST_DAYS),

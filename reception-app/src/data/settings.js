@@ -68,7 +68,6 @@ export function defaultSettings() {
     ]),
     promos: V([{ title: "Ở 3 đêm tặng 1 đêm", from: "2026-11-01", to: "2026-11-30", details: "Phòng Deluxe ban công, nhận phòng Chủ nhật tới thứ Năm", price: "2.250.000đ cho 4 đêm" }]),
     // 05
-    children: N("Bé dưới 6 tuổi ngủ chung miễn phí"),
     pets: V(null, "new"),
     smoking: V(["Không hút trong phòng"]),
     houseRules: V("Giữ yên lặng sau 22:00. Không tổ chức tiệc trong phòng."),

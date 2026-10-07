@@ -38,7 +38,8 @@ function useLiveModel() {
   const { reqs, calls, now, offline, focus } = app;
   // the owner switched Bonia off (or never switched her on): forwarded calls are rejected
   const off = !app.biz.active;
-  const vms = calls.map((c) => callVm(c, now, app.listen)).filter((v) => v.phase !== "gone").sort((a, b) => a.slot - b.slot);
+  // the desk shows two calls at once; a third real call waits for a free place (slot null)
+  const vms = calls.map((c) => callVm(c, now, app.listen)).filter((v) => v.phase !== "gone" && v.slot != null).sort((a, b) => a.slot - b.slot);
   const live = vms.filter((v) => v.phase === "live");
   const count = vms.length;
   const anyUrgent = live.some((v) => v.urgent);
