@@ -1,10 +1,16 @@
 import { C, F, contentMax } from "./tokens.js";
 
-/* Footer (handoff v5: v4's footer without "Đăng nhập", since the page no
- * longer links to an app, and without "Bonia Business", founder 2026-09-29):
- * company + MST, links, divider, copyright. */
+/* Footer (handoff v6): company + MST, links, divider, copyright. The links
+ * are v6's row of sections (Nghe thử · Cài đặt · Giá · Dùng thử), then the
+ * Bonia home and the legal pages. v6 also links "Bonia Business" (/business);
+ * that page is the bank product, and the founder took it off this footer on
+ * 2026-09-29, so it stays off. */
 
 const LINKS = [
+  ["Nghe thử", "#nghe"],
+  ["Cài đặt", "#cai-dat"],
+  ["Giá", "#gia"],
+  ["Dùng thử", "#demo"],
   ["Trang chủ Bonia", "/"], // the home chooser (2026-10-01)
   ["Chính sách bảo mật", "/privacy.html"],
   ["Điều khoản", "/terms.html"],

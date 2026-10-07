@@ -5,16 +5,18 @@ import Nav from "./Nav.jsx";
 import Hero from "./Hero.jsx";
 import CallDemo from "./CallDemo.jsx";
 import NoSetup from "./NoSetup.jsx";
-import Settings from "./Settings.jsx";
+import Lookup from "./Lookup.jsx";
 import Price from "./Price.jsx";
 import Start from "./Start.jsx";
 import Footer from "./Footer.jsx";
 
 /* bonia.vn/reception — Bonia Tiếp tân, the AI phone receptionist for
- * clinics, hotels & homestays and restaurants. Design handoff v5
- * (2026-09-28, hero redone 2026-09-30): full-screen hero, § 00 call demo,
- * §01 no new number, §02 easy settings, §03 price, §04 contact form, footer. The contact form is the page's only
- * call to action; the receptionist app will live at /reception/app.
+ * clinics, hotels & homestays and restaurants. Design handoff v6
+ * (2026-10-07, on v5 of 2026-09-28): hero (#nghe and #demo buttons), § 00
+ * call demo (#nghe), §01 no new number, §02 the settings lookup demo
+ * (#cai-dat), §03 price (#gia), §04 contact form (#demo), footer. Every
+ * button leads to the contact form or the call demo; the receptionist app
+ * lives at /reception/app and isn't linked from here.
  *
  * `sector` (from ?nganh=, else Phòng khám) is the one piece of shared state:
  * picking a call-demo tile selects its sector, and §01's phone, §02's example
@@ -34,7 +36,7 @@ export default function Reception() {
         <Hero />
         <CallDemo sector={sector} initSector={initSector} onSector={pickSector} />
         <NoSetup sector={sector} />
-        <Settings sector={sector} />
+        <Lookup sector={sector} />
         <Price />
         <Start sector={sector} />
       </main>

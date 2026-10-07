@@ -3,8 +3,10 @@ import { C, F } from "./tokens.js";
 import { usePageWidth } from "./hooks.js";
 
 /* Sticky nav (handoff v5, "Nav"). Logo + "TIẾP TÂN" on the left; the in-page
- * links Nghe thử · Lĩnh vực · Giá and the amber "Nhận tư vấn" pill (to the
- * contact form, the page's only call to action) on the right.
+ * links Nghe thử · Cài đặt · Giá and the amber "Nhận tư vấn" pill (to the
+ * §04 contact form) on the right. v6 still labels the middle link "Lĩnh vực",
+ * but in v6 its target is §02's settings demo, not the sectors, so it reads
+ * "Cài đặt" like the footer's link to the same place (2026-10-07).
  *
  * The links show only when the page is at least 640 px wide (the prototype
  * switches on its measured width, not a media query); below that the row is
@@ -102,8 +104,8 @@ export default function Nav() {
           <a href="#nghe" style={link}>
             Nghe thử
           </a>
-          <a href="#linh-vuc" style={link}>
-            Lĩnh vực
+          <a href="#cai-dat" style={link}>
+            Cài đặt
           </a>
           <a href="#gia" style={link}>
             Giá

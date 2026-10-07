@@ -36,7 +36,7 @@ button {
     transform: none;
   }
 }
-/* handoff v5 update: the call tiles' sheen and the hero link's nudge */
+/* handoff v5 update: the call tiles' sheen */
 @keyframes bnSheen {
   0%,
   62% {
@@ -44,15 +44,6 @@ button {
   }
   100% {
     transform: translateX(40%);
-  }
-}
-@keyframes bnNudge {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(4px);
   }
 }
 @keyframes bonia-caret {
@@ -64,6 +55,41 @@ button {
   100% {
     opacity: 0;
   }
+}
+/* handoff v6: the hero's and §03's buttons (links styled as buttons; the
+   colour is set here so a:hover doesn't darken the label) */
+.r-btn {
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.r-btn-amber,
+.r-btn-amber:hover {
+  background: #a65e24;
+  color: #fff8ee;
+}
+.r-btn-amber:hover {
+  background: #8f4f1d;
+}
+.r-btn-clay,
+.r-btn-clay:hover {
+  background: #7b4a2d;
+  color: #fff8ee;
+}
+.r-btn-clay:hover {
+  background: #5e3820;
+}
+.r-btn-line,
+.r-btn-line:hover {
+  border: 1px solid #b79c7c;
+  background: rgba(255, 252, 246, 0.7);
+  color: #1f1b16;
+}
+.r-btn-line:hover {
+  border-color: #7b4a2d;
+  background: #fffcf6;
+}
+/* §02's choice tiles and replay button */
+.r-tile:hover {
+  border-color: #7b4a2d !important;
 }
 @media (prefers-reduced-motion: reduce) {
   html {

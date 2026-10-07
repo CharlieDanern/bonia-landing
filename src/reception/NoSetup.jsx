@@ -348,7 +348,9 @@ export default function NoSetup({ sector }) {
             id="khong-can-so-moi"
             style={h2({ fontSize: "clamp(30px,4.6vw,56px)", lineHeight: 1.06, letterSpacing: "-0.03em" })}
           >
-            Bonia chạy ngay trên chiếc điện thoại <span style={accent}>đang dùng.</span>
+            Giữ nguyên số Hotline đang dùng,
+            <br />
+            mà vẫn xử lý{"\u00A0"}<span style={{ ...accent, fontWeight: 400 }}>nhiều cuộc gọi cùng lúc.</span>
           </h2>
           <p
             style={{
@@ -360,7 +362,7 @@ export default function NoSetup({ sector }) {
               textWrap: "pretty",
             }}
           >
-            Giữ nguyên số Hotline hiện hữu, không cần đăng ký tổng đài mới, không mua số mới.
+            Một số hotline, nhiều cuộc gọi cùng lúc mà không cần đầu tư tổng đài mới
           </p>
         </div>
 

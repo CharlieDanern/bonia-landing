@@ -486,7 +486,7 @@ export default function CallDemo({ sector, initSector, onSector }) {
         // continues the hero's warm glow
         background: "linear-gradient(180deg,#F6EBDA 0%,#F2EEE6 360px)",
         padding: "clamp(48px,7vw,96px) clamp(16px,4vw,56px) clamp(48px,7vw,96px)",
-        scrollMarginTop: 64,
+        scrollMarginTop: "var(--rnav-h, 64px)",
       }}
     >
       <div

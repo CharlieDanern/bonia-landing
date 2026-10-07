@@ -2,11 +2,12 @@ import { C, F, contentMax, eyebrow, h2 } from "./tokens.js";
 
 /* § 03 · Giá (#gia), handoff v5 "§03 · Giá": one price for all three sectors
  * (founder 2026-09-28: 999.000đ/tháng with 250 minutes, 4.000đ per extra
- * minute). The price is sized in cqw against the page root, which
+ * minute). v6: the trial is 14 days (as in the app, TRIAL_DAYS in the
+ * backend), with a button under the price to the §04 form. The price is sized in cqw against the page root, which
  * Reception.jsx makes an inline-size container. */
 
 const ROWS = [
-  ["Dùng thử miễn phí", "1 tháng"],
+  ["Dùng thử miễn phí", "14 ngày"],
   ["Phút nghe máy mỗi tháng", "250 phút"],
   ["Phút vượt, tính theo giây", "4.000đ/phút"],
   ["SIM, hotline mới", "Không cần"],
@@ -27,7 +28,7 @@ export default function Price() {
         borderTop: `1px solid ${C.priceLine}`,
         borderBottom: `1px solid ${C.priceLine}`,
         padding: pad,
-        scrollMarginTop: 64,
+        scrollMarginTop: "var(--rnav-h, 64px)",
       }}
     >
       <div
@@ -68,6 +69,25 @@ export default function Price() {
           >
             mỗi tháng · chưa gồm VAT
           </div>
+          <a
+            href="#demo"
+            className="r-btn r-btn-clay"
+            style={{
+              marginTop: 14,
+              width: "max-content",
+              maxWidth: "100%",
+              height: 50,
+              padding: "0 24px",
+              borderRadius: 999,
+              fontSize: 15,
+              fontWeight: 500,
+              display: "flex",
+              alignItems: "center",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Dùng thử miễn phí 14 ngày
+          </a>
         </div>
 
         <div style={{ minWidth: 0 }}>

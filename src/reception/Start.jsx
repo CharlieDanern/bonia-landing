@@ -3,9 +3,11 @@ import { C, F, contentMax, eyebrow, accent, appear } from "./tokens.js";
 import { SECTOR_KEYS, SECTORS, nb } from "./sectors.js";
 import { DEMO_ENDPOINT } from "./links.js";
 
-/* § 04 · Bắt đầu (#demo), handoff v5 "§04". Left: "Nhận tư vấn", the page's
- * only form and only call to action (sales calls the business back). Right:
- * how the Bonia team sets a business up, information only, no links.
+/* § 04 · Bắt đầu (#demo), handoff v5 "§04" with v6's 14-day trial (the form's
+ * label, step 03) and step 04 "Đồng hành sau khi chạy". Left: "Nhận tư vấn",
+ * the page's only form (sales calls the business back); the hero's and §03's
+ * buttons lead here. Right: how the Bonia team sets a business up,
+ * information only, no links.
  *
  * Lĩnh vực follows the page sector (?nganh= or a call-demo tile) until the
  * visitor picks a chip; after that their pick stays, as in the prototype
@@ -41,8 +43,12 @@ const STEPS = [
     "Thiết lập trọn gói, gọi thử trước",
     "Bonia cài giọng nói, lời chào, bảng giá, ưu đãi, rồi gọi demo tới khi hoàn toàn vừa ý.",
   ],
-  ["03", "Dùng thử miễn phí 1 tháng", "Chỉ bắt đầu thanh toán khi Bonia hoạt động ổn sau 1 tháng."],
-  ["04", "Hỗ trợ kỹ thuật liên tục", "Team Bonia luôn sẵn sàng hỗ trợ."],
+  ["03", "Dùng thử miễn phí 14 ngày", "Bonia nghe máy thật cho cơ sở. Chỉ thanh toán khi anh/chị thấy Bonia chạy ổn."],
+  [
+    "04",
+    "Đồng hành sau khi chạy",
+    "Team Bonia theo dõi những cuộc gọi đầu, chỉnh lại câu trả lời khi cần, và hỗ trợ suốt thời gian sử dụng.",
+  ],
 ];
 
 // v5 narrows the side padding floor to 16 px (tokens.sectionPad still says 18).
@@ -383,7 +389,7 @@ function ContactCard({ sector }) {
   return (
     <div style={{ ...card, background: C.surface, border: `1.5px solid ${C.clay}` }}>
       <div style={col(6)}>
-        <p style={cardEyebrow(C.clay)}>Nhận tư vấn</p>
+        <p style={cardEyebrow(C.clay)}>Nhận tư vấn · dùng thử 14 ngày</p>
         <h3 style={cardTitle}>Đặt lịch demo trực tiếp</h3>
       </div>
       <ContactForm sector={sector} />
@@ -391,7 +397,6 @@ function ContactCard({ sector }) {
   );
 }
 
-// The prototype's label reads "QUY TÌNH"; the intended word is "QUY TRÌNH".
 function ProcessCard() {
   return (
     <div style={{ ...card, background: C.warm, border: `1px solid ${C.line}` }}>
@@ -431,7 +436,7 @@ function ProcessCard() {
 
 export default function Start({ sector }) {
   return (
-    <section id="demo" data-screen-label="05 Bắt đầu" style={{ padding: pad, scrollMarginTop: 64 }}>
+    <section id="demo" data-screen-label="05 Bắt đầu" style={{ padding: pad, scrollMarginTop: "var(--rnav-h, 64px)" }}>
       <div style={{ maxWidth: contentMax, margin: "0 auto", ...col("clamp(28px,4vw,44px)") }}>
         <div style={{ ...col(14), maxWidth: 820 }}>
           <p style={eyebrow()}>§ 04 · Bắt đầu</p>
