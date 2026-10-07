@@ -12,6 +12,12 @@
       ]
     },
     {
+      "source": "/reception/app",
+      "headers": [
+        { "key": "Permissions-Policy", "value": "microphone=(self), camera=(), geolocation=(), payment=()" }
+      ]
+    },
+    {
       "source": "/reception/app/(.*)",
       "headers": [
         { "key": "Permissions-Policy", "value": "microphone=(self), camera=(), geolocation=(), payment=()" }
