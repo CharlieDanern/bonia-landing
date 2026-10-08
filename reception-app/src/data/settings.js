@@ -56,7 +56,6 @@ export function defaultSettings() {
     luggage: V(true),
     // 04
     roomAmenities: V(["Máy lạnh", "Nước nóng", "TV", "Tủ lạnh", "Ấm siêu tốc", "Nước suối"]),
-    priceBasis: V("Theo phòng"),
     priceTax: N("Giá đã gồm thuế, phí", booking),
     priceIncludes: V([]),
     weekendNights: V(["Thứ Sáu", "Thứ Bảy"]),

@@ -57,7 +57,6 @@ export const FIELDS = {
   // 04 · Phòng & giá (chung cho mọi phòng; từng loại phòng ở ROOM_FIELDS)
   // Wi-Fi is in Tiện nghi chung (founder 2026-10-05: every hotel has it)
   roomAmenities: { label: "Tiện nghi có ở mọi phòng", type: "multi", kind: "D", live: 2, more: true, opts: ["Máy lạnh", "Quạt", "Nước nóng", "TV", "Tủ lạnh", "Máy sấy tóc", "Ấm siêu tốc", "Nước suối", "Két sắt", "Bàn làm việc"] },
-  priceBasis: { label: "Giá tính theo", type: "chips", kind: "D", live: 1, opts: ["Theo phòng", "Theo người"] },
   priceTax: { label: "Thuế, phí dịch vụ", type: "chips", kind: "D", live: 1, opts: ["Giá đã gồm thuế, phí", "Chưa gồm thuế, phí"] },
   priceIncludes: { label: "Giá đã gồm (ăn sáng buffet, tea party...)", say: "Giá đã gồm", type: "tags", kind: "D", live: 1 },
   weekendNights: { label: "Đêm tính giá cuối tuần", type: "multi", kind: "D", live: 1, opts: ["Thứ Sáu", "Thứ Bảy", "Chủ nhật"] },
@@ -114,7 +113,7 @@ export const SECTIONS = [
   { key: "s1", n: "01", title: "Thông tin chung", cards: [["Khách sạn", ["name", "aliases", "type", "languages", "hotline"]], ["Quầy lễ tân", ["deskHours", "afterHours"]]] },
   { key: "s2", n: "02", title: "Vị trí & đường đi", cards: [["Địa chỉ", ["address", "addressOld", "landmark", "directions", "parking"]], ["Quanh đây", ["sights", "transport", "nearby"]]] },
   { key: "s3", n: "03", title: "Nhận & trả phòng", cards: [["Giờ giấc", ["checkin", "checkout", "earlyLate"]], ["Khi nhận phòng", ["idDocs", "minAge", "checkinDeposit", "luggage"]]] },
-  { key: "s4", n: "04", title: "Phòng & giá", cards: [["Chung cho mọi phòng", ["roomAmenities", "priceBasis", "priceTax", "priceIncludes", "weekendNights", "extraPerson", "minNights"]]], rooms: true },
+  { key: "s4", n: "04", title: "Phòng & giá", cards: [["Chung cho mọi phòng", ["roomAmenities", "priceTax", "priceIncludes", "weekendNights", "extraPerson", "minNights"]]], rooms: true },
   { key: "s5", n: "05", title: "Chính sách", cards: [["Khách", ["pets", "smoking", "houseRules", "policyOther"]], ["Cọc, đổi, hủy", ["deposit", "changeDate", "cancel", "payment", "vat"]]] },
   { key: "s6", n: "06", title: "Tiện nghi & dịch vụ", cards: [["Tiện nghi", ["amenities", "housekeeping"]], ["Ăn uống", ["breakfast", "dining"]], ["Hoạt động, dịch vụ", ["activities", "services", "dayVisit", "groups"]]] },
   { key: "s7", n: "07", title: "Nhận yêu cầu đặt phòng", cards: [["Khi khách muốn đặt", ["askFor", "groupSize", "channels"]], ["Tin nhắn xác nhận", ["smsConfirm"]]] },
