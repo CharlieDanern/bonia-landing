@@ -7,12 +7,13 @@
 import { FIELDS, ROOM_FIELDS, SECTIONS, hotelValue as V, isEmpty } from "./hotelSchema.js";
 
 export { FIELDS, SECTIONS };
-export const VOICE_COUNT = 6; // Giọng 1…6 (the engine's own names stay hidden; 6 = cedar, founder 2026-10-05)
-// The stored value stays 1–6 (the engine's bossa, vesper, willow, stone, gleam, cedar); the owner sees each by its
-// gender (founder 2026-10-06), women first: Nữ 1–3 = 1, 3, 5 · Nam 1–3 = 2, 4, 6.
+export const VOICE_COUNT = 4; // Giọng 1…4 (the engine's own names stay hidden)
+// The stored value is 1–4 (the engine's bossa, vesper, willow, stone); the owner sees each by its gender (founder
+// 2026-10-06), women first: Nữ 1–2 = 1, 3 · Nam 1–2 = 2, 4. Nữ 3 (5) and Nam 3 (6) were removed (founder 2026-10-09:
+// they don't sound good); a saved 5 or 6 reads as Nữ 1 / Nam 1, as the voice agent answers it.
 export const VOICE_GROUPS = [
-  [[1, "Giọng Nữ 1"], [3, "Giọng Nữ 2"], [5, "Giọng Nữ 3"]],
-  [[2, "Giọng Nam 1"], [4, "Giọng Nam 2"], [6, "Giọng Nam 3"]],
+  [[1, "Giọng Nữ 1"], [3, "Giọng Nữ 2"]],
+  [[2, "Giọng Nam 1"], [4, "Giọng Nam 2"]],
 ];
 export const voiceLabel = (i) => VOICE_GROUPS.flat().find(([n]) => n === i)?.[1] || `Giọng ${i}`;
 
@@ -147,6 +148,8 @@ function upgrade(k, x) {
   const f = FIELDS[k];
   if (!x || !f) return x;
   if (f.type === "multi" && typeof x.v === "string") return { ...x, v: x.v ? [x.v] : [] };
+  // Giọng Nữ 3 / Nam 3 were removed (founder 2026-10-09): a saved one reads as Nữ 1 / Nam 1
+  if (k === "voice" && (x.v === 5 || x.v === 6 || x.v === "5" || x.v === "6")) return { ...x, v: Number(x.v) === 5 ? 1 : 2 };
   // the option "Số người lớn" became "Số người" (founder 2026-10-08): a saved tick keeps its meaning
   if (k === "askFor" && Array.isArray(x.v) && x.v.includes("Số người lớn")) return { ...x, v: x.v.map((o) => (o === "Số người lớn" ? "Số người" : o)) };
   if (f.type === "holidays" && Array.isArray(x.v)) return { ...x, v: x.v.map((r) => (Array.isArray(r) ? { title: r[0] || "", from: "", to: "", price: r[1] || "" } : r)) };
