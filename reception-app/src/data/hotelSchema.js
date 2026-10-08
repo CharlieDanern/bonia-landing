@@ -92,7 +92,7 @@ export const FIELDS = {
   groups: { label: "Đoàn, sự kiện", type: "text", kind: "C", live: 2, opt: true },
 
   // 07 · Nhận yêu cầu đặt phòng
-  askFor: { label: "Hỏi khách khi đặt", type: "multi", kind: "Q", live: 1, opts: ["Tên", "Ngày nhận phòng", "Số đêm", "Số người lớn", "Trẻ em và tuổi", "Giờ tới", "Yêu cầu riêng", "Email"] },
+  askFor: { label: "Hỏi khách khi đặt", type: "multi", kind: "Q", live: 1, opts: ["Tên", "Ngày nhận phòng", "Số đêm", "Số người", "Trẻ em và tuổi", "Giờ tới", "Yêu cầu riêng", "Email"] },
   groupSize: { label: "Số lượng khách đặt cần quản lý tư vấn trực tiếp", type: "number", kind: "Q", live: 1 },
   channels: { label: "Kênh đặt phòng", type: "list", kind: "D", live: 3, opt: true, cols: ["Kênh", "Đường dẫn"] },
   // founder 2026-10-06: the owner picks what the confirmation SMS says; never in Bonia's prompts

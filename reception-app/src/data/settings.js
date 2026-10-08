@@ -86,7 +86,7 @@ export function defaultSettings() {
     dayVisit: V(""),
     groups: V("Đoàn từ 10 người: chủ gọi lại báo giá"),
     // 07
-    askFor: V(["Tên", "Ngày nhận phòng", "Số đêm", "Số người lớn", "Trẻ em và tuổi", "Giờ tới"]),
+    askFor: V(["Tên", "Ngày nhận phòng", "Số đêm", "Số người", "Giờ tới"]),
     groupSize: V("10"),
     channels: V([["Gọi điện", "0900 000 300"], ["Booking.com", ""], ["Agoda", ""]]),
     // 08
@@ -123,7 +123,8 @@ export function blankSettings(name = "") {
     name: V(name),
     // founder 2026-10-05: every hotel has Wi-Fi; the owner unticks it if not
     amenities: V(["Wi-Fi miễn phí"]),
-    askFor: V(["Tên", "Ngày nhận phòng", "Số đêm", "Số người lớn", "Trẻ em và tuổi"]),
+    // founder 2026-10-08: "Số người"; children and their ages only when the owner ticks them
+    askFor: V(["Tên", "Ngày nhận phòng", "Số đêm", "Số người"]),
     groupSize: V("10"),
     greeting: V(name ? `Dạ ${name} xin nghe ạ.` : ""),
     voice: V(1),
@@ -146,6 +147,8 @@ function upgrade(k, x) {
   const f = FIELDS[k];
   if (!x || !f) return x;
   if (f.type === "multi" && typeof x.v === "string") return { ...x, v: x.v ? [x.v] : [] };
+  // the option "Số người lớn" became "Số người" (founder 2026-10-08): a saved tick keeps its meaning
+  if (k === "askFor" && Array.isArray(x.v) && x.v.includes("Số người lớn")) return { ...x, v: x.v.map((o) => (o === "Số người lớn" ? "Số người" : o)) };
   if (f.type === "holidays" && Array.isArray(x.v)) return { ...x, v: x.v.map((r) => (Array.isArray(r) ? { title: r[0] || "", from: "", to: "", price: r[1] || "" } : r)) };
   if (f.type === "phones" && typeof x.v === "string") return { ...x, v: x.v.split(/[,;/]|\s{2,}/).map((t) => t.trim()).filter(Boolean) };
   if (f.type === "priced" && Array.isArray(x.v)) return { ...x, v: x.v.map((r) => (Array.isArray(r) ? pricedRow(r[0], r[1]) : r)) };
