@@ -7,7 +7,7 @@ import { financeApi } from "./api.js";
 import { CallDrawer } from "./CallDrawer.jsx";
 import { ExportDialog } from "./ExportDialog.jsx";
 import { FinHeader, FinPhoneTabs, OutcomePill } from "./common.jsx";
-import { LiveStage } from "./LiveStage.jsx";
+import { LiveStage, boxesOf, keyOf } from "./LiveStage.jsx";
 import {
   BOXES, CONCURRENCY, Choice, DAYS, FeedPill, NO_ANSWER, StatusPill, colOf, fmt, holidayDates, inWindow, masked, mmss, needs,
   nextCallTime, readSheet, settingsLine, spaced,
@@ -167,7 +167,7 @@ export function FinanceCampaign({ id, view = "live" }) {
             {progress}
             {actions}
             {viewSwitch}
-            {view === "live" ? <PhoneLive campaign={c} live={live} reduce={reduce} /> : <Bang campaign={c} phone />}
+            {view === "live" ? <PhoneLive counts={c.counts} live={live} reduce={reduce} /> : <Bang campaign={c} phone />}
           </div>
         </div>
         <FinPhoneTabs active={1} />
@@ -187,7 +187,7 @@ export function FinanceCampaign({ id, view = "live" }) {
         </div>
       </div>
       {view === "live"
-        ? <LiveView campaign={c} live={live} reduce={reduce} />
+        ? <LiveView counts={c.counts} live={live} reduce={reduce} />
         : <div style={{ position: "absolute", left: 28, right: 28, top: 144, bottom: 0 }}><Bang campaign={c} /></div>}
       {overlays}
     </div>
@@ -216,7 +216,11 @@ function useFeed(feed) {
 }
 const outcomeOf = (f) => f.outcome || (f.status === "no_answer" ? NO_ANSWER : null);
 
-function LiveView({ campaign, live, reduce }) {
+/**
+ * The live view under a bar (Gọi ra's campaign, or Gọi vào's hotline): the field and its result boxes, the pinned card,
+ * the feed. `stage` holds the field's words for the direction (LiveStage: noAnswer, liveLabel, ringWord, needTitle).
+ */
+export function LiveView({ counts, live, reduce, direction = "outbound", stage = {}, top = 144 }) {
   const [pin, setPin] = useState(null); // { row: id } a call in progress or a finished one
   const [mode, setMode] = useState("need");
   const [binF, setBinF] = useState(null);
@@ -226,7 +230,7 @@ function LiveView({ campaign, live, reduce }) {
   const feed = useFeed(live.feed);
   const shownFeed = feed.filter((f) => (binF ? outcomeOf(f) === binF : mode === "need" ? needs(f.outcome) : true)).slice(0, 40);
   const showPhone = (p) => (mask ? masked(p) : spaced(p));
-  const pinCall = pin && live.calls.find((x) => x.row_id === pin);
+  const pinCall = pin && live.calls.find((x) => keyOf(x) === pin);
   const pinRow = pin && feed.find((f) => f.id === pin);
   const wall = Date.now() + live.skew;
 
@@ -251,10 +255,10 @@ function LiveView({ campaign, live, reduce }) {
 
   return (
     <>
-      <div style={{ position: "absolute", left: 28, right: 28 + 316 + 24, top: 144, bottom: 20 }}>
-        <LiveStage calls={live.calls} feed={live.feed} counts={campaign.counts} skew={live.skew} pinnedId={pinCall ? pin : null} onPin={setPin} binF={binF} onBin={setBinF} mask={mask} reduce={reduce} />
+      <div style={{ position: "absolute", left: 28, right: 28 + 316 + 24, top, bottom: 20 }}>
+        <LiveStage direction={direction} {...stage} calls={live.calls} feed={live.feed} counts={counts} skew={live.skew} pinnedId={pinCall ? pin : null} onPin={setPin} binF={binF} onBin={setBinF} mask={mask} reduce={reduce} />
       </div>
-      <aside style={{ position: "absolute", right: 28, width: 316, top: 144, bottom: 20, display: "flex", flexDirection: "column", gap: 10, fontSize: 12.5 }}>
+      <aside style={{ position: "absolute", right: 28, width: 316, top, bottom: 20, display: "flex", flexDirection: "column", gap: 10, fontSize: 12.5 }}>
         {card && (
           <div style={{ borderRadius: 12, background: "#fff", border: "1px solid #D9D0BF", overflow: "hidden", flex: "none" }}>
             <div style={{ padding: "10px 12px", background: card.bg, borderBottom: "1px solid #E4DCCB", display: "flex", flexDirection: "column", gap: 3 }}>
@@ -306,27 +310,27 @@ function LiveView({ campaign, live, reduce }) {
 }
 
 /** A phone's Trực tiếp: no field (too small to point at); the sphere's counts, the boxes and the feed. */
-function PhoneLive({ campaign, live, reduce }) {
+export function PhoneLive({ counts, live, reduce, direction = "outbound", stage = {} }) {
   const [mask, setMask] = useState(true);
   const feed = useFeed(live.feed);
-  const o = campaign.counts.outcomes || {};
+  const o = counts.outcomes || {};
   const talk = live.calls.filter((x) => x.state === "talking").length;
-  const all = [...(BOXES.outbound || []), ...Object.keys(o).filter((x) => !BOXES.outbound.includes(x))];
-  const boxes = [...all.filter(needs), ...all.filter((x) => !needs(x)), NO_ANSWER];
+  const { need, quiet } = boxesOf(direction, o, stage.noAnswer !== false);
+  const boxes = [...need, ...quiet];
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14, background: "#fff", border: "1px solid #E4DCCB", borderRadius: 12, padding: "10px 12px" }}>
         <div style={{ width: 64, height: 64, flex: "none" }}><Orb size={64} mood={live.calls.length ? "bonia" : "idle"} tone={live.calls.length ? "green" : "warm"} lively={live.calls.length > 0} reduce={reduce} /></div>
         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          <span style={{ fontFamily: MONO, fontSize: 20, lineHeight: 1 }}>{fmt(live.calls.length)} <span style={{ fontSize: 9.5, letterSpacing: "0.18em", color: "#4A6B3A" }}>ĐANG GỌI</span></span>
-          <span style={{ fontSize: 12, color: "#4A4239" }}><span style={{ color: "#7A4B2A" }}>{fmt(talk)} trò chuyện</span> · {fmt(live.calls.length - talk)} đổ chuông</span>
+          <span style={{ fontFamily: MONO, fontSize: 20, lineHeight: 1 }}>{fmt(live.calls.length)} <span style={{ fontSize: 9.5, letterSpacing: "0.18em", color: "#4A6B3A" }}>{stage.liveLabel || "ĐANG GỌI"}</span></span>
+          <span style={{ fontSize: 12, color: "#4A4239" }}><span style={{ color: "#7A4B2A" }}>{fmt(talk)} trò chuyện</span> · {fmt(live.calls.length - talk)} {stage.ringWord || "đổ chuông"}</span>
         </div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         {boxes.map((b) => (
           <div key={b} style={{ border: `1px solid ${needs(b) ? "#D9D0BF" : "#E9E2D5"}`, borderRadius: 12, background: "#fff", padding: "8px 10px", display: "flex", flexDirection: "column", gap: 3 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: needs(b) ? 600 : 400, color: needs(b) ? "#1F1B16" : "#4A4239" }}>{needs(b) && <span style={{ width: 7, height: 7, borderRadius: 4, background: colOf(b) }} />}{b}</span>
-            <span style={{ fontFamily: MONO, fontSize: needs(b) ? 20 : 15, color: needs(b) ? "#1F1B16" : "#6E6255" }}>{fmt(b === NO_ANSWER ? campaign.counts.no_answer : o[b] || 0)}</span>
+            <span style={{ fontFamily: MONO, fontSize: needs(b) ? 20 : 15, color: needs(b) ? "#1F1B16" : "#6E6255" }}>{fmt(b === NO_ANSWER ? counts.no_answer : o[b] || 0)}</span>
           </div>
         ))}
       </div>

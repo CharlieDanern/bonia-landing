@@ -1,12 +1,10 @@
 import React from "react";
-import { Link } from "wouter";
 import { useLayout } from "../layout.jsx";
 import { useApp } from "../state.jsx";
 import { MONO, SERIF, dims } from "../ui.js";
-import { FinHeader, FinPhoneTabs, TrialNote, useCompany } from "./common.jsx";
+import { FinHeader, FinPhoneTabs, useCompany } from "./common.jsx";
 
-// The finance account's other tabs (handoff 16). Gọi vào gets its live view next (founder 2026-10-10: Gọi vào follows
-// Gọi ra's live view); until then it says so and points to Lịch sử.
+// The finance account's Cài đặt and Tài khoản (handoff 16).
 
 const localPhone = (n) => { const d = String(n || "").replace(/\D/g, ""); const l = d.startsWith("84") ? `0${d.slice(2)}` : d; return /^0\d{9}$/.test(l) ? `${l.slice(0, 4)} ${l.slice(4, 7)} ${l.slice(7)}` : String(n || ""); };
 
@@ -82,20 +80,4 @@ export function FinanceSettings() {
       </div>
     </Page>
   );
-}
-
-function Coming({ tab, title, lines, trial }) {
-  return (
-    <Page tab={tab} title={title}>
-      {trial && <TrialNote />}
-      <div style={{ ...card, padding: "18px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
-        {lines.map((l) => <span key={l} style={{ fontSize: 13, color: "#4A4239", lineHeight: 1.55 }}>{l}</span>)}
-        <Link href="/lich-su" style={{ fontSize: 13, color: "#7B4A2D" }}>Xem các cuộc gọi trong Lịch sử →</Link>
-      </div>
-    </Page>
-  );
-}
-
-export function FinanceInbound() {
-  return <Coming tab={0} title="Gọi vào" lines={["Màn hình trực tiếp của tổng đài (các cuộc đang nghe máy, kết quả trong ngày) đang được hoàn thiện."]} />;
 }

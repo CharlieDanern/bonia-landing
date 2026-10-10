@@ -22,6 +22,9 @@ export const financeApi = {
   check: (phones) => call("POST", "/reception/web/finance/campaigns/check", { phones }),
   testCall: (body) => call("POST", "/reception/web/finance/test-call", body),
   dnc: () => call("GET", "/reception/web/finance/dnc"),
+  // Gọi vào: the hotline's calls in progress, today's results, its switch
+  inboundLive: () => call("GET", "/reception/web/finance/inbound/live"),
+  setHotline: (on) => call("PUT", "/reception/web/finance/hotline", { on }),
 };
 
 const query = (params) => new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")).toString();

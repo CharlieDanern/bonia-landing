@@ -58,14 +58,21 @@ function wave(g, x, y, k, wk, sel, now, col) {
 const LABEL_WAIT_MS = 45_000; // a finished call whose result never comes fades out
 
 /** The boxes in order: follow-up results (wide), then the rest and Không nghe máy (narrow); unknown results get a box. */
-function boxesOf(direction, outcomes) {
+export function boxesOf(direction, outcomes, noAnswer = true) {
   const known = BOXES[direction] || BOXES.outbound;
   const extra = Object.keys(outcomes || {}).filter((o) => !known.includes(o));
   const all = [...known, ...extra];
-  return { need: all.filter(needs), quiet: [...all.filter((o) => !needs(o)), NO_ANSWER] };
+  return { need: all.filter(needs), quiet: [...all.filter((o) => !needs(o)), ...(noAnswer ? [NO_ANSWER] : [])] };
 }
+/** A call in progress is known by its campaign row (Gọi ra) or by its own uuid (Gọi vào). */
+export const keyOf = (c) => c.key ?? c.row_id;
 
-export function LiveStage({ direction = "outbound", calls, feed, counts, skew = 0, pinnedId, onPin, binF, onBin, mask, reduce }) {
+/**
+ * direction: outbound (Gọi ra: the campaign's rows, a Không nghe máy box) or inbound (Gọi vào: the hotline's calls,
+ * every one answered). liveLabel, ringWord and needTitle are the words under the sphere and over the wide boxes.
+ */
+export function LiveStage({ direction = "outbound", calls, feed, counts, skew = 0, pinnedId, onPin, binF, onBin, mask, reduce,
+  noAnswer = true, liveLabel = "ĐANG GỌI", ringWord = "đổ chuông", needTitle = "CẦN TƯ VẤN VIÊN GỌI LẠI" }) {
   const stageRef = useRef(null);
   const cvRef = useRef(null);
   const boxRefs = useRef({});
@@ -111,7 +118,7 @@ export function LiveStage({ direction = "outbound", calls, feed, counts, skew = 
   // the engine's calls → markers: a new conversation comes out of the sphere; one that ended waits for its result
   useEffect(() => {
     const now = performance.now(), wall = Date.now() + skew;
-    const talking = new Map((calls || []).filter((c) => c.state === "talking" && c.row_id).map((c) => [c.row_id, c]));
+    const talking = new Map((calls || []).filter((c) => c.state === "talking" && keyOf(c)).map((c) => [keyOf(c), c]));
     for (const [id, c] of talking) {
       const ts = Date.parse(c.talking_since || c.since) || wall;
       const m = S.markers.get(id);
@@ -256,7 +263,7 @@ export function LiveStage({ direction = "outbound", calls, feed, counts, skew = 
   const opened = useRef(null);
   if (!opened.current && counts) opened.current = { ...o, [NO_ANSWER]: counts.no_answer || 0 };
   const called = counts?.called || 0;
-  const { need, quiet } = boxesOf(direction, o);
+  const { need, quiet } = boxesOf(direction, o, noAnswer);
   const needN = need.reduce((a, k) => a + shown(k), 0);
   const quietN = quiet.reduce((a, k) => a + shown(k), 0);
   const cols = `${need.map(() => "1.25fr").join(" ")} 12px ${quiet.map(() => "0.8fr").join(" ")}`;
@@ -298,19 +305,19 @@ export function LiveStage({ direction = "outbound", calls, feed, counts, skew = 
       <canvas ref={cvRef} style={{ position: "absolute", left: 0, top: 0, width: W, height: H, pointerEvents: "none" }} />
       <div style={{ position: "absolute", left: CX - 60, top: CY - 35, width: 120, height: 70, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, pointerEvents: "none", background: "radial-gradient(closest-side,rgba(242,238,230,0.92),rgba(242,238,230,0))" }}>
         <span style={{ fontFamily: MONO, fontSize: 24, lineHeight: 1, color: "#1F1B16" }}>{fmt(liveN)}</span>
-        <span style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.18em", color: "#4A6B3A" }}>ĐANG GỌI</span>
+        <span style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.18em", color: "#4A6B3A" }}>{liveLabel}</span>
       </div>
       <div style={{ position: "absolute", left: CX - 200, top: CY + 65, width: 400, display: "flex", justifyContent: "center", gap: 18, fontSize: 12, color: "#4A4239", pointerEvents: "none" }}>
         <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#7A4B2A" }}><span style={{ fontFamily: MONO, fontWeight: 500 }}>{fmt(snap.talk)}</span> trò chuyện</span>
         <span style={{ color: "#B8AB94" }}>·</span>
-        <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#6E6255" }}><span style={{ fontFamily: MONO }}>{fmt(ringN)}</span> đổ chuông</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#6E6255" }}><span style={{ fontFamily: MONO }}>{fmt(ringN)}</span> {ringWord}</span>
       </div>
       {pinnedId && [...S.markers.values()].some((m) => m.id === pinnedId && (m.phase === "talk" || m.phase === "wait")) && (
         <div style={{ position: "absolute", left: W, top: 46, width: 24, height: 1, background: "#B8AB94", pointerEvents: "none" }} />
       )}
       <div style={{ position: "absolute", left: 0, right: 0, top: H - 110, height: 22, display: "grid", gridTemplateColumns: cols, columnGap: 10, pointerEvents: "none" }}>
         <div style={{ gridColumn: `1 / span ${need.length}`, display: "flex", justifyContent: "space-between", alignItems: "baseline", borderTop: "1px solid #B8AB94", paddingTop: 5, gap: 8, minWidth: 0 }}>
-          <span style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.18em", color: "#4A4239", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>CẦN TƯ VẤN VIÊN GỌI LẠI</span>
+          <span style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.18em", color: "#4A4239", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{needTitle}</span>
           <span style={{ fontSize: 12.5, color: "#1F1B16", whiteSpace: "nowrap" }}><span style={{ fontFamily: MONO, fontWeight: 500 }}>{fmt(needN)}</span> khách cần xử lý</span>
         </div>
         <div style={{ gridColumn: `${need.length + 2} / span ${quiet.length}`, display: "flex", justifyContent: "space-between", alignItems: "baseline", borderTop: "1px solid #E4DCCB", paddingTop: 5 }}>

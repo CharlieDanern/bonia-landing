@@ -9,11 +9,13 @@ import { FOLLOW_UP } from "./common.jsx";
 export const fmt = (n) => String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 export const pct = (a, b) => (b ? `${((a / b) * 100).toFixed(1).replace(".", ",")}%` : "");
 
-/** "0900 000 181" from any form of a Vietnamese number. */
+/** "0900 000 181" (a mobile) or "028 7301 7200" (a landline) from any form of a Vietnamese number. */
 export function spaced(p) {
   const d = String(p || "").replace(/\D/g, "");
   const l = d.startsWith("84") ? `0${d.slice(2)}` : d;
-  return /^0\d{9}$/.test(l) ? `${l.slice(0, 4)} ${l.slice(4, 7)} ${l.slice(7)}` : String(p || "");
+  if (/^0\d{9}$/.test(l)) return `${l.slice(0, 4)} ${l.slice(4, 7)} ${l.slice(7)}`;
+  if (/^02\d{9}$/.test(l)) return `${l.slice(0, 3)} ${l.slice(3, 7)} ${l.slice(7)}`;
+  return String(p || "");
 }
 /** "0900 ••• 181" until Hiện số. */
 export const masked = (p) => { const s = spaced(p); return s.length >= 10 ? `${s.slice(0, 4)} ••• ${s.slice(-3)}` : s; };
