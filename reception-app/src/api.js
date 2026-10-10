@@ -25,7 +25,7 @@ export const token = {
 };
 
 /** One call; throws { status, error } (status 0 = no network). A refused token is forgotten. */
-async function call(method, path, body) {
+export async function call(method, path, body) {
   const t = token.get();
   let res;
   try {

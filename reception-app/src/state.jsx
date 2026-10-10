@@ -294,7 +294,8 @@ export function AppStateProvider({ children }) {
       setSettings(withSaved(withAllFields(me.profile)));
       bizSeq.current++;
       setBiz(fromState(me));
-      setAccount({ status: "in", phone: me.phone, version: me.version, firstRun: !me.profile });
+      // a finance company (Bonia Tiếp tân · Tài chính, sector finance): its name for the header and Tài khoản
+      setAccount({ status: "in", phone: me.phone, version: me.version, firstRun: !me.profile, company: me.sector === "finance" ? me.profile?.company || me.name || null : null });
     } catch (e) {
       setAccount(e.status === 401 ? { status: "out" } : { status: "error", error: e.error || "network" });
     }
