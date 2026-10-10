@@ -71,6 +71,7 @@ export function FinanceOutbound() {
             {stat(k.answered, "Nghe máy")}
             {stat(o["Quan tâm"] || 0, "Quan tâm", true)}
             {stat(o["Hẹn gọi lại"] || 0, "Hẹn gọi lại", true)}
+            {stat(o["Đang cân nhắc"] || 0, "Đang cân nhắc", true)}
             {stat(o["Không muốn được gọi"] || 0, "Không muốn được gọi")}
           </div>
           <div style={{ display: "flex", gap: 6 }} onClick={(e) => e.stopPropagation()}>

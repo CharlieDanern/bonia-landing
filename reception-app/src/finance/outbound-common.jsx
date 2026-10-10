@@ -129,9 +129,9 @@ export const BOXES = {
   outbound: ["Quan tâm", "Hẹn gọi lại", "Đang cân nhắc", "Không quan tâm", "Không muốn được gọi", "Sai người", "Không rõ"],
   inbound: ["Quan tâm", "Lời nhắn", "Khiếu nại", "Hỏi thông tin", "Khách hiện tại", "Khác"],
 };
-export const OUT_COL = { "Quan tâm": "#5E8A4A", "Hẹn gọi lại": "#A65E24", "Lời nhắn": "#4A4239", "Khiếu nại": "#8A3F2E" };
-export const FLASH = { "Quan tâm": "#EEF2E8", "Hẹn gọi lại": "#F7EBDD", "Lời nhắn": "#EFEBE4", "Khiếu nại": "#F5E6E0" };
-export const PILL = { "Quan tâm": ["#E6EDDD", "#4A6B3A"], "Hẹn gọi lại": ["#F5E4C9", "#8A4D1C"], "Lời nhắn": ["#EFE9DD", "#4A4239"], "Khiếu nại": ["#F3E0D9", "#8A3F2E"] };
+export const OUT_COL = { "Quan tâm": "#5E8A4A", "Hẹn gọi lại": "#A65E24", "Đang cân nhắc": "#4A4239", "Lời nhắn": "#4A4239", "Khiếu nại": "#8A3F2E" };
+export const FLASH = { "Quan tâm": "#EEF2E8", "Hẹn gọi lại": "#F7EBDD", "Đang cân nhắc": "#EFEBE4", "Lời nhắn": "#EFEBE4", "Khiếu nại": "#F5E6E0" };
+export const PILL = { "Quan tâm": ["#E6EDDD", "#4A6B3A"], "Hẹn gọi lại": ["#F5E4C9", "#8A4D1C"], "Đang cân nhắc": ["#EFE9DD", "#4A4239"], "Lời nhắn": ["#EFE9DD", "#4A4239"], "Khiếu nại": ["#F3E0D9", "#8A3F2E"] };
 export const colOf = (o) => OUT_COL[o] || "#B8AB94";
 export const needs = (o) => FOLLOW_UP.has(o);
 

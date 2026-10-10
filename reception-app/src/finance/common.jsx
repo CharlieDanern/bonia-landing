@@ -9,8 +9,9 @@ import { MONO } from "../ui.js";
 
 export const FIN_TABS = [["Gọi vào", "/"], ["Gọi ra", "/goi-ra"], ["Lịch sử", "/lich-su"], ["Cài đặt", "/cai-dat"], ["Tài khoản", "/tai-khoan"]];
 
-// results that need a person to follow up get a dark pill; the rest an outlined one (handoff 16, "Outcome pills")
-export const FOLLOW_UP = new Set(["Quan tâm", "Hẹn gọi lại", "Lời nhắn", "Khiếu nại"]);
+// results that need a person to follow up get a dark pill; the rest an outlined one (handoff 16, "Outcome pills");
+// Đang cân nhắc is one of them (founder 2026-10-10)
+export const FOLLOW_UP = new Set(["Quan tâm", "Hẹn gọi lại", "Đang cân nhắc", "Lời nhắn", "Khiếu nại"]);
 
 const WEEKDAYS = ["CHỦ NHẬT", "THỨ HAI", "THỨ BA", "THỨ TƯ", "THỨ NĂM", "THỨ SÁU", "THỨ BẢY"];
 /** "THỨ NĂM 9/10" in Vietnam time. */
