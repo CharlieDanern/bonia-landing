@@ -54,7 +54,8 @@ export function FinanceHistory() {
   const [range, setRange] = useState("30");
   const [from, setFrom] = useState(vnDay(Date.now() - 6 * 86400e3));
   const [to, setTo] = useState(vnDay());
-  const [openId, setOpenId] = useState(null);
+  // "Mở trong Lịch sử →" from Gọi ra's live view opens that call
+  const [openId, setOpenId] = useState(() => new URLSearchParams(window.location.search).get("call"));
   const [exporting, setExporting] = useState(false);
 
   const inRange = useCallback((c) => {

@@ -8,7 +8,23 @@ export const financeApi = {
   calls: (days = 30) => call("GET", `/reception/web/finance/calls?days=${days}`),
   call: (id) => call("GET", `/reception/web/finance/calls/${encodeURIComponent(id)}`),
   done: (id, done = true) => call("POST", `/reception/web/finance/calls/${encodeURIComponent(id)}/done`, { done }),
+  // Gọi ra: the campaigns (the backend's routes/finance.ts, "Gọi ra")
+  campaigns: () => call("GET", "/reception/web/finance/campaigns"),
+  campaign: (id) => call("GET", `/reception/web/finance/campaigns/${encodeURIComponent(id)}`),
+  live: (id) => call("GET", `/reception/web/finance/campaigns/${encodeURIComponent(id)}/live`),
+  rows: (id, params = {}) => call("GET", `/reception/web/finance/campaigns/${encodeURIComponent(id)}/rows?${query(params)}`),
+  row: (id, rowId) => call("GET", `/reception/web/finance/campaigns/${encodeURIComponent(id)}/rows/${encodeURIComponent(rowId)}`),
+  addRows: (id, rows) => call("POST", `/reception/web/finance/campaigns/${encodeURIComponent(id)}/rows`, { rows }),
+  update: (id, body) => call("PATCH", `/reception/web/finance/campaigns/${encodeURIComponent(id)}`, body),
+  create: (body) => call("POST", "/reception/web/finance/campaigns", body),
+  understand: (headers, rows) => call("POST", "/reception/web/finance/campaigns/understand", { headers, rows }),
+  opening: (columns, row) => call("POST", "/reception/web/finance/campaigns/opening", { columns, row }),
+  check: (phones) => call("POST", "/reception/web/finance/campaigns/check", { phones }),
+  testCall: (body) => call("POST", "/reception/web/finance/test-call", body),
+  dnc: () => call("GET", "/reception/web/finance/dnc"),
 };
+
+const query = (params) => new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")).toString();
 
 async function fetchBlob(path) {
   const t = token.get();
@@ -27,15 +43,14 @@ export async function financeRecordingUrl(id) {
   return URL.createObjectURL(await fetchBlob(`/reception/web/finance/calls/${encodeURIComponent(id)}/recording`));
 }
 
-/** Xuất Excel: the backend writes the file for the filter; the browser saves it. */
-export async function downloadExport(params) {
-  const q = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")).toString();
-  const blob = await fetchBlob(`/reception/web/finance/export?${q}`);
+/** Xuất Excel: the backend writes the file for the filter (or a campaign's whole list); the browser saves it. */
+export async function downloadExport(params, name = "lich-su") {
+  const blob = await fetchBlob(`/reception/web/finance/export?${query(params)}`);
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   const day = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
   a.href = url;
-  a.download = `lich-su-${day}.xlsx`;
+  a.download = `${name}-${day}.xlsx`;
   document.body.appendChild(a);
   a.click();
   a.remove();

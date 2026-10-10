@@ -13,15 +13,18 @@ export function ExportDialog({ count, filter, filterLabel, range: initialRange, 
   const [range, setRange] = useState(initialRange === "custom" ? "custom" : initialRange || "30");
   const [withText, setWithText] = useState(false);
   const [state, setState] = useState("idle"); // idle · busy · failed
+  const whole = what === "campaign" && campaign;
   const params = () => {
-    const base = what === "campaign" && campaign ? { campaign: campaign.id } : { ...filter };
-    if (range !== "custom") { delete base.from; delete base.to; base.days = range === "today" ? 1 : Number(range); }
+    // a campaign's list is exported whole (every customer, called or not); Lịch sử's filter by its time
+    const base = whole ? { campaign: campaign.id } : { ...filter };
+    if (!whole && range !== "custom") { delete base.from; delete base.to; base.days = range === "today" ? 1 : Number(range); }
     return { ...base, ...(withText ? { transcript: "1" } : {}) };
   };
+  const slug = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "chien-dich";
   const go = async () => {
     setState("busy");
     try {
-      await downloadExport(params());
+      await downloadExport(params(), whole ? slug(campaign.name) : "lich-su");
       onClose();
     } catch {
       setState("failed");
@@ -52,14 +55,14 @@ export function ExportDialog({ count, filter, filterLabel, range: initialRange, 
         <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
           <span style={lbl}>Xuất</span>
           {option("campaign", "Danh sách này", campaign ? campaign.name : "Mở một chiến dịch Gọi ra để xuất danh sách của nó", !campaign)}
-          {option("filter", "Bộ lọc Lịch sử hiện tại", filterLabel || "Tất cả")}
-          <span style={{ ...lbl, marginTop: 6 }}>Thời gian</span>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {filterLabel !== undefined && option("filter", "Bộ lọc Lịch sử hiện tại", filterLabel || "Tất cả")}
+          {!whole && <span style={{ ...lbl, marginTop: 6 }}>Thời gian</span>}
+          {!whole && <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {RANGES.map(([k, l]) => (
               <button key={k} type="button" onClick={() => setRange(k)} style={{ height: 34, padding: "0 14px", borderRadius: 8, border: `1px solid ${range === k ? "#1F1B16" : "#D9D0BF"}`, background: range === k ? "#1F1B16" : "#fff", color: range === k ? "#F7F3EC" : "#1F1B16", fontSize: 12.5, cursor: "pointer" }}>{l}</button>
             ))}
             {range === "custom" && <span style={{ height: 34, padding: "0 14px", borderRadius: 8, border: "1px solid #1F1B16", background: "#1F1B16", color: "#F7F3EC", fontSize: 12.5, display: "flex", alignItems: "center" }}>Tùy chọn ({filter.from} – {filter.to})</span>}
-          </div>
+          </div>}
           <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6, cursor: "pointer", fontSize: 12.5 }}>
             <span onClick={() => setWithText(!withText)} style={{ width: 34, height: 20, borderRadius: 10, background: withText ? "#7B4A2D" : "#D9D0BF", position: "relative", flex: "none", transition: "background 160ms" }}>
               <span style={{ position: "absolute", top: 2, left: withText ? 16 : 2, width: 16, height: 16, borderRadius: 8, background: "#fff", transition: "left 160ms" }} />

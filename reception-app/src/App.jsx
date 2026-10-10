@@ -10,7 +10,10 @@ import { Settings } from "./screens/Settings.jsx";
 import { QrLanding, Start, StartLink } from "./screens/Start.jsx";
 import { TryBonia } from "./screens/TryBonia.jsx";
 import { FinanceHistory } from "./finance/History.jsx";
-import { FinanceAccount, FinanceInbound, FinanceOutbound, FinanceSettings } from "./finance/screens.jsx";
+import { FinanceAccount, FinanceInbound, FinanceSettings } from "./finance/screens.jsx";
+import { FinanceOutbound } from "./finance/Outbound.jsx";
+import { FinanceCreate } from "./finance/Creator.jsx";
+import { FinanceCampaign } from "./finance/Campaign.jsx";
 
 // Bonia Tiếp tân v3 (Claude Design handoff 13 + the founder's 2026-10-04
 // changes). Tabs: Trực tiếp · Lịch sử · Cài đặt · Thử Bonia · Tài khoản, plus
@@ -44,6 +47,9 @@ function FinanceApp() {
       <Switch>
         <Route path="/" component={FinanceInbound} />
         <Route path="/goi-ra" component={FinanceOutbound} />
+        <Route path="/goi-ra/tao" component={FinanceCreate} />
+        <Route path="/goi-ra/:id/bang">{(p) => <FinanceCampaign key={p.id} id={p.id} view="bang" />}</Route>
+        <Route path="/goi-ra/:id">{(p) => <FinanceCampaign key={p.id} id={p.id} view="live" />}</Route>
         <Route path="/lich-su" component={FinanceHistory} />
         <Route path="/cai-dat" component={FinanceSettings} />
         <Route path="/tai-khoan" component={FinanceAccount} />
@@ -75,8 +81,9 @@ export default function App() {
             <Route path="/dang-nhap">
               <Redirect to="/bat-dau/dang-nhap" replace />
             </Route>
+            {/* wait for the account first: a finance account's own paths (/goi-ra/…) must survive the loading */}
             <Route>
-              <Redirect to="/" replace />
+              <Gate><Redirect to="/" replace /></Gate>
             </Route>
           </Switch>
         </AppFrame>

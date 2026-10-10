@@ -5,8 +5,8 @@ import { useApp } from "../state.jsx";
 import { MONO, SERIF, dims } from "../ui.js";
 import { FinHeader, FinPhoneTabs, TrialNote, useCompany } from "./common.jsx";
 
-// The finance account's other tabs (handoff 16). Gọi vào and Gọi ra get their live views in the next phases
-// (founder 2026-10-10: Gọi vào follows Gọi ra's live view); until then they say so and point to Lịch sử.
+// The finance account's other tabs (handoff 16). Gọi vào gets its live view next (founder 2026-10-10: Gọi vào follows
+// Gọi ra's live view); until then it says so and points to Lịch sử.
 
 const localPhone = (n) => { const d = String(n || "").replace(/\D/g, ""); const l = d.startsWith("84") ? `0${d.slice(2)}` : d; return /^0\d{9}$/.test(l) ? `${l.slice(0, 4)} ${l.slice(4, 7)} ${l.slice(7)}` : String(n || ""); };
 
@@ -98,8 +98,4 @@ function Coming({ tab, title, lines, trial }) {
 
 export function FinanceInbound() {
   return <Coming tab={0} title="Gọi vào" lines={["Màn hình trực tiếp của tổng đài (các cuộc đang nghe máy, kết quả trong ngày) đang được hoàn thiện."]} />;
-}
-
-export function FinanceOutbound() {
-  return <Coming tab={1} title="Gọi ra" trial lines={["Chiến dịch gọi ra (tải danh sách khách hàng, Bonia gọi, theo dõi trực tiếp) đang được hoàn thiện."]} />;
 }
