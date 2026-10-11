@@ -47,6 +47,8 @@ export function FinanceCreate() {
   const [err, setErr] = useState("");
   const [columns, setColumns] = useState([]);
   const [blocked, setBlocked] = useState({ dnc: new Set(), recent: new Set() });
+  // the company's own rule (Cài đặt "Số đã gọi gần đây", founder 2026-10-11): skip numbers dialled in the last N days, 0 = none
+  const [recentDays, setRecentDays] = useState(0);
   const [recentMode, setRecentMode] = useState("skip");
   const [opening, setOpening] = useState({ text: "", busy: false });
   const [badOpen, setBadOpen] = useState(false);
@@ -90,6 +92,7 @@ export function FinanceCreate() {
         const good = checkRows(rows, pc).good.map((g) => g.phone);
         const b = await financeApi.check(good);
         setBlocked({ dnc: new Set(b.dnc), recent: new Set(b.recent) });
+        setRecentDays(b.recent_days || 0);
       }
       setStage("done");
       if (!name) setName(baseName(file.name));
@@ -116,7 +119,7 @@ export function FinanceCreate() {
     setColumns((cs) => cs.map((c) => (c.name === nm ? { ...c, kind: "phone", mention: false, meaning: c.meaning || "Số điện thoại để gọi" } : c.kind === "phone" ? { ...c, kind: "other" } : c)));
     if (sheet) {
       const good = checkRows(sheet.rows, nm).good.map((g) => g.phone);
-      financeApi.check(good).then((b) => setBlocked({ dnc: new Set(b.dnc), recent: new Set(b.recent) })).catch(() => {});
+      financeApi.check(good).then((b) => { setBlocked({ dnc: new Set(b.dnc), recent: new Set(b.recent) }); setRecentDays(b.recent_days || 0); }).catch(() => {});
     }
   };
 
@@ -150,7 +153,7 @@ export function FinanceCreate() {
   // why Tiếp tục is off on step 2: no file yet, or every number skipped (the 7-day rule has a way out: Vẫn gọi)
   const blockedHint = stage !== "done" || !check ? "Tải file lên để tiếp tục"
     : !phoneCol ? "Chọn cột số điện thoại để tiếp tục"
-      : recentN > 0 && recentMode === "skip" ? `${fmt(recentN)} số đã được gọi trong 7 ngày qua · bấm “Vẫn gọi” để gọi lại`
+      : recentN > 0 && recentMode === "skip" ? `${fmt(recentN)} số đã được gọi trong ${recentDays} ngày qua · bấm “Vẫn gọi” để gọi lại`
         : "Không còn số nào để gọi";
   const canNext = step === 1 ? true : step === 2 ? ready : step === 3 ? okWindows && s.days.length > 0 && okStart : !created && !!name.trim();
   const nextLabel = step === 1 ? "Tôi đã có file" : step < 4 ? "Tiếp tục" : s.start === "now" ? "Bắt đầu gọi" : "Lên lịch";
@@ -229,7 +232,7 @@ export function FinanceCreate() {
 
   const pct = STAGES[stage]?.[0] ?? 0;
   const bad = check ? [...check.wrong, ...check.duplicate].sort((a, b) => a.n - b.n) : [];
-  const cols4 = phone ? "1fr 1fr" : "repeat(4, 1fr)";
+  const cols4 = phone ? "1fr 1fr" : `repeat(${recentDays ? 4 : 3}, 1fr)`;
   const step2 = (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       {head("Tải lên và kiểm tra")}
@@ -271,14 +274,14 @@ export function FinanceCreate() {
               <div style={{ ...card, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 4 }}>
                 <span style={{ fontFamily: MONO, fontSize: 22 }}>{fmt(check.duplicate.length)}</span><span style={{ fontSize: 12.5, color: "#4A4239" }}>số trùng, bỏ qua</span>
               </div>
-              <div style={{ ...card, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 4 }}>
-                <span style={{ fontFamily: MONO, fontSize: 22 }}>{fmt(recentN)}</span><span style={{ fontSize: 12.5, color: "#4A4239" }}>đã gọi trong 7 ngày qua</span>
+              {recentDays > 0 && <div style={{ ...card, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 4 }}>
+                <span style={{ fontFamily: MONO, fontSize: 22 }}>{fmt(recentN)}</span><span style={{ fontSize: 12.5, color: "#4A4239" }}>đã gọi trong {recentDays} ngày qua <Link href="/cai-dat" style={{ color: "#7B4A2D", fontSize: 11.5 }}>· đổi trong Cài đặt</Link></span>
                 {recentN > 0 && (
                   <div style={{ display: "flex", background: "#F7F3EC", border: "1px solid #D9D0BF", borderRadius: 9, padding: 2, gap: 2, alignSelf: "flex-start", marginTop: 4 }}>
                     {[["skip", `Bỏ qua ${fmt(recentN)} số này`], ["keep", "Vẫn gọi"]].map(([k, l]) => <button key={k} type="button" onClick={() => setRecentMode(k)} style={{ height: 26, padding: "0 9px", border: 0, borderRadius: 7, background: recentMode === k ? "#1F1B16" : "transparent", color: recentMode === k ? "#F7F3EC" : "#1F1B16", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>{l}</button>)}
                   </div>
                 )}
-              </div>
+              </div>}
             </div>
           )}
           {dncN > 0 && <span style={{ fontSize: 12.5, color: "#4A4239" }}>Bỏ qua thêm {fmt(dncN)} số khách đã xin không gọi nữa.</span>}
@@ -420,7 +423,7 @@ export function FinanceCreate() {
   );
 
   const review = [
-    ["Danh sách", sheet ? `${fmt(N)} số · ${columns.length} cột thông tin · ${sheet.file}${recentN && recentMode === "skip" ? ` · bỏ qua ${fmt(recentN)} số đã gọi trong 7 ngày qua` : ""}` : "Chưa tải lên", 2],
+    ["Danh sách", sheet ? `${fmt(N)} số · ${columns.length} cột thông tin · ${sheet.file}${recentN && recentMode === "skip" ? ` · bỏ qua ${fmt(recentN)} số đã gọi trong ${recentDays} ngày qua` : ""}` : "Chưa tải lên", 2],
     ["Kịch bản", "Kịch bản gọi ra của công ty", 3],
     ["Số hiển thị", "Số tổng đài Bonia · bản dùng thử", 3],
     ["Cùng lúc", `${s.concurrency} cuộc`, 3],

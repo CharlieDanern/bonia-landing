@@ -22,6 +22,9 @@ export const financeApi = {
   check: (phones) => call("POST", "/reception/web/finance/campaigns/check", { phones }),
   testCall: (body) => call("POST", "/reception/web/finance/test-call", body),
   dnc: () => call("GET", "/reception/web/finance/dnc"),
+  // Cài đặt: the company's own rules (recent_days: skip numbers dialled in the last N days, 0 = call everyone)
+  settings: () => call("GET", "/reception/web/finance/settings"),
+  saveSettings: (body) => call("PUT", "/reception/web/finance/settings", body),
   // Gọi vào: the hotline's calls in progress, today's results, its switch
   inboundLive: () => call("GET", "/reception/web/finance/inbound/live"),
   setHotline: (on) => call("PUT", "/reception/web/finance/hotline", { on }),

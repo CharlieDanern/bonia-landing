@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useLayout } from "../layout.jsx";
 import { useApp } from "../state.jsx";
 import { MONO, SERIF, dims } from "../ui.js";
+import { financeApi } from "./api.js";
 import { FinHeader, FinPhoneTabs, useCompany } from "./common.jsx";
 
 // The finance account's Cài đặt and Tài khoản (handoff 16).
@@ -58,6 +59,29 @@ export function FinanceAccount() {
   );
 }
 
+/** "Số đã gọi gần đây": the company decides whether a new list skips numbers dialled lately (founder 2026-10-11). */
+function RecentDays() {
+  const [v, setV] = useState(null);
+  const [opts, setOpts] = useState([0, 1, 3, 7, 14, 30]);
+  const [state, setState] = useState("");
+  useEffect(() => { financeApi.settings().then((r) => { setV(r.recent_days); setOpts(r.recent_days_options || opts); }).catch(() => setState("failed")); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const save = async (n) => {
+    const prev = v;
+    setV(n); setState("saving");
+    try { await financeApi.saveSettings({ recent_days: n }); setState("saved"); setTimeout(() => setState(""), 1800); } catch { setV(prev); setState("failed"); }
+  };
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      {state === "saved" && <span style={{ fontSize: 12, color: "#4A6B3A" }}>Đã lưu</span>}
+      {state === "failed" && <span style={{ fontSize: 12, color: "#A0412D" }}>Chưa lưu được</span>}
+      <select value={v ?? ""} disabled={v === null || state === "saving"} onChange={(e) => save(Number(e.target.value))} style={{ height: 32, border: "1px solid #D9D0BF", borderRadius: 8, padding: "0 8px", fontSize: 12.5, background: "#fff", color: "#1F1B16" }}>
+        {v === null && <option value="">…</option>}
+        {opts.map((n) => <option key={n} value={n}>{n ? `Bỏ qua số đã gọi trong ${n} ngày` : "Gọi tất cả các số"}</option>)}
+      </select>
+    </div>
+  );
+}
+
 export function FinanceSettings() {
   const row = (title, sub, right) => (
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", borderTop: "1px solid #EFE9DD" }}>
@@ -75,6 +99,7 @@ export function FinanceSettings() {
         <div style={{ marginTop: -1 }}>
           {row("Thông tin công ty", "Sản phẩm vay, lãi suất, điều kiện, giờ làm việc", soon)}
           {row("Kịch bản gọi ra", "Đội Bonia chỉnh kịch bản cho công ty", <span style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.14em", color: "#4A4239" }}>1 KỊCH BẢN</span>)}
+          {row("Số đã gọi gần đây", "Khi tải danh sách mới, Bonia có bỏ qua số vừa gọi gần đây không. Vẫn gọi được từng danh sách.", <RecentDays />)}
           {row("Thử Bonia", "Nói chuyện với Bonia ngay trên trình duyệt", soon)}
         </div>
       </div>
