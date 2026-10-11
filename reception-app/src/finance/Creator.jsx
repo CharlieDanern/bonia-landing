@@ -147,6 +147,11 @@ export function FinanceCreate() {
     }
   };
 
+  // why Tiếp tục is off on step 2: no file yet, or every number skipped (the 7-day rule has a way out: Vẫn gọi)
+  const blockedHint = stage !== "done" || !check ? "Tải file lên để tiếp tục"
+    : !phoneCol ? "Chọn cột số điện thoại để tiếp tục"
+      : recentN > 0 && recentMode === "skip" ? `${fmt(recentN)} số đã được gọi trong 7 ngày qua · bấm “Vẫn gọi” để gọi lại`
+        : "Không còn số nào để gọi";
   const canNext = step === 1 ? true : step === 2 ? ready : step === 3 ? okWindows && s.days.length > 0 && okStart : !created && !!name.trim();
   const nextLabel = step === 1 ? "Tôi đã có file" : step < 4 ? "Tiếp tục" : s.start === "now" ? "Bắt đầu gọi" : "Lên lịch";
   const next = () => { if (!canNext || saving) return; if (step < 4) goStep(step + 1); else save(true); };
@@ -415,7 +420,7 @@ export function FinanceCreate() {
   );
 
   const review = [
-    ["Danh sách", sheet ? `${fmt(N)} số · ${columns.length} cột thông tin · ${sheet.file}` : "Chưa tải lên", 2],
+    ["Danh sách", sheet ? `${fmt(N)} số · ${columns.length} cột thông tin · ${sheet.file}${recentN && recentMode === "skip" ? ` · bỏ qua ${fmt(recentN)} số đã gọi trong 7 ngày qua` : ""}` : "Chưa tải lên", 2],
     ["Kịch bản", "Kịch bản gọi ra của công ty", 3],
     ["Số hiển thị", "Số tổng đài Bonia · bản dùng thử", 3],
     ["Cùng lúc", `${s.concurrency} cuộc`, 3],
@@ -480,7 +485,7 @@ export function FinanceCreate() {
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "14px 0", borderTop: "1px solid #D9D0BF" }}>
       <button type="button" onClick={() => goStep(Math.max(1, step - 1))} style={{ visibility: step > 1 && !created ? "visible" : "hidden", height: 36, padding: "0 16px", borderRadius: 18, border: "1px solid #D9D0BF", background: "#fff", fontSize: 13, cursor: "pointer" }}>Quay lại</button>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {step === 2 && !ready && <span style={{ fontSize: 12.5, color: "#6E6255" }}>Tải file lên để tiếp tục</span>}
+        {step === 2 && !ready && <span style={{ fontSize: 12.5, color: stage === "done" && check ? "#7B4A2D" : "#6E6255" }}>{blockedHint}</span>}
         {step === 4 && !created && <button type="button" disabled={saving || !name.trim()} onClick={() => save(false)} style={{ height: 36, padding: "0 16px", borderRadius: 18, border: "1px solid #D9D0BF", background: "#fff", fontSize: 13, cursor: "pointer" }}>Lưu nháp</button>}
         {!created && <button type="button" onClick={next} disabled={!canNext || saving} style={{ height: 36, padding: "0 20px", borderRadius: 18, border: 0, background: canNext ? "#7B4A2D" : "#C9BCA5", color: "#fff", fontSize: 13, cursor: canNext ? "pointer" : "not-allowed" }}>{saving ? "Đang lưu…" : nextLabel}</button>}
       </div>
