@@ -329,7 +329,14 @@ export function Playground() {
     </label>
   ), null, (
     <Reader d={d} business={cur.business.name} sector={pg.sector} isSample={!!entry && cur.knowledge === entry.sample.knowledge} disabled={live}
-      onAdd={(text, mode) => setField("knowledge", (mode === "replace" || !cur.knowledge.trim() ? text : `${cur.knowledge.trim()}\n\n${text}`).slice(0, pg.limits.knowledge))} />
+      onAdd={(parts, mode) => {
+        // each file its own section, under its title; nothing is cut: too long, nothing is added and the card says so
+        const block = parts.map((x) => `## ${x.title.trim() || "Thông tin"}\n${x.text.trim()}`).join("\n\n");
+        const next = mode === "replace" || !cur.knowledge.trim() ? block : `${cur.knowledge.trim()}\n\n${block}`;
+        if (next.length > pg.limits.knowledge) return "full";
+        setField("knowledge", next);
+        return null;
+      }} />
   ));
   const form = (
     <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
