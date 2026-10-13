@@ -142,7 +142,7 @@ export function Playground() {
       setResult({ state: "done", call: c });
       patch({
         live: false, done: true, err: "", len: Math.round(c.duration_ms / 1000), title: c.business_name, out: c.direction === "outbound" ? c.scenario || "Gọi ra" : null,
-        lines: (c.transcript || []).map((t) => ({ w: t.who === "bonia" ? "B" : "K", text: t.text })),
+        lines: (c.transcript || []).map((t) => ({ w: t.who === "bonia" ? "B" : "K", text: t.text, rest: t.unheard || "" })),
         records: (c.records || []).map((r) => ({ id: r.id, type: r.type || "Ghi nhận" })),
       });
     } catch { /* gone */ }
@@ -182,11 +182,17 @@ export function Playground() {
           // m.uuid: this call, to ask for its result card once it is over
           ready: (m) => { R.current.uuid = m?.uuid || null; const at = Date.now(); patch({ t0: at }); setNow(at); },
           level: (lv) => { if (Math.abs(lv - C.current.level) > 0.01) patch({ level: lv }); },
-          // gpt-realtime + ElevenLabs sends whole lines: one bubble each
-          transcript: (who, text) => {
+          // gpt-realtime + ElevenLabs sends whole lines: one bubble each (a line cut short: rest, the part never said)
+          transcript: (who, text, m) => {
             const t = String(text || "").trim();
-            if (t) patch((s) => ({ lines: [...s.lines, { w: who === "bonia" ? "B" : "K", text: t }] }));
+            if (t) patch((s) => ({ lines: [...s.lines, { w: who === "bonia" ? "B" : "K", text: t, id: m?.id || null, rest: m?.rest || "" }] }));
           },
+          // the caller cut in after the line was shown: only what they heard stays (founder 2026-10-14); none of it, it goes
+          transcriptCut: (m) => patch((s) => ({
+            lines: m.heard
+              ? s.lines.map((l) => (l.id === m.id ? { ...l, text: `${m.heard}…`, rest: m.rest || "" } : l))
+              : s.lines.filter((l) => l.id !== m.id),
+          })),
           request: (m) => patch((s) => ({ records: [...s.records.filter((r) => r.id !== m.id), { id: m.id, type: m.card?.type || "Ghi nhận" }] })),
           end: () => finish(),
           error: (msg) => patch({ err: msg }),
@@ -368,7 +374,14 @@ export function Playground() {
         </div>
       </div>
       <div ref={listRef} style={{ flex: 1, minHeight: 0, overflow: "auto", display: "flex", flexDirection: "column", gap: 8, padding: "12px 14px" }}>
-        {call.lines.map((t, i) => <Bubble key={i} who={t.w} text={t.text} />)}
+        {call.lines.map((t, i) => (
+          <Bubble key={i} who={t.w} text={t.rest ? (
+            <>
+              {t.text}{" "}
+              <span title="Khách nói chen vào: phần này Bonia chưa kịp nói" style={{ color: "#A89C8A", textDecoration: "line-through" }}>{t.rest}</span>
+            </>
+          ) : t.text} />
+        ))}
         {(call.records.length > 0 || !live) && (
           <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingTop: 10, borderTop: "1px solid #EFE9DD", marginTop: 4, flex: "none" }}>
             <span style={eyebrow}>BONIA ĐÃ GHI</span>
