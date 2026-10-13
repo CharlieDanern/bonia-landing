@@ -106,7 +106,7 @@ export function RecentCalls({ d, calls, open, onOpen, max = 6 }) {
           <span style={{ display: "flex", flexDirection: "column", fontFamily: MONO, fontSize: 10, color: "#6E6255", lineHeight: 1.3 }}><span>{hhmm(c.started_at)}</span><span>{ddmm(c.started_at)}</span></span>
           <span style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
             <span style={{ fontSize: d.fs.small, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#1F1B16" }}>{c.outcome || "Gọi thử"} · {c.business_name}</span>
-            <span style={{ fontSize: d.fs.tiny, color: "#6E6255", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.summary || "—"}</span>
+            <span style={{ fontSize: d.fs.tiny, color: "#6E6255", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.direction === "outbound" ? `Gọi ra: ${c.scenario || ""} · ` : ""}{c.summary || "—"}</span>
           </span>
           <span style={{ fontSize: d.fs.tiny, color: "#6E6255", whiteSpace: "nowrap" }}>{mmss(Math.round(c.duration_ms / 1000))}</span>
         </button>

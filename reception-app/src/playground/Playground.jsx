@@ -8,6 +8,7 @@ import { useApp } from "../state.jsx";
 import { BONIA_MARK } from "../lib/assets.js";
 import { EASE, MONO, SERIF, dims } from "../ui.js";
 import { Reader } from "./Reader.jsx";
+import { Select } from "./Select.jsx";
 import { RecentCalls, ResultCard, mmss } from "./Result.jsx";
 
 // The partner demo playground (founder 2026-10-13): a reseller shows Bonia to his clients. He picks one of 8 sectors,
@@ -18,6 +19,9 @@ import { RecentCalls, ResultCard, mmss } from "./Result.jsx";
 // Phase 2: a menu, price list or promotion dropped on "Thông tin cho Bonia" is read by Bonia ("Bonia đã đọc",
 // ./Reader.jsx). Phase 3: after the call, the result card the owner would get (./Result.jsx), and the account's last
 // calls to open again.
+// Kịch bản (founder 2026-10-13: "kịch bản only for calls-out. calls-in are free"): Gọi vào, the tester calls as any
+// customer; or one of the sector's Gọi ra scenarios (the voice agent's, edited in the founder's prompt editor): Bonia
+// calls the tester, who plays the customer the card describes.
 
 const SAVE_MS = 800;
 const ERRORS = {
@@ -59,7 +63,7 @@ export function Playground() {
   // what the backend keeps: the picks and the current sector's text
   const bodyOf = (p) => {
     const s = p.sectors[p.sector];
-    return { sector: p.sector, voice: p.voice, data: { business: s.business, knowledge: s.knowledge, greeting: s.greeting } };
+    return { sector: p.sector, voice: p.voice, data: { business: s.business, knowledge: s.knowledge, greeting: s.greeting, scenario: s.scenario || null } };
   };
   const saveNow = useCallback(async () => {
     clearTimeout(R.current.saveT);
@@ -89,7 +93,7 @@ export function Playground() {
   const pickVoice = (id) => change((p) => ({ ...p, voice: id }));
   const useSample = () => change((p) => {
     const sample = p.catalog.find((c) => c.id === p.sector).sample;
-    return { ...p, sectors: { ...p.sectors, [p.sector]: { ...sample } } };
+    return { ...p, sectors: { ...p.sectors, [p.sector]: { ...sample, scenario: p.sectors[p.sector].scenario || null } } };
   });
 
   // ── the call ────────────────────────────────────────────────────────────
@@ -137,7 +141,7 @@ export function Playground() {
       setResultUuid(uuid);
       setResult({ state: "done", call: c });
       patch({
-        live: false, done: true, err: "", len: Math.round(c.duration_ms / 1000), title: c.business_name,
+        live: false, done: true, err: "", len: Math.round(c.duration_ms / 1000), title: c.business_name, out: c.direction === "outbound" ? c.scenario || "Gọi ra" : null,
         lines: (c.transcript || []).map((t) => ({ w: t.who === "bonia" ? "B" : "K", text: t.text })),
         records: (c.records || []).map((r) => ({ id: r.id, type: r.type || "Ghi nhận" })),
       });
@@ -155,7 +159,8 @@ export function Playground() {
     setResultUuid(null);
     setPickups((n) => n + 1);
     const t0 = Date.now();
-    patch({ live: true, phase: "connecting", lines: [], records: [], err: "", t0, level: 0, done: false, title: cur.business.name });
+    const sc = (pg.scenarios?.[pg.sector] || []).find((x) => x.id === cur.scenario) || null;
+    patch({ live: true, phase: "connecting", lines: [], records: [], err: "", t0, level: 0, done: false, title: cur.business.name, out: sc ? sc.name : null });
     setNow(t0);
     R.current.tick = setInterval(() => setNow(Date.now()), 500);
     clearTimeout(R.current.saveT);
@@ -218,6 +223,10 @@ export function Playground() {
   const entry = pg.catalog.find((c) => c.id === pg.sector);
   const sectorName = entry?.name || "";
   const edited = !!entry && JSON.stringify([cur.business, cur.knowledge, cur.greeting]) !== JSON.stringify([entry.sample.business, entry.sample.knowledge, entry.sample.greeting]);
+  // the Gọi ra scenario picked (one the sector no longer has: Gọi vào)
+  const scenarios = pg.scenarios?.[pg.sector] || [];
+  const picked = scenarios.find((x) => x.id === cur.scenario) || null;
+  const fill = (t, sc) => t.replace(/\{\{name\}\}/g, cur.business.name || "…").replace(/\{\{customer\}\}/g, sc.customer);
   const live = call.live;
   const showPanel = live || call.done;
   const sec = Math.max(0, Math.floor((now - call.t0) / 1000));
@@ -252,16 +261,43 @@ export function Playground() {
   );
 
   const sectors = section("Ngành", (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-      {pg.catalog.map((c) => {
-        const on = c.id === pg.sector;
-        return (
-          <button key={c.id} type="button" disabled={live} onClick={() => pickSector(c.id)} style={{ display: "flex", flexDirection: "column", gap: 2, textAlign: "left", padding: "8px 10px", borderRadius: 9, border: `1px solid ${on ? "#7B4A2D" : "#D9D0BF"}`, background: on ? "#FBF5EC" : "#fff", opacity: live && !on ? 0.5 : 1 }}>
-            <span style={{ fontSize: d.fs.small, fontWeight: 600, color: on ? "#7B4A2D" : "#1F1B16", lineHeight: 1.3 }}>{c.name}</span>
-            <span style={{ fontSize: d.fs.tiny, color: "#6E6255", lineHeight: 1.35 }}>{c.hint}</span>
-          </button>
-        );
-      })}
+    <Select d={d} label="Ngành" value={pg.sector} disabled={live} onChange={pickSector}
+      options={pg.catalog.map((c) => ({ value: c.id, label: c.name, hint: c.hint }))} />
+  ));
+  // Kịch bản: every choice on show (Gọi vào, then the sector's Gọi ra scenarios); the picked one opens up
+  const scenarioCard = (sc) => {
+    const on = sc ? picked?.id === sc.id : !picked;
+    const tag = (
+      <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: "0.14em", padding: "2px 6px", borderRadius: 6, flex: "none", whiteSpace: "nowrap",
+        color: sc ? "#7B4A2D" : "#4A6B3A", background: sc ? "#FBF0E4" : "#EEF3EA", border: `1px solid ${sc ? "#E9D3BC" : "#C9D8BF"}` }}>{sc ? "GỌI RA" : "GỌI VÀO"}</span>
+    );
+    return (
+      <button key={sc?.id || "in"} type="button" disabled={live} onClick={() => setField("scenario", sc ? sc.id : null)}
+        style={{ display: "flex", flexDirection: "column", gap: 6, textAlign: "left", padding: "10px 12px", borderRadius: 10, border: `1px solid ${on ? "#7B4A2D" : "#D9D0BF"}`, background: on ? "#FBF5EC" : "#fff", opacity: live && !on ? 0.5 : 1, boxShadow: on ? "0 0 0 3px rgba(123,74,45,0.08)" : "none" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {tag}
+          <span style={{ fontSize: d.fs.body, fontWeight: 600, color: on ? "#7B4A2D" : "#1F1B16", lineHeight: 1.3 }}>{sc ? sc.name : "Khách gọi tới"}</span>
+        </span>
+        <span style={{ fontSize: d.fs.tiny, color: "#6E6255", lineHeight: 1.45 }}>{sc ? `Bonia gọi cho ${sc.customer}.` : "Bạn gọi như một khách, hỏi gì cũng được."}</span>
+        {on && sc && (
+          <span style={{ display: "flex", flexDirection: "column", gap: 6, paddingTop: 6, borderTop: "1px solid #EADFCD" }}>
+            <span style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <span style={eyebrow}>BẠN ĐÓNG VAI</span>
+              <span style={{ fontSize: d.fs.small, color: "#1F1B16", lineHeight: 1.5 }}>{sc.hint}</span>
+            </span>
+            <span style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <span style={eyebrow}>BONIA MỞ ĐẦU</span>
+              <span style={{ fontSize: d.fs.small, color: "#4A4239", lineHeight: 1.5, fontStyle: "italic" }}>“{fill(sc.opening, sc)}”</span>
+            </span>
+          </span>
+        )}
+      </button>
+    );
+  };
+  const script = section("Kịch bản", (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {scenarioCard(null)}
+      {scenarios.map((sc) => scenarioCard(sc))}
     </div>
   ));
   const business = section("Doanh nghiệp", (
@@ -269,13 +305,22 @@ export function Playground() {
       {field("name", "TÊN", { ph: "Tên khách hàng nghe Bonia nói" })}
       {field("address", "ĐỊA CHỈ")}
       {field("hours", "GIỜ LÀM VIỆC", { ph: "Ví dụ: 8:00–21:00 hằng ngày" })}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        {field("phone", "SỐ ĐIỆN THOẠI")}
-        {field("website", "WEBSITE, FANPAGE")}
-      </div>
       {field("about", "GIỚI THIỆU NGẮN", { rows: 2 })}
     </>
   ), edited ? <button type="button" disabled={live} onClick={useSample} style={{ fontSize: d.fs.small, color: "#7B4A2D" }}>Dùng lại mẫu</button> : <span style={eyebrow}>MẪU</span>);
+  const voice = section("Giọng và lời chào", (
+    <>
+      <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+        <span style={eyebrow}>GIỌNG</span>
+        <Select d={d} label="Giọng" value={pg.voice} disabled={live} onChange={pickVoice} options={pg.voices.map((v) => ({ value: v.id, label: v.label }))} />
+      </label>
+      <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+        <span style={eyebrow}>LỜI CHÀO KHI KHÁCH GỌI VÀO</span>
+        <textarea rows={2} value={cur.greeting} maxLength={pg.limits.greeting} placeholder={`Dạ ${cur.business.name || "…"} xin nghe ạ.`} onChange={(e) => setField("greeting", e.target.value)} style={area} />
+        {picked && <span style={{ fontSize: d.fs.tiny, color: "#6E6255", lineHeight: 1.45 }}>Kịch bản gọi ra: Bonia mở đầu bằng câu của kịch bản.</span>}
+      </label>
+    </>
+  ));
   const knowledge = section("Thông tin cho Bonia", (
     <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
       <span style={{ fontSize: d.fs.small, color: "#4A4239", lineHeight: 1.5 }}>Sản phẩm, dịch vụ, bảng giá, khuyến mãi, chính sách. Bonia chỉ trả lời theo phần này.</span>
@@ -286,41 +331,27 @@ export function Playground() {
     <Reader d={d} business={cur.business.name} sector={pg.sector} isSample={!!entry && cur.knowledge === entry.sample.knowledge} disabled={live}
       onAdd={(text, mode) => setField("knowledge", (mode === "replace" || !cur.knowledge.trim() ? text : `${cur.knowledge.trim()}\n\n${text}`).slice(0, pg.limits.knowledge))} />
   ));
-  const voice = section("Giọng và lời chào", (
-    <>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-        {pg.voices.map((v) => {
-          const on = v.id === pg.voice;
-          return (
-            <button key={v.id} type="button" disabled={live} onClick={() => pickVoice(v.id)} style={{ height: d.chip, padding: "0 12px", borderRadius: d.chip / 2, border: `1px solid ${on ? "#7B4A2D" : "#D9D0BF"}`, background: on ? "#FBF5EC" : "#fff", fontSize: d.fs.small, color: on ? "#7B4A2D" : "#1F1B16" }}>{v.label}</button>
-          );
-        })}
-      </div>
-      <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-        <span style={eyebrow}>LỜI CHÀO</span>
-        <textarea rows={2} value={cur.greeting} maxLength={pg.limits.greeting} placeholder={`Dạ ${cur.business.name || "…"} xin nghe ạ.`} onChange={(e) => setField("greeting", e.target.value)} style={area} />
-      </label>
-    </>
-  ));
   const form = (
     <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
       {sectors}
+      {script}
       {business}
-      {knowledge}
       {voice}
+      {knowledge}
     </div>
   );
 
   // ── the call panel ──────────────────────────────────────────────────────
   const startBtn = (
-    <button type="button" className="b-primary" onClick={start} style={{ height: phone ? 44 : 42, padding: "0 26px", borderRadius: 22, fontSize: phone ? 14.5 : 14 }}>{call.done ? "▶ Gọi lại" : "▶ Gọi thử"}</button>
+    <button type="button" className="b-primary" onClick={start} style={{ height: phone ? 44 : 42, padding: "0 26px", borderRadius: 22, fontSize: phone ? 14.5 : 14 }}>{picked ? "▶ Bonia gọi cho bạn" : call.done ? "▶ Gọi lại" : "▶ Gọi thử"}</button>
   );
   const panel = (
     <div style={{ height: "100%", background: "#fff", border: "1px solid #D9D0BF", borderRadius: phone ? "18px 18px 0 0" : 14, overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <div style={{ padding: "9px 12px 9px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, background: live ? "#F1F3EA" : "#F3F3EC", borderBottom: "1px solid #E2E6D6", flex: "none" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-          <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.14em", color: live ? "#4A6B3A" : "#4A4239" }}>{live ? "ĐANG GỌI THỬ" : "CUỘC GỌI THỬ ĐÃ XONG"}</span>
+          <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.14em", color: live ? "#4A6B3A" : "#4A4239" }}>{live ? (call.out ? "BONIA ĐANG GỌI RA" : "ĐANG GỌI THỬ") : call.out ? "CUỘC GỌI RA ĐÃ XONG" : "CUỘC GỌI THỬ ĐÃ XONG"}</span>
           <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{call.title || cur.business.name}</span>
+          {call.out && <span style={{ fontSize: d.fs.tiny, color: "#6E6255", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Kịch bản: {call.out}</span>}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontFamily: MONO, fontSize: 11.5, color: "#4A4239" }}>{live ? mmss(sec) : mmss(call.len || 0)}</span>
@@ -374,7 +405,7 @@ export function Playground() {
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
               <Orb size={170} mood={mood} tone={live ? "green" : "warm"} pickup={pickups} lively={live} reduce={reduce} />
               <div style={{ marginTop: -14 }}>{startBtn}</div>
-              <span style={{ ...eyebrow, textAlign: "center" }}>{sectorName.toUpperCase()} · {savedLabel}</span>
+              <span style={{ ...eyebrow, textAlign: "center", lineHeight: 1.7 }}>{picked ? `GỌI RA · BẠN LÀ ${picked.customer.toUpperCase()}` : sectorName.toUpperCase()} · {savedLabel}</span>
               {!live && call.err && <span role="alert" style={{ fontSize: 12, color: "#A0412D", textAlign: "center" }}>{call.err}</span>}
             </div>
             <RecentCalls d={d} calls={recent} open={resultUuid} onOpen={openPast} max={3} />
@@ -410,7 +441,7 @@ export function Playground() {
         </div>
         {!live && startBtn}
         {live && <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.16em", color: phaseC }}>{phaseLabel}</span>}
-        <span style={{ ...eyebrow, marginTop: 6, textAlign: "center" }}>BONIA NGHE MÁY CHO {cur.business.name ? cur.business.name.toUpperCase() : "…"}</span>
+        <span style={{ ...eyebrow, marginTop: 6, textAlign: "center", maxWidth: 420, lineHeight: 1.7 }}>{picked ? `BONIA GỌI RA · BẠN LÀ ${picked.customer.toUpperCase()}` : `BONIA NGHE MÁY CHO ${cur.business.name ? cur.business.name.toUpperCase() : "…"}`}</span>
         {!live && call.err && <span role="alert" style={{ fontSize: 12, color: "#A0412D", textAlign: "center", maxWidth: 400, lineHeight: 1.5 }}>{call.err}</span>}
         {!live && <div style={{ width: "min(380px, 100%)", marginTop: 18 }}><RecentCalls d={d} calls={recent} open={resultUuid} onOpen={openPast} /></div>}
       </div>
