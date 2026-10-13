@@ -7,12 +7,17 @@ import { useLayout } from "../layout.jsx";
 import { useApp } from "../state.jsx";
 import { BONIA_MARK } from "../lib/assets.js";
 import { EASE, MONO, SERIF, dims } from "../ui.js";
+import { Reader } from "./Reader.jsx";
+import { RecentCalls, ResultCard, mmss } from "./Result.jsx";
 
 // The partner demo playground (founder 2026-10-13): a reseller shows Bonia to his clients. He picks one of 8 sectors,
 // types the business (name, address, opening hours, what it sells and its prices), picks a voice and the greeting,
 // and calls Bonia from this browser: gpt-realtime + ElevenLabs (voice agent src/demo), answering as that business.
 // What is typed is kept per sector (backend services/playground.ts, saved as you type); each sector starts from a
 // fictional sample. The call shows its lines and what Bonia recorded as they happen.
+// Phase 2: a menu, price list or promotion dropped on "Thông tin cho Bonia" is read by Bonia ("Bonia đã đọc",
+// ./Reader.jsx). Phase 3: after the call, the result card the owner would get (./Result.jsx), and the account's last
+// calls to open again.
 
 const SAVE_MS = 800;
 const ERRORS = {
@@ -21,7 +26,7 @@ const ERRORS = {
   network: "Không kết nối được tới Bonia. Thử lại sau ít phút.",
 };
 const eyebrow = { fontFamily: MONO, fontSize: 9, letterSpacing: "0.18em", color: "#6E6255" };
-const mmss = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+const RESULT_WAIT_MS = 45_000; // the result card is written after the call (a few seconds)
 
 export function Playground() {
   const app = useApp();
@@ -33,6 +38,9 @@ export function Playground() {
   const [call, setCall] = useState({ live: false, phase: "idle", lines: [], records: [], err: "", t0: 0, level: 0, done: false });
   const [now, setNow] = useState(Date.now());
   const [pickups, setPickups] = useState(0);
+  const [result, setResult] = useState({ state: "idle" }); // the result card: idle | waiting | done | none
+  const [resultUuid, setResultUuid] = useState(null);
+  const [recent, setRecent] = useState([]);
   const C = useRef(call);
   C.current = call;
   const R = useRef({});
@@ -45,6 +53,8 @@ export function Playground() {
     api.playground().then(setPg).catch((e) => setLoadErr(e?.status === 403 ? "Tài khoản này không mở được playground." : ERRORS.network));
   }, []);
   useEffect(load, [load]);
+  const loadRecent = useCallback(() => { api.playgroundCalls().then((r) => setRecent(r.calls || [])).catch(() => {}); }, []);
+  useEffect(loadRecent, [loadRecent]);
 
   // what the backend keeps: the picks and the current sector's text
   const bodyOf = (p) => {
@@ -88,21 +98,64 @@ export function Playground() {
     R.current.call = null;
     clearInterval(R.current.tick);
   };
-  useEffect(() => teardown, []);
+  useEffect(() => () => { teardown(); clearTimeout(R.current.pollT); }, []);
+  // the result card: the call server reports the call once its card is written; asked for until then
+  const waitResult = (uuid) => {
+    clearTimeout(R.current.pollT);
+    const until = Date.now() + RESULT_WAIT_MS;
+    setResultUuid(uuid);
+    setResult({ state: "waiting" });
+    const ask = async () => {
+      if (R.current.resultFor !== uuid) return;
+      try {
+        const r = await api.playgroundCallOf(uuid);
+        if (R.current.resultFor !== uuid) return;
+        setResult({ state: "done", call: r.call });
+        loadRecent();
+        return;
+      } catch { /* not reported yet */ }
+      if (Date.now() > until) return setResult({ state: "none" });
+      R.current.pollT = setTimeout(ask, 1500);
+    };
+    R.current.resultFor = uuid;
+    R.current.pollT = setTimeout(ask, 2500);
+  };
   const finish = () => {
     if (R.current.ended) return;
     R.current.ended = true;
     teardown();
     patch({ live: false, phase: "idle", level: 0, done: true, len: Math.max(0, Math.round((Date.now() - C.current.t0) / 1000)) });
+    if (R.current.uuid) waitResult(R.current.uuid);
+  };
+  // a past call, opened again from Cuộc gọi gần đây
+  const openPast = async (uuid) => {
+    if (C.current.live) return;
+    try {
+      const { call: c } = await api.playgroundCallOf(uuid);
+      R.current.resultFor = uuid;
+      clearTimeout(R.current.pollT);
+      setResultUuid(uuid);
+      setResult({ state: "done", call: c });
+      patch({
+        live: false, done: true, err: "", len: Math.round(c.duration_ms / 1000), title: c.business_name,
+        lines: (c.transcript || []).map((t) => ({ w: t.who === "bonia" ? "B" : "K", text: t.text })),
+        records: (c.records || []).map((r) => ({ id: r.id, type: r.type || "Ghi nhận" })),
+      });
+    } catch { /* gone */ }
   };
   const start = async () => {
     if (C.current.live || !pg) return;
     const cur = pg.sectors[pg.sector];
     if (!cur.business.name.trim()) return patch({ err: ERRORS.name, done: false });
     R.current.ended = false;
+    R.current.uuid = null;
+    R.current.resultFor = null;
+    clearTimeout(R.current.pollT);
+    setResult({ state: "idle" });
+    setResultUuid(null);
     setPickups((n) => n + 1);
     const t0 = Date.now();
-    patch({ live: true, phase: "connecting", lines: [], records: [], err: "", t0, level: 0, done: false });
+    patch({ live: true, phase: "connecting", lines: [], records: [], err: "", t0, level: 0, done: false, title: cur.business.name });
     setNow(t0);
     R.current.tick = setInterval(() => setNow(Date.now()), 500);
     clearTimeout(R.current.saveT);
@@ -121,7 +174,8 @@ export function Playground() {
         ticket: ticket.ticket,
         on: {
           state: (phase) => { if (C.current.live && C.current.phase !== phase) patch({ phase }); },
-          ready: () => { const at = Date.now(); patch({ t0: at }); setNow(at); },
+          // m.uuid: this call, to ask for its result card once it is over
+          ready: (m) => { R.current.uuid = m?.uuid || null; const at = Date.now(); patch({ t0: at }); setNow(at); },
           level: (lv) => { if (Math.abs(lv - C.current.level) > 0.01) patch({ level: lv }); },
           // gpt-realtime + ElevenLabs sends whole lines: one bubble each
           transcript: (who, text) => {
@@ -145,7 +199,7 @@ export function Playground() {
   useEffect(() => {
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [call.lines.length, call.records.length]);
+  }, [call.lines.length, call.records.length, result.state]);
 
   if (!pg) {
     return (
@@ -186,13 +240,14 @@ export function Playground() {
       )}
     </label>
   );
-  const section = (title, children, right = null) => (
+  const section = (title, children, right = null, after = null) => (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
         <span style={{ fontFamily: SERIF, fontSize: phone ? 18 : 19 }}>{title}</span>
         {right}
       </div>
       {children}
+      {after}
     </div>
   );
 
@@ -227,6 +282,9 @@ export function Playground() {
       <textarea rows={phone ? 10 : 14} value={cur.knowledge} maxLength={pg.limits.knowledge} onChange={(e) => setField("knowledge", e.target.value)} style={{ ...area, fontSize: d.fs.small }} />
       <span style={{ ...eyebrow, alignSelf: "flex-end" }}>{cur.knowledge.length.toLocaleString("vi-VN")} / {pg.limits.knowledge.toLocaleString("vi-VN")} KÝ TỰ</span>
     </label>
+  ), null, (
+    <Reader d={d} business={cur.business.name} sector={pg.sector} isSample={!!entry && cur.knowledge === entry.sample.knowledge} disabled={live}
+      onAdd={(text, mode) => setField("knowledge", (mode === "replace" || !cur.knowledge.trim() ? text : `${cur.knowledge.trim()}\n\n${text}`).slice(0, pg.limits.knowledge))} />
   ));
   const voice = section("Giọng và lời chào", (
     <>
@@ -262,7 +320,7 @@ export function Playground() {
       <div style={{ padding: "9px 12px 9px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, background: live ? "#F1F3EA" : "#F3F3EC", borderBottom: "1px solid #E2E6D6", flex: "none" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
           <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.14em", color: live ? "#4A6B3A" : "#4A4239" }}>{live ? "ĐANG GỌI THỬ" : "CUỘC GỌI THỬ ĐÃ XONG"}</span>
-          <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cur.business.name}</span>
+          <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{call.title || cur.business.name}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontFamily: MONO, fontSize: 11.5, color: "#4A4239" }}>{live ? mmss(sec) : mmss(call.len || 0)}</span>
@@ -284,6 +342,7 @@ export function Playground() {
             )) : <span style={{ fontSize: d.fs.small, color: "#6E6255", lineHeight: 1.5 }}>Không có gì để ghi: cuộc gọi chỉ hỏi thông tin.</span>}
           </div>
         )}
+        {!live && <ResultCard d={d} result={result} uuid={resultUuid} />}
       </div>
       <div style={{ padding: `8px 12px ${phone ? "max(22px, var(--tt-bot))" : "12px"}`, borderTop: "1px solid #EFE9DD", display: "flex", flexDirection: "column", gap: 6, flex: "none" }}>
         {live && phone && <span style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.14em", color: phaseC, textAlign: "center" }}>{phaseLabel}</span>}
@@ -318,6 +377,7 @@ export function Playground() {
               <span style={{ ...eyebrow, textAlign: "center" }}>{sectorName.toUpperCase()} · {savedLabel}</span>
               {!live && call.err && <span role="alert" style={{ fontSize: 12, color: "#A0412D", textAlign: "center" }}>{call.err}</span>}
             </div>
+            <RecentCalls d={d} calls={recent} open={resultUuid} onOpen={openPast} max={3} />
             {form}
           </div>
         </div>
@@ -336,7 +396,7 @@ export function Playground() {
           <span className="tt-head-name">{cur.business.name || sectorName}</span>
         </div>
         <span style={{ flex: 1 }} />
-        <div className="tt-head-right" style={{ display: "flex", alignItems: "center", gap: 18 }}>
+        <div className="tt-head-right" style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 18 }}>
           <span style={eyebrow}>{savedLabel}</span>
           {signOut}
         </div>
@@ -352,6 +412,7 @@ export function Playground() {
         {live && <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.16em", color: phaseC }}>{phaseLabel}</span>}
         <span style={{ ...eyebrow, marginTop: 6, textAlign: "center" }}>BONIA NGHE MÁY CHO {cur.business.name ? cur.business.name.toUpperCase() : "…"}</span>
         {!live && call.err && <span role="alert" style={{ fontSize: 12, color: "#A0412D", textAlign: "center", maxWidth: 400, lineHeight: 1.5 }}>{call.err}</span>}
+        {!live && <div style={{ width: "min(380px, 100%)", marginTop: 18 }}><RecentCalls d={d} calls={recent} open={resultUuid} onOpen={openPast} /></div>}
       </div>
       <div style={{ position: "absolute", right: 48, width: 400, top: 56 + 24, bottom: 28, transform: showPanel ? "none" : "translateX(480px)", opacity: showPanel ? 1 : 0, pointerEvents: showPanel ? "auto" : "none", transition: `transform 650ms ${EASE}, opacity 400ms ease`, zIndex: 6 }}>
         {panel}

@@ -53,6 +53,10 @@ export const api = {
   playground: () => call("GET", "/reception/web/playground"),
   savePlayground: (body) => call("PUT", "/reception/web/playground", body),
   playgroundCall: (body) => call("POST", "/reception/web/playground/test-call", body),
+  // phase 2: "Bonia đã đọc" a file; phase 3: the result card and Cuộc gọi gần đây
+  playgroundRead: (body) => call("POST", "/reception/web/playground/read", body),
+  playgroundCalls: () => call("GET", "/reception/web/playground/calls"),
+  playgroundCallOf: (uuid) => call("GET", `/reception/web/playground/calls/${encodeURIComponent(uuid)}`),
   saveProfile: (profile, version, sector) => call("PUT", "/reception/web/profile", { profile, version, ...(sector ? { sector } : {}) }),
   startImport: (input) => call("POST", "/reception/web/import", input),
   importStatus: (id) => call("GET", `/reception/web/import/${encodeURIComponent(id)}`),
@@ -78,14 +82,17 @@ export const api = {
 };
 
 /** A call's recording as a playable URL: fetched with the login (an <audio> tag can't send it), kept as a Blob. */
-export async function recordingUrl(id) {
+export async function recordingUrl(id, path = `/reception/web/calls/${encodeURIComponent(id)}/recording`) {
   const t = token.get();
   let res;
   try {
-    res = await fetch(`${BASE}/reception/web/calls/${encodeURIComponent(id)}/recording`, { headers: t ? { Authorization: `Bearer ${t}` } : {} });
+    res = await fetch(`${BASE}${path}`, { headers: t ? { Authorization: `Bearer ${t}` } : {} });
   } catch {
     throw { status: 0, error: "network" };
   }
   if (!res.ok) throw { status: res.status, error: res.status === 404 ? "no_recording" : "failed" };
   return URL.createObjectURL(await res.blob());
 }
+
+/** A playground call's recording (kept 7 days on the call server). */
+export const playgroundRecordingUrl = (uuid) => recordingUrl(uuid, `/reception/web/playground/calls/${encodeURIComponent(uuid)}/recording`);
