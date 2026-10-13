@@ -71,7 +71,8 @@ export function Select({ d, value, options, onChange, disabled = false, label })
           return (
             <div
               key={o.value} role="option" aria-selected={on}
-              onMouseEnter={() => setActive(i)} onMouseDown={(e) => e.preventDefault()} onClick={() => pick(o)}
+              // preventDefault: inside a <label>, the click would also press the field again and reopen the list
+              onMouseEnter={() => setActive(i)} onMouseDown={(e) => e.preventDefault()} onClick={(e) => { e.preventDefault(); e.stopPropagation(); pick(o); }}
               style={{
                 display: "flex", alignItems: "center", gap: 10, padding: hinted ? "8px 10px" : "7px 10px", borderRadius: 8, cursor: "pointer",
                 background: i === active ? "#F7F3EC" : on ? "#FBF5EC" : "transparent",

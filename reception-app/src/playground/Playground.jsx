@@ -310,10 +310,10 @@ export function Playground() {
   ), edited ? <button type="button" disabled={live} onClick={useSample} style={{ fontSize: d.fs.small, color: "#7B4A2D" }}>Dùng lại mẫu</button> : <span style={eyebrow}>MẪU</span>);
   const voice = section("Giọng và lời chào", (
     <>
-      <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
         <span style={eyebrow}>GIỌNG</span>
         <Select d={d} label="Giọng" value={pg.voice} disabled={live} onChange={pickVoice} options={pg.voices.map((v) => ({ value: v.id, label: v.label }))} />
-      </label>
+      </div>
       <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
         <span style={eyebrow}>LỜI CHÀO KHI KHÁCH GỌI VÀO</span>
         <textarea rows={2} value={cur.greeting} maxLength={pg.limits.greeting} placeholder={`Dạ ${cur.business.name || "…"} xin nghe ạ.`} onChange={(e) => setField("greeting", e.target.value)} style={area} />
