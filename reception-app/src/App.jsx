@@ -15,6 +15,7 @@ import { FinanceInbound } from "./finance/Inbound.jsx";
 import { FinanceOutbound } from "./finance/Outbound.jsx";
 import { FinanceCreate } from "./finance/Creator.jsx";
 import { FinanceCampaign } from "./finance/Campaign.jsx";
+import { Playground } from "./playground/Playground.jsx";
 
 // Bonia Tiếp tân v3 (Claude Design handoff 13 + the founder's 2026-10-04
 // changes). Tabs: Trực tiếp · Lịch sử · Cài đặt · Thử Bonia · Tài khoản, plus
@@ -64,6 +65,7 @@ function FinanceApp() {
 
 export default function App() {
   const app = useApp();
+  if (app.account.status === "in" && app.account.playground) return <AppFrame><Playground /></AppFrame>;
   if (app.account.status === "in" && app.biz.sector === "finance") return <FinanceApp />;
   return (
     <Switch>

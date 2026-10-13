@@ -152,7 +152,7 @@ export async function startRealCall({ url, ticket, profile, today, on }) {
       ready = true;
       on.ready?.(m);
     } else if (m.type === "clearAudio") clear();
-    else if (m.type === "transcript") on.transcript?.(m.who, m.text);
+    else if (m.type === "transcript") on.transcript?.(m.who, m.text, m);
     else if (m.type === "request") on.request?.(m);
     else if (m.type === "error") on.error?.(REFUSED[m.error] || "Không kết nối được tới Bonia. Thử lại sau ít phút.");
     return undefined;

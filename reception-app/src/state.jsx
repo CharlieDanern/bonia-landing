@@ -295,7 +295,8 @@ export function AppStateProvider({ children }) {
       bizSeq.current++;
       setBiz(fromState(me));
       // a finance company (Bonia Tiếp tân · Tài chính, sector finance): its name for the header and Tài khoản
-      setAccount({ status: "in", phone: me.phone, version: me.version, firstRun: !me.profile, company: me.sector === "finance" ? me.profile?.company || me.name || null : null });
+      // playground: a demo login of the partner playground (founder 2026-10-13), which opens on it
+      setAccount({ status: "in", phone: me.phone, version: me.version, firstRun: !me.profile, company: me.sector === "finance" ? me.profile?.company || me.name || null : null, playground: !!me.playground });
     } catch (e) {
       setAccount(e.status === 401 ? { status: "out" } : { status: "error", error: e.error || "network" });
     }
@@ -387,7 +388,7 @@ export function AppStateProvider({ children }) {
   }, [ensureTick, loadCalls, loadRequests]);
 
   useEffect(() => {
-    if (demo || account.status !== "in") return undefined;
+    if (demo || account.status !== "in" || account.playground) return undefined;
     let ws = null;
     let stop = false;
     let retry = 0;
@@ -417,12 +418,12 @@ export function AppStateProvider({ children }) {
       if (ws) { ws.onclose = null; ws.close(); }
       setCalls((cs) => cs.filter((c) => !c.real));
     };
-  }, [demo, account.status, onLive]);
+  }, [demo, account.status, account.playground, onLive]);
 
   // ── Bonia on/off, Hôm nay, the Orb tip (handoff 14) ─────────────────────
   // the phone may switch Bonia or change the note: ask again every 15 s and when the page comes back
   useEffect(() => {
-    if (demo || account.status !== "in") return undefined;
+    if (demo || account.status !== "in" || account.playground) return undefined;
     const pull = () => {
       if (document.visibilityState !== "visible") return;
       const seq = bizSeq.current;
@@ -441,7 +442,7 @@ export function AppStateProvider({ children }) {
       window.removeEventListener("focus", pull);
       document.removeEventListener("visibilitychange", pull);
     };
-  }, [demo, account.status, loadRequests, loadCalls]);
+  }, [demo, account.status, account.playground, loadRequests, loadCalls]);
 
   useEffect(() => {
     if (!demo) return;

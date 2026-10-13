@@ -49,6 +49,10 @@ export const api = {
   requestCode: (phone) => call("POST", "/reception/web/login/code", { phone }),
   verify: (phone, code) => call("POST", "/reception/web/login/verify", { phone, code }),
   me: () => call("GET", "/reception/web/me"),
+  // the partner demo playground (founder 2026-10-13): the demo logins only
+  playground: () => call("GET", "/reception/web/playground"),
+  savePlayground: (body) => call("PUT", "/reception/web/playground", body),
+  playgroundCall: (body) => call("POST", "/reception/web/playground/test-call", body),
   saveProfile: (profile, version, sector) => call("PUT", "/reception/web/profile", { profile, version, ...(sector ? { sector } : {}) }),
   startImport: (input) => call("POST", "/reception/web/import", input),
   importStatus: (id) => call("GET", `/reception/web/import/${encodeURIComponent(id)}`),
