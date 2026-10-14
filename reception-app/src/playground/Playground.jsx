@@ -135,6 +135,12 @@ export function Playground() {
     patch((s) => ({ live: false, phase: "idle", level: 0, done: true, len: Math.max(0, Math.round((Date.now() - s.t0) / 1000)), endNote: END_NOTES[reason]?.(s.limits) || "" }));
     if (R.current.uuid) waitResult(R.current.uuid);
   };
+  // the mic, off and on (founder 2026-10-14: "this demo would likely be played at noisy places"): Bonia hears silence
+  const toggleMute = () => {
+    const m = !C.current.muted;
+    R.current.call?.mute(m);
+    patch({ muted: m });
+  };
   // a past call, opened again from Cuộc gọi gần đây
   const openPast = async (uuid) => {
     if (C.current.live) return;
@@ -164,7 +170,7 @@ export function Playground() {
     setPickups((n) => n + 1);
     const t0 = Date.now();
     const sc = (pg.scenarios?.[pg.sector] || []).find((x) => x.id === cur.scenario) || null;
-    patch({ live: true, phase: "connecting", lines: [], records: [], err: "", t0, level: 0, done: false, title: cur.business.name, out: sc ? sc.name : null, limits: null, endNote: "" });
+    patch({ live: true, phase: "connecting", lines: [], records: [], err: "", t0, level: 0, done: false, title: cur.business.name, out: sc ? sc.name : null, limits: null, endNote: "", muted: false });
     setNow(t0);
     R.current.tick = setInterval(() => setNow(Date.now()), 500);
     clearTimeout(R.current.saveT);
@@ -203,6 +209,7 @@ export function Playground() {
           error: (msg) => patch({ err: msg }),
         },
       });
+      R.current.call.mute(!!C.current.muted); // muted while it connected
     } catch (e) {
       patch({ err: e?.name === "NotAllowedError" ? "Cần cho phép micro để gọi thử." : "Không bắt đầu được cuộc gọi thử. Thử lại sau." });
       setTimeout(finish, 1800);
@@ -243,8 +250,11 @@ export function Playground() {
   const sec = Math.max(0, Math.floor((now - call.t0) / 1000));
   const talking = call.phase === "listening" && call.level > 0.045;
   const mood = !live || call.phase === "connecting" ? "idle" : call.phase === "speaking" ? "bonia" : talking ? "guest" : "idle";
-  const phaseLabel = { connecting: "ĐANG KẾT NỐI · BONIA SẮP NHẤC MÁY…", speaking: "BONIA ĐANG NÓI", listening: talking ? "BẠN ĐANG NÓI" : "BONIA ĐANG NGHE · MỜI BẠN NÓI" }[call.phase] || "";
-  const phaseC = call.phase === "listening" ? "#4A6B3A" : "#7B4A2D";
+  const muted = live && !!call.muted;
+  const phaseLabel = muted && call.phase !== "connecting"
+    ? (call.phase === "speaking" ? "BONIA ĐANG NÓI · MIC ĐANG TẮT" : "MIC ĐANG TẮT · BẬT MIC ĐỂ TRẢ LỜI")
+    : { connecting: "ĐANG KẾT NỐI · BONIA SẮP NHẤC MÁY…", speaking: "BONIA ĐANG NÓI", listening: talking ? "BẠN ĐANG NÓI" : "BONIA ĐANG NGHE · MỜI BẠN NÓI" }[call.phase] || "";
+  const phaseC = muted && call.phase === "listening" ? "#A0412D" : call.phase === "listening" ? "#4A6B3A" : "#7B4A2D";
   const savedLabel = { saved: "ĐÃ LƯU", dirty: "ĐANG SỬA…", saving: "ĐANG LƯU…", error: "CHƯA LƯU ĐƯỢC" }[saving];
 
   // ── the form ────────────────────────────────────────────────────────────
@@ -406,9 +416,24 @@ export function Playground() {
         {live && phone && <span style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.14em", color: phaseC, textAlign: "center" }}>{phaseLabel}</span>}
         {call.err && <span role="alert" style={{ fontSize: 11.5, color: "#A0412D", textAlign: "center", lineHeight: 1.45 }}>{call.err}</span>}
         {!live && call.endNote && <span style={{ fontSize: d.fs.tiny, color: "#6E6255", textAlign: "center", lineHeight: 1.45 }}>{call.endNote}</span>}
-        {live && <span style={{ fontSize: d.fs.tiny, color: "#6E6255", textAlign: "center", lineHeight: 1.45 }}>Nói vào micro như một khách hàng. Nên đeo tai nghe để Bonia không nghe lại giọng của chính mình.</span>}
+        {live && (
+          <span style={{ fontSize: d.fs.tiny, color: muted ? "#A0412D" : "#6E6255", textAlign: "center", lineHeight: 1.45 }}>
+            {muted
+              ? `Mic đang tắt: Bonia chỉ nghe im lặng, tiếng ồn xung quanh không ngắt lời Bonia. Bật mic để trả lời; im lặng quá ${Math.round((call.limits?.silence_ms || 10000) / 1000)} giây, cuộc gọi tự kết thúc.`
+              : "Nói vào micro như một khách hàng. Nên đeo tai nghe để Bonia không nghe lại giọng của chính mình. Chỗ ồn: tắt mic khi không nói."}
+          </span>
+        )}
         {live ? (
-          <button type="button" className="b-ghost" onClick={finish} style={{ height: d.btn, borderRadius: d.btn / 2, fontSize: d.fs.body, textAlign: "center" }}>Kết thúc cuộc gọi</button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button" className="b-ghost" onClick={toggleMute} aria-pressed={muted} aria-label={muted ? "Bật mic" : "Tắt mic"}
+              style={{ height: d.btn, borderRadius: d.btn / 2, padding: "0 16px", fontSize: d.fs.body, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, flex: "none", ...(muted ? { background: "#A0412D", borderColor: "#A0412D", color: "#fff" } : {}) }}
+            >
+              <MicGlyph off={muted} />
+              {muted ? "Bật mic" : "Tắt mic"}
+            </button>
+            <button type="button" className="b-ghost" onClick={finish} style={{ flex: 1, height: d.btn, borderRadius: d.btn / 2, fontSize: d.fs.body, textAlign: "center" }}>Kết thúc cuộc gọi</button>
+          </div>
         ) : (
           <button type="button" className="b-primary" onClick={start} style={{ height: d.btn, borderRadius: d.btn / 2, fontSize: d.fs.body, textAlign: "center" }}>Gọi lại</button>
         )}
@@ -477,6 +502,17 @@ export function Playground() {
         {panel}
       </div>
     </div>
+  );
+}
+
+/** The mic, struck through when off. */
+function MicGlyph({ off }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5.75" y="1.5" width="4.5" height="8" rx="2.25" />
+      <path d="M3.5 7.5a4.5 4.5 0 0 0 9 0M8 12v2.5" />
+      {off && <path d="M2.5 2.5l11 11" />}
+    </svg>
   );
 }
 

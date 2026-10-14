@@ -41,8 +41,10 @@ registerProcessor("up8k", Up8k);
 /**
  * Starts a call: url + ticket from the backend (POST /reception/web/test-call); without a ticket (the local lab
  * server) the Cài đặt on screen and the Hôm nay note go with the start. on: { state(phase: connecting | speaking | listening), ready(), level(rms), transcript(who, text),
- * request({ id, card, withdrawn }), end(), error(message) }. Resolves to { stop }. "connecting" lasts until Bonia's
- * greeting is ready (the server's 'ready'), so the call starts with her greeting; the mic goes up only from then.
+ * request({ id, card, withdrawn }), end(), error(message) }. Resolves to { stop, mute(on) }. "connecting" lasts until
+ * Bonia's greeting is ready (the server's 'ready'), so the call starts with her greeting; the mic goes up only from then.
+ * Muted, silence goes up in place of the mic (founder 2026-10-14, demos in noisy places: the room's noise must not cut
+ * Bonia off): her turn-taking sees a quiet line, and a sentence cut by the mute still ends as a turn.
  */
 export async function startRealCall({ url, ticket, profile, today, on }) {
   let ac;
@@ -74,12 +76,15 @@ export async function startRealCall({ url, ticket, profile, today, on }) {
   sink.connect(ac.destination);
   const stats = { rate: ac.sampleRate, sent: 0, maxLevel: 0, got: 0 };
   let ready = false;
+  let muted = false;
+  const silent = new ArrayBuffer(320); // one 20 ms frame
   if (import.meta.env.DEV) window.__boniaCall = stats; // local debugging only
   up.port.onmessage = (e) => {
-    on.level?.(e.data.level);
-    stats.maxLevel = Math.max(stats.maxLevel, e.data.level);
+    const level = muted ? 0 : e.data.level;
+    on.level?.(level);
+    stats.maxLevel = Math.max(stats.maxLevel, level);
     if (ready && ws.readyState === 1) {
-      ws.send(e.data.pcm);
+      ws.send(muted ? silent : e.data.pcm);
       stats.sent += 1;
     }
   };
@@ -173,5 +178,5 @@ export async function startRealCall({ url, ticket, profile, today, on }) {
       on.end?.(endReason);
     }, left * 1000 + 300);
   };
-  return { stop };
+  return { stop, mute: (on) => { muted = !!on; } };
 }
