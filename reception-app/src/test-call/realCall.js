@@ -155,19 +155,22 @@ export async function startRealCall({ url, ticket, profile, today, on }) {
     else if (m.type === "transcript") on.transcript?.(m.who, m.text, m);
     // a line already shown, cut short by the caller: only m.heard was said (gpt-realtime + ElevenLabs)
     else if (m.type === "transcript_cut") on.transcriptCut?.(m);
+    // why Bonia's side is ending the call (silence, max_duration, end_call), just before the socket closes
+    else if (m.type === "end") endReason = m.reason || null;
     else if (m.type === "request") on.request?.(m);
     else if (m.type === "error") on.error?.(REFUSED[m.error] || "Không kết nối được tới Bonia. Thử lại sau ít phút.");
     return undefined;
   };
   ws.onerror = () => { if (!stopped) on.error?.("Không kết nối được tới Bonia. Thử lại sau ít phút."); };
   // Bonia hung up (or the line dropped): let her last words play out, then end
+  let endReason = null;
   ws.onclose = () => {
     if (stopped) return;
     const left = Math.max(0, playhead - ac.currentTime);
     setTimeout(() => {
       if (stopped) return;
       stop();
-      on.end?.();
+      on.end?.(endReason);
     }, left * 1000 + 300);
   };
   return { stop };

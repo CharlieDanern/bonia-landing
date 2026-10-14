@@ -124,11 +124,13 @@ export function Playground() {
     R.current.resultFor = uuid;
     R.current.pollT = setTimeout(ask, 2500);
   };
-  const finish = () => {
+  // why a call ended, said under it (founder 2026-10-14: the guardrails: 10 s of silence, 2 minutes at most)
+  const END_NOTES = { silence: (l) => `Cuộc gọi tự kết thúc sau ${Math.round((l?.silence_ms || 10000) / 1000)} giây không ai nói.`, max_duration: (l) => `Cuộc gọi thử dài tối đa ${Math.round((l?.max_ms || 120000) / 60000)} phút.` };
+  const finish = (reason = null) => {
     if (R.current.ended) return;
     R.current.ended = true;
     teardown();
-    patch({ live: false, phase: "idle", level: 0, done: true, len: Math.max(0, Math.round((Date.now() - C.current.t0) / 1000)) });
+    patch((s) => ({ live: false, phase: "idle", level: 0, done: true, len: Math.max(0, Math.round((Date.now() - s.t0) / 1000)), endNote: END_NOTES[reason]?.(s.limits) || "" }));
     if (R.current.uuid) waitResult(R.current.uuid);
   };
   // a past call, opened again from Cuộc gọi gần đây
@@ -141,7 +143,7 @@ export function Playground() {
       setResultUuid(uuid);
       setResult({ state: "done", call: c });
       patch({
-        live: false, done: true, err: "", len: Math.round(c.duration_ms / 1000), title: c.business_name, out: c.direction === "outbound" ? c.scenario || "Gọi ra" : null,
+        live: false, done: true, err: "", endNote: "", len: Math.round(c.duration_ms / 1000), title: c.business_name, out: c.direction === "outbound" ? c.scenario || "Gọi ra" : null,
         lines: (c.transcript || []).map((t) => ({ w: t.who === "bonia" ? "B" : "K", text: t.text, rest: t.unheard || "" })),
         records: (c.records || []).map((r) => ({ id: r.id, type: r.type || "Ghi nhận" })),
       });
@@ -160,7 +162,7 @@ export function Playground() {
     setPickups((n) => n + 1);
     const t0 = Date.now();
     const sc = (pg.scenarios?.[pg.sector] || []).find((x) => x.id === cur.scenario) || null;
-    patch({ live: true, phase: "connecting", lines: [], records: [], err: "", t0, level: 0, done: false, title: cur.business.name, out: sc ? sc.name : null });
+    patch({ live: true, phase: "connecting", lines: [], records: [], err: "", t0, level: 0, done: false, title: cur.business.name, out: sc ? sc.name : null, limits: null, endNote: "" });
     setNow(t0);
     R.current.tick = setInterval(() => setNow(Date.now()), 500);
     clearTimeout(R.current.saveT);
@@ -180,7 +182,8 @@ export function Playground() {
         on: {
           state: (phase) => { if (C.current.live && C.current.phase !== phase) patch({ phase }); },
           // m.uuid: this call, to ask for its result card once it is over
-          ready: (m) => { R.current.uuid = m?.uuid || null; const at = Date.now(); patch({ t0: at }); setNow(at); },
+          // limits: the call's maximum length and silence (the server's), shown beside the clock
+          ready: (m) => { R.current.uuid = m?.uuid || null; const at = Date.now(); patch({ t0: at, limits: m?.limits || null }); setNow(at); },
           level: (lv) => { if (Math.abs(lv - C.current.level) > 0.01) patch({ level: lv }); },
           // gpt-realtime + ElevenLabs sends whole lines: one bubble each (a line cut short: rest, the part never said)
           transcript: (who, text, m) => {
@@ -194,7 +197,7 @@ export function Playground() {
               : s.lines.filter((l) => l.id !== m.id),
           })),
           request: (m) => patch((s) => ({ records: [...s.records.filter((r) => r.id !== m.id), { id: m.id, type: m.card?.type || "Ghi nhận" }] })),
-          end: () => finish(),
+          end: (reason) => finish(reason),
           error: (msg) => patch({ err: msg }),
         },
       });
@@ -367,7 +370,9 @@ export function Playground() {
           {call.out && <span style={{ fontSize: d.fs.tiny, color: "#6E6255", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Kịch bản: {call.out}</span>}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontFamily: MONO, fontSize: 11.5, color: "#4A4239" }}>{live ? mmss(sec) : mmss(call.len || 0)}</span>
+          <span style={{ fontFamily: MONO, fontSize: 11.5, color: live && call.limits?.max_ms && sec >= call.limits.max_ms / 1000 - 15 ? "#A0412D" : "#4A4239" }}>
+            {live ? mmss(sec) : mmss(call.len || 0)}{live && call.limits?.max_ms ? ` / ${mmss(Math.round(call.limits.max_ms / 1000))}` : ""}
+          </span>
           {!live && (
             <button type="button" onClick={() => patch({ done: false })} aria-label="Đóng" className="h-line" style={{ width: 34, height: 34, borderRadius: 17, fontSize: 14, color: "#4A4239", textAlign: "center" }}>✕</button>
           )}
@@ -398,6 +403,7 @@ export function Playground() {
       <div style={{ padding: `8px 12px ${phone ? "max(22px, var(--tt-bot))" : "12px"}`, borderTop: "1px solid #EFE9DD", display: "flex", flexDirection: "column", gap: 6, flex: "none" }}>
         {live && phone && <span style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.14em", color: phaseC, textAlign: "center" }}>{phaseLabel}</span>}
         {call.err && <span role="alert" style={{ fontSize: 11.5, color: "#A0412D", textAlign: "center", lineHeight: 1.45 }}>{call.err}</span>}
+        {!live && call.endNote && <span style={{ fontSize: d.fs.tiny, color: "#6E6255", textAlign: "center", lineHeight: 1.45 }}>{call.endNote}</span>}
         {live && <span style={{ fontSize: d.fs.tiny, color: "#6E6255", textAlign: "center", lineHeight: 1.45 }}>Nói vào micro như một khách hàng. Nên đeo tai nghe để Bonia không nghe lại giọng của chính mình.</span>}
         {live ? (
           <button type="button" className="b-ghost" onClick={finish} style={{ height: d.btn, borderRadius: d.btn / 2, fontSize: d.fs.body, textAlign: "center" }}>Kết thúc cuộc gọi</button>
