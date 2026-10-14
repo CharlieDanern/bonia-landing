@@ -1,5 +1,5 @@
 import React from "react";
-import { Redirect, Route, Switch } from "wouter";
+import { Redirect, Route, Switch, useRoute } from "wouter";
 import { useApp } from "./state.jsx";
 import { AppFrame } from "./layout.jsx";
 import { StoreRedirect } from "./components/StoreQR.jsx";
@@ -15,7 +15,7 @@ import { FinanceInbound } from "./finance/Inbound.jsx";
 import { FinanceOutbound } from "./finance/Outbound.jsx";
 import { FinanceCreate } from "./finance/Creator.jsx";
 import { FinanceCampaign } from "./finance/Campaign.jsx";
-import { Playground } from "./playground/Playground.jsx";
+import { Playground, PlaygroundEntry } from "./playground/Playground.jsx";
 
 // Bonia Tiếp tân v3 (Claude Design handoff 13 + the founder's 2026-10-04
 // changes). Tabs: Trực tiếp · Lịch sử · Cài đặt · Thử Bonia · Tài khoản, plus
@@ -65,7 +65,21 @@ function FinanceApp() {
 
 export default function App() {
   const app = useApp();
-  if (app.account.status === "in" && app.account.playground) return <AppFrame><Playground /></AppFrame>;
+  const [atPlayground] = useRoute("/playground");
+  // the partner playground (founder 2026-10-13): a demo login lives at /playground, whatever path it opened
+  if (app.account.status === "in" && app.account.playground) {
+    return (
+      <AppFrame>
+        <Switch>
+          <Route path="/playground" component={Playground} />
+          <Route><Redirect to="/playground" replace /></Route>
+        </Switch>
+      </AppFrame>
+    );
+  }
+  // the playground's own link in a browser signed in otherwise (a business, ABC Credit) or not yet: its login, or a word
+  // to switch
+  if (atPlayground) return <AppFrame><PlaygroundEntry /></AppFrame>;
   if (app.account.status === "in" && app.biz.sector === "finance") return <FinanceApp />;
   return (
     <Switch>

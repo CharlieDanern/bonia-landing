@@ -164,10 +164,13 @@ export function Start({ step: slug = "" }) {
   const [resendAt, setResendAt] = useState(0);
   const [, setTick] = useState(0);
   const ref = session("tt3.ref");
+  // came from the partner playground's link (/playground, founder 2026-10-14): its login, then back to it
+  const toPlayground = session("tt3.dest") === "playground";
+  const home = toPlayground ? "/playground" : "/cai-dat";
 
   // logged in already: straight to Cài đặt; a browser that signed in before skips the welcome
   useEffect(() => {
-    if (app.account.status === "in") navigate("/cai-dat", { replace: true });
+    if (app.account.status === "in") navigate(home, { replace: true });
     else if (step === "welcome" && known.get()) navigate(PATH.login, { replace: true });
   }, [app.account.status, navigate, step]);
   useEffect(() => {
@@ -207,8 +210,8 @@ export function Start({ step: slug = "" }) {
     known.set();
     if (app.demo) return void navigate("/cai-dat?moi=1");
     await app.signIn(t);
-    navigate("/cai-dat");
-  }, [app, navigate]);
+    navigate(home);
+  }, [app, navigate, home]);
 
   const verify = async (c) => {
     if (app.demo) return void setTimeout(() => signedIn("demo"), 350);
@@ -254,22 +257,29 @@ export function Start({ step: slug = "" }) {
       <form style={{ display: "contents" }} onSubmit={(e) => { e.preventDefault(); if (!busy && tel.replace(/\D/g, "").length >= 9) sendCode("code"); }}>
         <h1 style={h1}>Đăng nhập</h1>
         <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <span style={{ fontSize: 14, color: "#4A4239" }}>Số điện thoại đã cài Bonia</span>
+          <span style={{ fontSize: 14, color: "#4A4239" }}>{toPlayground ? "Số tài khoản demo" : "Số điện thoại đã cài Bonia"}</span>
           <input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="tel" autoComplete="tel" placeholder="0909 123 456" style={{ height: 56, border: "1px solid #D9D0BF", borderRadius: 12, padding: "0 16px", fontFamily: MONO, fontSize: 19, background: "#fff", color: "#1F1B16" }} />
         </label>
         {errLine}
-        <button type="submit" className="b-primary" disabled={busy} style={primary()}>{busy ? "Đang gửi…" : "Gửi mã tới ứng dụng Bonia"}</button>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, color: "#6E6255", fontSize: 13.5 }}>
-          <span style={{ flex: 1, height: 1, background: "#E4DCCB" }} />hoặc<span style={{ flex: 1, height: 1, background: "#E4DCCB" }} />
-        </div>
-        <QrSignIn demo={app.demo} onToken={signedIn} phone={phone} />
+        <button type="submit" className="b-primary" disabled={busy} style={primary()}>{busy ? "Đang gửi…" : toPlayground ? "Tiếp tục" : "Gửi mã tới ứng dụng Bonia"}</button>
+        {/* a demo login has no phone app to scan with */}
+        {!toPlayground && (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, color: "#6E6255", fontSize: 13.5 }}>
+              <span style={{ flex: 1, height: 1, background: "#E4DCCB" }} />hoặc<span style={{ flex: 1, height: 1, background: "#E4DCCB" }} />
+            </div>
+            <QrSignIn demo={app.demo} onToken={signedIn} phone={phone} />
+          </>
+        )}
       </form>
     );
   } else if (step === "code") {
     body = (
       <>
         <h1 style={h1}>Nhập mã</h1>
-        <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239" }}>Mã đã gửi tới ứng dụng Bonia trên số <span style={{ fontFamily: MONO, color: "#1F1B16" }}>{tel}</span>, trong thông báo mới nhất.</span>
+        <span style={{ fontSize: 13.5, lineHeight: 1.55, color: "#4A4239" }}>
+          {toPlayground ? <>Mã của tài khoản demo <span style={{ fontFamily: MONO, color: "#1F1B16" }}>{tel}</span>.</> : <>Mã đã gửi tới ứng dụng Bonia trên số <span style={{ fontFamily: MONO, color: "#1F1B16" }}>{tel}</span>, trong thông báo mới nhất.</>}
+        </span>
         {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
         <input
           value={code}
@@ -337,7 +347,7 @@ export function Start({ step: slug = "" }) {
       <div style={{ position: "absolute", left: 0, right: 0, top: phone ? "var(--tt-top)" : 12, height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", padding: `0 ${phone ? 20 : 40}px` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img src={BONIA_MARK} alt="Bonia" style={{ height: 22, width: "auto" }} />
-          <span className="tt-mono-label">TIẾP TÂN</span>
+          <span className="tt-mono-label">{toPlayground ? "PLAYGROUND" : "TIẾP TÂN"}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {ref?.code && <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.12em", padding: "4px 8px", border: "1px solid #D9D0BF", borderRadius: 10, color: "#4A4239", whiteSpace: "nowrap" }}>{ref.via} · {ref.code}</span>}

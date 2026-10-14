@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useLocation } from "wouter";
 import { Orb } from "../components/Orb.jsx";
 import { Bubble } from "../components/Request.jsx";
 import { startRealCall } from "../test-call/realCall.js";
@@ -36,6 +37,7 @@ export function Playground() {
   const app = useApp();
   const { phone, reduce } = useLayout();
   const d = dims(phone);
+  useEffect(forget, []); // the login brought this account here: a later login in this tab is an ordinary one
   const [pg, setPg] = useState(null); // the backend's view: { sector, voice, sectors, catalog, voices, limits }
   const [loadErr, setLoadErr] = useState("");
   const [saving, setSaving] = useState("saved"); // saved | dirty | saving | error
@@ -474,6 +476,37 @@ export function Playground() {
       <div style={{ position: "absolute", right: 48, width: 400, top: 56 + 24, bottom: 28, transform: showPanel ? "none" : "translateX(480px)", opacity: showPanel ? 1 : 0, pointerEvents: showPanel ? "auto" : "none", transition: `transform 650ms ${EASE}, opacity 400ms ease`, zIndex: 6 }}>
         {panel}
       </div>
+    </div>
+  );
+}
+
+// the login's way back here (screens/Start.jsx): set on the way to it, gone once the playground opens
+const DEST = "tt3.dest";
+const forget = () => { try { sessionStorage.removeItem(DEST); } catch { /* private mode */ } };
+
+/**
+ * bonia.vn/reception/app/playground (founder 2026-10-14: "the new page is currently linked to the old page"): signed
+ * out, the login, back here after it; signed in with another account (a business, ABC Credit), never signed out
+ * silently: a word and a button to switch to a demo login.
+ */
+export function PlaygroundEntry() {
+  const app = useApp();
+  const [, navigate] = useLocation();
+  const toLogin = () => {
+    try { sessionStorage.setItem(DEST, JSON.stringify("playground")); } catch { /* private mode */ }
+    navigate("/bat-dau/dang-nhap", { replace: true });
+  };
+  const status = app.account.status;
+  useEffect(() => { if (status === "out") toLogin(); }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
+  const box = { position: "absolute", inset: 0, display: "flex", flexDirection: "column", gap: 14, alignItems: "center", justifyContent: "center", background: "#F2EEE6", color: "#4A4239", fontSize: 14, padding: 24, textAlign: "center" };
+  if (status === "loading" || status === "out") return <div style={box}><span>Đang mở…</span></div>;
+  return (
+    <div style={box}>
+      <img src={BONIA_MARK} alt="Bonia" style={{ height: 26 }} />
+      <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.18em", color: "#6E6255" }}>PLAYGROUND</span>
+      <span style={{ maxWidth: 420, lineHeight: 1.6 }}>Playground dùng tài khoản demo. Trình duyệt này đang đăng nhập số {(app.account.phone || "khác").replace(/^\+84/, "0")}.</span>
+      <button type="button" className="b-primary" onClick={() => { app.signOut(); toLogin(); }} style={{ height: 44, padding: "0 22px", borderRadius: 22, fontSize: 14.5 }}>Đăng xuất để đăng nhập tài khoản demo</button>
+      <button type="button" onClick={() => { forget(); navigate("/", { replace: true }); }} style={{ fontSize: 13, color: "#7B4A2D" }}>Quay lại tài khoản này</button>
     </div>
   );
 }
