@@ -57,9 +57,12 @@ function wave(g, x, y, k, wk, sel, now, col) {
 
 const LABEL_WAIT_MS = 45_000; // a finished call whose result never comes fades out
 
-/** The boxes in order: follow-up results (wide), then the rest and Không nghe máy (narrow); unknown results get a box. */
-export function boxesOf(direction, outcomes, noAnswer = true) {
-  const known = BOXES[direction] || BOXES.outbound;
+/**
+ * The boxes in order: follow-up results (wide), then the rest and Không nghe máy (narrow); unknown results get a box.
+ * list: the company's own results when they are not ABC Credit's (the engine's, e.g. OCB's hotline).
+ */
+export function boxesOf(direction, outcomes, noAnswer = true, list = null) {
+  const known = list?.length ? list : BOXES[direction] || BOXES.outbound;
   const extra = Object.keys(outcomes || {}).filter((o) => !known.includes(o));
   const all = [...known, ...extra];
   return { need: all.filter(needs), quiet: [...all.filter((o) => !needs(o)), ...(noAnswer ? [NO_ANSWER] : [])] };
@@ -72,7 +75,7 @@ export const keyOf = (c) => c.key ?? c.row_id;
  * every one answered). liveLabel, ringWord and needTitle are the words under the sphere and over the wide boxes.
  */
 export function LiveStage({ direction = "outbound", calls, feed, counts, skew = 0, pinnedId, onPin, binF, onBin, mask, reduce,
-  noAnswer = true, liveLabel = "ĐANG GỌI", ringWord = "đổ chuông", needTitle = "CẦN TƯ VẤN VIÊN GỌI LẠI" }) {
+  noAnswer = true, liveLabel = "ĐANG GỌI", ringWord = "đổ chuông", needTitle = "CẦN TƯ VẤN VIÊN GỌI LẠI", boxes = null }) {
   const stageRef = useRef(null);
   const cvRef = useRef(null);
   const boxRefs = useRef({});
@@ -263,7 +266,7 @@ export function LiveStage({ direction = "outbound", calls, feed, counts, skew = 
   const opened = useRef(null);
   if (!opened.current && counts) opened.current = { ...o, [NO_ANSWER]: counts.no_answer || 0 };
   const called = counts?.called || 0;
-  const { need, quiet } = boxesOf(direction, o, noAnswer);
+  const { need, quiet } = boxesOf(direction, o, noAnswer, boxes);
   const needN = need.reduce((a, k) => a + shown(k), 0);
   const quietN = quiet.reduce((a, k) => a + shown(k), 0);
   const cols = `${need.map(() => "1.25fr").join(" ")} 12px ${quiet.map(() => "0.8fr").join(" ")}`;

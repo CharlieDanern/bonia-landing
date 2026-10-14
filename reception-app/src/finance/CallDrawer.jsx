@@ -2,12 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 import { copyToClipboard } from "../state.jsx";
 import { MONO } from "../ui.js";
 import { financeApi, financeRecordingUrl } from "./api.js";
-import { OutcomePill, clock, directionLabel } from "./common.jsx";
+import { OutcomePill, clock, directionLabel, useCompany } from "./common.jsx";
+import { SystemSteps } from "./SystemSteps.jsx";
 
 // The call drawer (handoff 16 v1): what Bonia recorded (the after-call step's fields), every attempt, the
 // recording and the transcript; Đánh dấu đã xử lý and Sao chép for the results someone must follow up.
 
-const RECORD_NAMES = { lead: "Ghi khách để quản lý gọi lại", complaint: "Ghi khiếu nại", message: "Ghi lời nhắn" };
+const RECORD_NAMES = { lead: "Ghi khách để quản lý gọi lại", complaint: "Ghi khiếu nại", message: "Ghi lời nhắn", trace: "Ghi yêu cầu tra soát" };
 const money = (v) => (typeof v === "number" ? `khoảng ${String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}đ` : v);
 
 function dayWord(date) {
@@ -59,6 +60,7 @@ export function CallDrawer({ item, phone, onClose, onChange }) {
     financeApi.call(item.id).then((r) => { if (live) setDetail(r.call); }).catch(() => { if (live) setFailed(true); });
     return () => { live = false; };
   }, [item.id]);
+  const { short } = useCompany();
   const c = { ...(detail || {}), ...item };
   const det = detail?.details || {};
   const rows = [
@@ -73,6 +75,10 @@ export function CallDrawer({ item, phone, onClose, onChange }) {
     ["Khu vực làm hồ sơ", det.area],
     ["Gọi lại lúc", det.callback_time],
     ["Tóm tắt", c.summary],
+    // a company's own record (OCB's demo): its lines, the next step, the team that owns it
+    ...(Array.isArray(det.items) ? det.items.map((i) => [i.label, i.value]) : []),
+    ["Việc tiếp theo", det.next_step],
+    ["Bộ phận phụ trách", det.owner],
   ].filter(([, v]) => v !== undefined && v !== null && v !== "");
   const markDone = async (done) => {
     setBusy(true);
@@ -121,12 +127,13 @@ export function CallDrawer({ item, phone, onClose, onChange }) {
               {detail.records.map((r) => (
                 <span key={r.id} style={{ fontSize: 12, color: "#4A4239" }}>
                   <span style={{ fontFamily: MONO, fontSize: 10.5, border: "1px solid #C9D8BF", background: "#EEF3EA", color: "#4A6B3A", borderRadius: 5, padding: "1px 6px", marginRight: 6 }}>{r.id}</span>
-                  {RECORD_NAMES[r.kind] || r.function} lúc {clock(r.at_ms)}
+                  {r.label || RECORD_NAMES[r.kind] || r.function} lúc {clock(r.at_ms)}
                 </span>
               ))}
             </div>
           )}
         </div>
+        {Array.isArray(det.system) && det.system.length > 0 && <SystemSteps system={{ verified: !!det.verified, steps: det.system }} title={`HỆ THỐNG ${short.toUpperCase()}`} />}
         {detail?.attempts?.length > 0 && (
           <div style={{ padding: "12px 16px", borderTop: "1px solid #EFE9DD", display: "flex", flexDirection: "column", gap: 5 }}>
             <span style={lbl}>CÁC LẦN GỌI</span>

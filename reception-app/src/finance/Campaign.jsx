@@ -6,8 +6,9 @@ import { EASE, MONO, SERIF, dims } from "../ui.js";
 import { financeApi } from "./api.js";
 import { CallDrawer } from "./CallDrawer.jsx";
 import { ExportDialog } from "./ExportDialog.jsx";
-import { FinHeader, FinPhoneTabs, OutcomePill } from "./common.jsx";
+import { FinHeader, FinPhoneTabs, OutcomePill, useCompany } from "./common.jsx";
 import { LiveStage, boxesOf, keyOf } from "./LiveStage.jsx";
+import { SystemSteps } from "./SystemSteps.jsx";
 import {
   BOXES, CONCURRENCY, Choice, DAYS, FeedPill, NO_ANSWER, StatusPill, colOf, fmt, holidayDates, inWindow, masked, mmss, needs,
   nextCallTime, readSheet, settingsLine, spaced,
@@ -221,6 +222,7 @@ const outcomeOf = (f) => f.outcome || (f.status === "no_answer" ? NO_ANSWER : nu
  * the feed. `stage` holds the field's words for the direction (LiveStage: noAnswer, liveLabel, ringWord, needTitle).
  */
 export function LiveView({ counts, live, reduce, direction = "outbound", stage = {}, top = 144 }) {
+  const { short } = useCompany();
   const [pin, setPin] = useState(null); // { row: id } a call in progress or a finished one
   const [mode, setMode] = useState("need");
   const [binF, setBinF] = useState(null);
@@ -242,6 +244,7 @@ export function LiveView({ counts, live, reduce, direction = "outbound", stage =
     card = {
       status: pinCall.state === "talking" ? `ĐANG NÓI CHUYỆN · ${mmss(el)}` : "ĐANG ĐỔ CHUÔNG", c: "#4A6B3A", bg: "#F1F3EA",
       name: pinCall.name || "Khách", phone: pinCall.phone, who, whoC: "#4A6B3A", line: pinCall.line?.text || "…", bonia: b,
+      system: pinCall.system || null,
     };
   } else if (pinRow) {
     const o = outcomeOf(pinRow);
@@ -274,6 +277,7 @@ export function LiveView({ counts, live, reduce, direction = "outbound", stage =
               <div style={{ maxWidth: "94%", padding: "7px 10px", borderRadius: 11, lineHeight: 1.45, background: card.bonia ? "#EFE4D6" : "#FAF7F1", border: `1px solid ${card.bonia ? "#E4D5C1" : "#EFE9DD"}` }}>{card.line}</div>
               {card.done && card.callId && <Link href={`/lich-su?call=${card.callId}`} style={{ fontSize: 12, paddingTop: 2, color: "#7B4A2D" }}>Mở trong Lịch sử →</Link>}
             </div>
+            {card.system && <SystemSteps system={card.system} title={`HỆ THỐNG ${short.toUpperCase()}`} />}
           </div>
         )}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flex: "none" }}>
@@ -315,7 +319,7 @@ export function PhoneLive({ counts, live, reduce, direction = "outbound", stage 
   const feed = useFeed(live.feed);
   const o = counts.outcomes || {};
   const talk = live.calls.filter((x) => x.state === "talking").length;
-  const { need, quiet } = boxesOf(direction, o, stage.noAnswer !== false);
+  const { need, quiet } = boxesOf(direction, o, stage.noAnswer !== false, stage.boxes);
   const boxes = [...need, ...quiet];
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

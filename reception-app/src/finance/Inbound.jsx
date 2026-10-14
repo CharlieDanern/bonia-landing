@@ -54,6 +54,8 @@ export function FinanceInbound() {
   const offline = data && data.engine !== "ok";
   const k = data?.counts || { total: 0, called: 0, answered: 0, no_answer: 0, outcomes: {}, open: 0 };
   const live = { calls: data?.calls || [], feed: data?.feed || [], skew: data?.skew || 0 };
+  // the company's own results, when its hotline has them (OCB's demo): the boxes
+  const stage = data?.boxes?.length ? { ...STAGE, boxes: data.boxes } : STAGE;
   const pill = offline ? ["MẤT KẾT NỐI", "#A0412D", "#E3B9AE"] : on ? ["ĐANG NGHE MÁY", "#4A6B3A", "#4A6B3A"] : ["ĐÃ TẮT", "#6E6255", "#D9D0BF"];
   const sub = offline
     ? "Chưa kết nối được tổng đài của Bonia. Đang thử lại…"
@@ -107,7 +109,7 @@ export function FinanceInbound() {
             {nameBlock}
             {stats}
             {actions}
-            {loading || <PhoneLive counts={k} live={live} reduce={reduce} direction="inbound" stage={STAGE} />}
+            {loading || <PhoneLive counts={k} live={live} reduce={reduce} direction="inbound" stage={stage} />}
           </div>
         </div>
         <FinPhoneTabs active={0} />
@@ -125,7 +127,7 @@ export function FinanceInbound() {
           {actions}
         </div>
       </div>
-      {loading ? <div style={{ position: "absolute", left: 28, top: 144 }}>{loading}</div> : <LiveView counts={k} live={live} reduce={reduce} direction="inbound" stage={STAGE} />}
+      {loading ? <div style={{ position: "absolute", left: 28, top: 144 }}>{loading}</div> : <LiveView counts={k} live={live} reduce={reduce} direction="inbound" stage={stage} />}
       {overlays}
     </div>
   );

@@ -97,7 +97,7 @@ export function FinanceSettings() {
     <Page tab={3} title="Cài đặt">
       <div style={card}>
         <div style={{ marginTop: -1 }}>
-          {row("Thông tin công ty", "Sản phẩm vay, lãi suất, điều kiện, giờ làm việc", soon)}
+          {row("Thông tin công ty", "Sản phẩm, biểu phí, điều kiện, giờ làm việc", soon)}
           {row("Kịch bản gọi ra", "Đội Bonia chỉnh kịch bản cho công ty", <span style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.14em", color: "#4A4239" }}>1 KỊCH BẢN</span>)}
           {row("Số đã gọi gần đây", "Khi tải danh sách mới, Bonia có bỏ qua số vừa gọi gần đây không. Vẫn gọi được từng danh sách.", <RecentDays />)}
           {row("Thử Bonia", "Nói chuyện với Bonia ngay trên trình duyệt", soon)}
