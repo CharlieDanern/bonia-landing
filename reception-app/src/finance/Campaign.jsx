@@ -54,6 +54,9 @@ function subline(c, engine, now) {
 
 export function FinanceCampaign({ id, view = "live" }) {
   const { phone, reduce } = useLayout();
+  const { staff } = useCompany();
+  // the wide boxes' title: who calls the interested customers back (a bank's chuyên viên, a lender's tư vấn viên)
+  const stage = { needTitle: `CẦN ${staff.toUpperCase()} GỌI LẠI` };
   const [, go] = useLocation();
   const [campaign, setCampaign] = useState(null);
   const [error, setError] = useState(null);
@@ -168,7 +171,7 @@ export function FinanceCampaign({ id, view = "live" }) {
             {progress}
             {actions}
             {viewSwitch}
-            {view === "live" ? <PhoneLive counts={c.counts} live={live} reduce={reduce} /> : <Bang campaign={c} phone />}
+            {view === "live" ? <PhoneLive counts={c.counts} live={live} reduce={reduce} stage={stage} /> : <Bang campaign={c} phone />}
           </div>
         </div>
         <FinPhoneTabs active={1} />
@@ -188,7 +191,7 @@ export function FinanceCampaign({ id, view = "live" }) {
         </div>
       </div>
       {view === "live"
-        ? <LiveView counts={c.counts} live={live} reduce={reduce} />
+        ? <LiveView counts={c.counts} live={live} reduce={reduce} stage={stage} />
         : <div style={{ position: "absolute", left: 28, right: 28, top: 144, bottom: 0 }}><Bang campaign={c} /></div>}
       {overlays}
     </div>

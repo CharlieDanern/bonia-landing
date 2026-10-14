@@ -20,11 +20,16 @@ export function todayLabel(now = Date.now()) {
   return `${WEEKDAYS[d.getUTCDay()]} ${d.getUTCDate()}/${d.getUTCMonth() + 1}`;
 }
 
-/** The company's name for the header: "ABC Credit" out of "Công ty Tài chính ABC Credit". */
+/**
+ * The company's name for the header ("ABC Credit" out of "Công ty Tài chính ABC Credit"), and whether it is a bank
+ * (its profile's kind; OCB's demo, founder 2026-10-14: "optimize for banks"): a bank's words and files, its staff
+ * "chuyên viên" where a lender's are "tư vấn viên".
+ */
 export function useCompany() {
   const { account } = useApp();
   const full = account?.company || "ABC Credit";
-  return { full, short: full.replace(/^công ty (tnhh |cổ phần )?(tài chính )?/i, "").trim() || full };
+  const bank = !!account?.bank;
+  return { full, short: full.replace(/^công ty (tnhh |cổ phần )?(tài chính )?/i, "").trim() || full, bank, staff: bank ? "chuyên viên" : "tư vấn viên" };
 }
 
 export function FinHeader({ active }) {

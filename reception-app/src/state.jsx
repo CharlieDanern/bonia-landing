@@ -296,7 +296,7 @@ export function AppStateProvider({ children }) {
       setBiz(fromState(me));
       // a finance company (Bonia Tiếp tân · Tài chính, sector finance): its name for the header and Tài khoản
       // playground: a demo login of the partner playground (founder 2026-10-13), which opens on it
-      setAccount({ status: "in", phone: me.phone, version: me.version, firstRun: !me.profile, company: me.sector === "finance" ? me.profile?.company || me.name || null : null, playground: !!me.playground });
+      setAccount({ status: "in", phone: me.phone, version: me.version, firstRun: !me.profile, company: me.sector === "finance" ? me.profile?.company || me.name || null : null, bank: me.sector === "finance" && me.profile?.kind === "bank", playground: !!me.playground });
     } catch (e) {
       setAccount(e.status === 401 ? { status: "out" } : { status: "error", error: e.error || "network" });
     }

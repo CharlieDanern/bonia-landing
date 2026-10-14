@@ -1,14 +1,20 @@
 import React, { useState } from "react";
 import { MONO, SERIF } from "../ui.js";
 import { downloadExport } from "./api.js";
+import { useCompany } from "./common.jsx";
 
 // Xuất Excel (handoff 16 v1): what is exported (a campaign's list, or Lịch sử's current filter), the time, the
 // transcript option, and the columns the file will have. The backend writes the file (routes/finance.ts).
 
 const COLUMNS = ["Thời gian", "Chiều", "Danh sách", "Số điện thoại", "Tên", "Ghi chú (danh sách)", "Kết quả", "Máy quan tâm", "Giá máy", "Trả trước", "Số tháng", "Gói", "Khu vực", "Gọi lại lúc", "Tóm tắt", "Thời lượng", "Số lần gọi", "Trạng thái xử lý"];
+// a bank's file (the backend's exportTable): no lender columns, the record's own lines (founder 2026-10-14)
+const LENDER = new Set(["Máy quan tâm", "Giá máy", "Trả trước", "Số tháng", "Gói", "Khu vực"]);
+const BANK_COLUMNS = [...COLUMNS.filter((c) => !LENDER.has(c)), "Chi tiết"];
 const RANGES = [["today", "Hôm nay"], ["7", "7 ngày"], ["30", "30 ngày"]];
 
 export function ExportDialog({ count, filter, filterLabel, range: initialRange, campaign = null, onClose }) {
+  const { bank } = useCompany();
+  const cols = bank ? BANK_COLUMNS : COLUMNS;
   const [what, setWhat] = useState(campaign ? "campaign" : "filter");
   const [range, setRange] = useState(initialRange === "custom" ? "custom" : initialRange || "30");
   const [withText, setWithText] = useState(false);
@@ -70,9 +76,9 @@ export function ExportDialog({ count, filter, filterLabel, range: initialRange, 
             <span onClick={() => setWithText(!withText)}>Gồm lời thoại</span>
             <span style={{ color: "#6E6255" }}>· lời thoại khá dài</span>
           </label>
-          <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.18em", color: "#6E6255", marginTop: 8 }}>CÁC CỘT TRONG FILE · {COLUMNS.length + (withText ? 1 : 0)} CỘT</span>
+          <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.18em", color: "#6E6255", marginTop: 8 }}>CÁC CỘT TRONG FILE · {cols.length + (withText ? 1 : 0)} CỘT</span>
           <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-            {[...COLUMNS, ...(withText ? ["Lời thoại"] : [])].map((c) => (
+            {[...cols, ...(withText ? ["Lời thoại"] : [])].map((c) => (
               <span key={c} style={{ fontSize: 12, padding: "3px 8px", borderRadius: 6, background: "#F7F3EC", border: "1px solid #E4DCCB", color: "#1F1B16" }}>{c}</span>
             ))}
           </div>

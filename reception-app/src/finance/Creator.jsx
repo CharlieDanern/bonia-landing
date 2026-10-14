@@ -15,12 +15,22 @@ import {
 // 4 Xem lại và bắt đầu (Gọi thử, Lưu nháp, Bắt đầu gọi). The summary card on the right carries the estimate.
 
 const MAX_ROWS = 20_000;
-const SAMPLE = [
-  ["Số ĐT", "Họ tên", "Xưng hô", "Ngày sinh", "Thu nhập/tháng", "Đã vay trước?", "Máy quan tâm", "Cửa hàng ghé", "Ghi chú tư vấn"],
-  ["0900 000 181", "Trần Thảo Vy", "chị", "14/03/1994", "18 triệu", "Có · 2024", "iPhone 17", "Quận 10 · 05/10", "Hỏi trả trước 20%"],
-  ["0900 000 182", "Lê Văn Đạt", "anh", "02/11/1988", "25 triệu", "Không", "Galaxy S26", "Thủ Đức · 06/10", ""],
-  ["0900 000 183", "Phạm Hà My", "em", "21/07/1999", "", "Không", "iPhone 17 Pro", "Quận 7 · 07/10", "Muốn góp 12 tháng"],
-];
+// the example file: a lender's leads, or a bank's customers chosen from its data (founder 2026-10-14: "optimize for
+// banks"; all made up)
+const SAMPLES = {
+  lender: [
+    ["Số ĐT", "Họ tên", "Xưng hô", "Ngày sinh", "Thu nhập/tháng", "Đã vay trước?", "Máy quan tâm", "Cửa hàng ghé", "Ghi chú tư vấn"],
+    ["0900 000 181", "Trần Thảo Vy", "chị", "14/03/1994", "18 triệu", "Có · 2024", "iPhone 17", "Quận 10 · 05/10", "Hỏi trả trước 20%"],
+    ["0900 000 182", "Lê Văn Đạt", "anh", "02/11/1988", "25 triệu", "Không", "Galaxy S26", "Thủ Đức · 06/10", ""],
+    ["0900 000 183", "Phạm Hà My", "em", "21/07/1999", "", "Không", "iPhone 17 Pro", "Quận 7 · 07/10", "Muốn góp 12 tháng"],
+  ],
+  bank: [
+    ["Số ĐT", "Họ tên", "Xưng hô", "Phân khúc", "Sản phẩm đang dùng", "Tín hiệu từ dữ liệu", "Chi nhánh quản lý", "Đồng ý nhận thông tin"],
+    ["0900 000 181", "Nguyễn Minh Khang", "anh", "Ưu tiên", "Tiền gửi có kỳ hạn · Mastercard Platinum", "Tra cứu tỷ giá đô la Úc 3 lần trong tháng 9", "Quận 3", "Có · 2025"],
+    ["0900 000 182", "Trần Thu Hà", "chị", "Ưu tiên", "Tiền gửi có kỳ hạn", "Chuyển tiền tới Canada tháng 8", "Quận 1", "Có · 2024"],
+    ["0900 000 183", "Lê Quốc Bảo", "anh", "Phổ thông", "Tài khoản thanh toán · OCB OMNI", "Mua đô la Mỹ tháng 9", "Thủ Đức", "Có · 2026"],
+  ],
+};
 const DEFAULTS = {
   script: "default", caller: "bonia", concurrency: 20, days: [1, 2, 3, 4, 5, 6], skip_holidays: true, windows: [["08:30", "11:30"], ["13:30", "17:00"]],
   retries: 1, retry_gap: "2h", callback_mode: "manager", order: "file", start: "now", start_at: "",
@@ -39,7 +49,8 @@ const baseName = (f) => f.replace(/\.(xlsx|xls|csv)$/i, "").replace(/[-_]+/g, " 
 export function FinanceCreate() {
   const { phone } = useLayout();
   const [, go] = useLocation();
-  const { short } = useCompany();
+  const { short, bank, staff } = useCompany();
+  const SAMPLE = bank ? SAMPLES.bank : SAMPLES.lender;
   const [step, setStep] = useState(1);
   const [maxStep, setMaxStep] = useState(1);
   const [sheet, setSheet] = useState(null); // { file, headers, rows }
@@ -358,7 +369,7 @@ export function FinanceCreate() {
         {row("Số cuộc gọi cùng lúc", `Gói hiện tại: tối đa ${PLAN_MAX}`, (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{CONCURRENCY.map((n) => <Choice key={n} mono h={32} on={s.concurrency === n} onClick={() => setS({ ...s, concurrency: n })}>{n}</Choice>)}</div>
-            <span style={{ fontSize: 12.5, color: "#4A4239", lineHeight: 1.5 }}>Bonia gọi tối đa {s.concurrency} khách cùng một lúc. Nhiều cuộc cùng lúc thì danh sách xong sớm hơn, nhưng số khách quan tâm cũng dồn về tư vấn viên nhanh hơn.</span>
+            <span style={{ fontSize: 12.5, color: "#4A4239", lineHeight: 1.5 }}>Bonia gọi tối đa {s.concurrency} khách cùng một lúc. Nhiều cuộc cùng lúc thì danh sách xong sớm hơn, nhưng số khách quan tâm cũng dồn về {staff} nhanh hơn.</span>
           </div>
         ), true)}
       </div>
@@ -401,7 +412,7 @@ export function FinanceCreate() {
         ), true)}
         {row("Khách hẹn gọi lại", null, (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-            <Choice h={32} on>Tư vấn viên gọi</Choice>
+            <Choice h={32} on>{staff.charAt(0).toUpperCase() + staff.slice(1)} gọi</Choice>
             <span style={{ height: 32, padding: "0 11px", borderRadius: 8, border: "1px dashed #D9D0BF", color: "#6E6255", fontSize: 12.5, display: "inline-flex", alignItems: "center", gap: 8 }}>Bonia tự gọi lại đúng giờ hẹn <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: "0.14em" }}>SẮP CÓ</span></span>
           </div>
         ))}
@@ -429,7 +440,7 @@ export function FinanceCreate() {
     ["Cùng lúc", `${s.concurrency} cuộc`, 3],
     ["Ngày và giờ", `${daysLabel(s.days)} · ${windowsLabel(s.windows)}${s.skip_holidays ? " · nghỉ lễ" : ""}`, 3],
     ["Không nghe máy", retryLabel(s), 3],
-    ["Khách hẹn gọi lại", "Tư vấn viên gọi", 3],
+    ["Khách hẹn gọi lại", `${staff.charAt(0).toUpperCase() + staff.slice(1)} gọi`, 3],
     ["Bắt đầu", s.start === "now" ? "Ngay khi xác nhận" : startText, 3],
   ];
   const step4 = (

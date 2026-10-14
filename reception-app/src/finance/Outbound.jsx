@@ -4,7 +4,7 @@ import { useLayout } from "../layout.jsx";
 import { MONO, SERIF, dims } from "../ui.js";
 import { financeApi } from "./api.js";
 import { ExportDialog } from "./ExportDialog.jsx";
-import { FinHeader, FinPhoneTabs, TrialNote } from "./common.jsx";
+import { FinHeader, FinPhoneTabs, TrialNote, useCompany } from "./common.jsx";
 import { StatusPill, fmt, holidayDates, spaced } from "./outbound-common.jsx";
 
 // Gọi ra (handoff 16 v1): today's numbers, "Số không gọi", + Tạo chiến dịch, and one card per campaign (progress,
@@ -15,6 +15,7 @@ const dmy = (iso) => { const d = new Date(Date.parse(iso) + 7 * 3600e3); return 
 
 export function FinanceOutbound() {
   const { phone } = useLayout();
+  const { staff } = useCompany();
   const d = dims(phone);
   const [, go] = useLocation();
   const [data, setData] = useState(null);
@@ -99,7 +100,7 @@ export function FinanceOutbound() {
       {data && !data.campaigns.length && (
         <div style={{ background: "#fff", border: "1px dashed #D9D0BF", borderRadius: 12, padding: "28px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textAlign: "center" }}>
           <span style={{ fontSize: 14, fontWeight: 600 }}>Chưa có chiến dịch nào</span>
-          <span style={{ fontSize: 12.5, color: "#4A4239", maxWidth: 420 }}>Tải lên danh sách khách (Excel hoặc CSV), chọn giờ gọi, Bonia gọi từng khách và ghi lại kết quả cho tư vấn viên.</span>
+          <span style={{ fontSize: 12.5, color: "#4A4239", maxWidth: 420 }}>Tải lên danh sách khách (Excel hoặc CSV), chọn giờ gọi, Bonia gọi từng khách và ghi lại kết quả cho {staff}.</span>
         </div>
       )}
       {(data?.campaigns || []).map(card)}
