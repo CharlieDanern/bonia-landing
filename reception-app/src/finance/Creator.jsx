@@ -24,11 +24,12 @@ const SAMPLES = {
     ["0900 000 182", "Lê Văn Đạt", "anh", "02/11/1988", "25 triệu", "Không", "Galaxy S26", "Thủ Đức · 06/10", ""],
     ["0900 000 183", "Phạm Hà My", "em", "21/07/1999", "", "Không", "iPhone 17 Pro", "Quận 7 · 07/10", "Muốn góp 12 tháng"],
   ],
+  // the name, the gender and the xưng hô each in its own column (founder 2026-10-15: "don't collapse both")
   bank: [
-    ["Số ĐT", "Họ tên", "Xưng hô", "Phân khúc", "Sản phẩm đang dùng", "Tín hiệu từ dữ liệu", "Chi nhánh quản lý", "Đồng ý nhận thông tin"],
-    ["0900 000 181", "Nguyễn Minh Khang", "anh", "Ưu tiên", "Tiền gửi có kỳ hạn · Mastercard Platinum", "Tra cứu tỷ giá đô la Úc 3 lần trong tháng 9", "Quận 3", "Có · 2025"],
-    ["0900 000 182", "Trần Thu Hà", "chị", "Ưu tiên", "Tiền gửi có kỳ hạn", "Chuyển tiền tới Canada tháng 8", "Quận 1", "Có · 2024"],
-    ["0900 000 183", "Lê Quốc Bảo", "anh", "Phổ thông", "Tài khoản thanh toán · OCB OMNI", "Mua đô la Mỹ tháng 9", "Thủ Đức", "Có · 2026"],
+    ["Số ĐT", "Họ tên", "Giới tính", "Xưng hô", "Phân khúc", "Sản phẩm đang dùng", "Tín hiệu từ dữ liệu", "Chi nhánh quản lý", "Đồng ý nhận thông tin"],
+    ["0900 000 181", "Nguyễn Minh Khang", "Nam", "anh", "Ưu tiên", "Tiền gửi có kỳ hạn · Mastercard Platinum", "Tra cứu tỷ giá đô la Úc 3 lần trong tháng 9", "Quận 3", "Có · 2025"],
+    ["0900 000 182", "Trần Thu Hà", "Nữ", "chị", "Ưu tiên", "Tiền gửi có kỳ hạn", "Chuyển tiền tới Canada tháng 8", "Quận 1", "Có · 2024"],
+    ["0900 000 183", "Lê Quốc Bảo", "Nam", "anh", "Phổ thông", "Tài khoản thanh toán · ứng dụng ngân hàng", "Mua đô la Mỹ tháng 9", "Thủ Đức", "Có · 2026"],
   ],
 };
 const DEFAULTS = {
